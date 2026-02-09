@@ -1,0 +1,23 @@
+{% extends 'core/base.html' %}
+{% block title %}Histórico{% endblock %}
+
+{% block content %}
+<div class="container">
+<div class="card">
+
+<h2>Histórico</h2>
+
+<ul>
+  {% for a in atividades %}
+    <li>
+      <b>{{ a.nome }}</b> — {{ a.tipo }} — {{ a.creditos }} créditos
+    </li>
+  {% empty %}
+    <p>Nenhuma atividade registrada.</p>
+  {% endfor %}
+</ul>
+
+<a href="{% url 'dashboard' %}" class="btn-gray">Voltar</a>
+</div>
+</div>
+{% endblock %}

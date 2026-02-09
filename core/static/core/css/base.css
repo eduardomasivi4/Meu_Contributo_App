@@ -1,0 +1,123 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", sans-serif;
+}
+
+body {
+  background: #f4f6fa;
+  color: #111;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 30px auto;
+  padding: 20px;
+}
+
+.hidden {
+  display: none;
+}
+
+.fade {
+  animation: fade 0.4s ease;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---------- Cards ---------- */
+
+.card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 25px;
+  margin-bottom: 25px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+.card.blue {
+  background: #3b82f6;
+  color: #fff;
+  text-align: center;
+}
+
+/* ---------- Títulos ---------- */
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* ---------- Inputs ---------- */
+
+.input-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 14px;
+  padding: 12px;
+  margin: 10px 0;
+}
+
+.input-group i {
+  color: #3b82f6;
+}
+
+.input-group input,
+.input-group select,
+.input-group textarea {
+  border: none;
+  outline: none;
+  width: 100%;
+  font-size: 14px;
+}
+
+/* ---------- Botões ---------- */
+
+button,
+.btn-gray,
+.btn-red {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  border-radius: 14px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+  text-align: center;
+  text-decoration: none;
+}
+
+button {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.btn-gray {
+  background: #e5e7eb;
+  color: #000;
+}
+
+.btn-red {
+  background: #ef4444;
+  color: #fff;
+}
+
+/* ---------- Créditos ---------- */
+
+.credit {
+  font-size: 36px;
+  font-weight: bold;
+  margin-top: 8px;
+}

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Gerenciamento de Créditos</title>
+        <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    </head>
+
+    <body>
+
+        <div class="container">
+
+            <div id="login" class="card fade">
+            <h2>Bem-vindo</h2>
+
+            <div class="input-group">
+            <i class="fa-solid fa-envelope"></i>
+            <input id="email" placeholder="Email">
+            </div>
+
+            <div class="input-group">
+            <i class="fa-solid fa-user"></i>
+            <input id="nome" placeholder="Nome">
+            </div>
+
+            <button onclick="login()">Entrar</button>
+            </div>
+
+            <div id="dashboard" class="hidden fade">
+
+            <div class="card blue">
+            Olá, <b id="userName"></b>
+            <div>Créditos atuais</div>
+            <div class="credit" id="credits">0</div>
+            </div>
+
+            <div class="grid">
+
+            <div class="card icon-card" onclick="show('atividade')">
+            <div class="icon-circle"><i class="fa-solid fa-circle-plus"></i></div>
+            <span>Registrar Atividade</span>
+            </div>
+
+            <div class="card icon-card" onclick="show('historico')">
+            <div class="icon-circle"><i class="fa-solid fa-clipboard-list"></i></div>
+            <span>Consultar Atividades</span>
+            </div>
+
+            <div class="card icon-card" onclick="show('credito')">
+            <div class="icon-circle"><i class="fa-solid fa-database"></i></div>
+            <span>Meu Crédito</span>
+            </div>
+
+            <div class="card icon-card" onclick="show('perfil')">
+            <div class="icon-circle"><i class="fa-solid fa-user"></i></div>
+            <span>Perfil</span>
+            </div>
+
+            </div>
+            </div>
+
+            <div id="atividade" class="hidden fade card">
+            <h2>Registrar Atividade</h2>
+
+            <div class="input-group">
+            <i class="fa-solid fa-pen"></i>
+            <input id="actNome" placeholder="Nome da atividade">
+            </div>
+
+            <div class="input-group">
+            <i class="fa-solid fa-layer-group"></i>
+            <select id="actTipo">
+            <option>Acadêmica</option>
+            <option>Projeto</option>
+            <option>Voluntariado</option>
+            </select>
+            </div>
+
+            <div class="input-group">
+            <i class="fa-solid fa-coins"></i>
+            <input type="number" id="actCred" placeholder="Quantidade de créditos">
+            </div>
+
+            <div class="input-group">
+            <i class="fa-solid fa-calendar"></i>
+            <input type="date" id="actData">
+            </div>
+
+            <div class="input-group">
+            <i class="fa-solid fa-align-left"></i>
+            <textarea id="actDesc" placeholder="Descrição"></textarea>
+            </div>
+
+            <button onclick="registrar()">Salvar Atividade</button>
+            <button class="btn-gray" onclick="show('dashboard')">Voltar</button>
+            </div>
+
+            <div id="historico" class="hidden fade card">
+            <h2>Histórico</h2>
+            <ul id="lista"></ul>
+            <button class="btn-gray" onclick="show('dashboard')">Voltar</button>
+            </div>
+
+            <div id="credito" class="hidden fade card">
+            <h2>Meu Crédito</h2>
+            <div class="credit" id="totalCredito"></div>
+            <button class="btn-gray" onclick="show('dashboard')">Voltar</button>
+            </div>
+
+            <div id="perfil" class="hidden fade card">
+            <img id="foto" class="profile-img">
+            <h2 id="perfilNome"></h2>
+
+            <button onclick="show('editar')">Editar Perfil</button>
+            <button onclick="show('imagem')">Adicionar Imagem</button>
+            <button class="btn-red" onclick="logout()">Sair</button>
+            </div>
+
+            <div id="editar" class="hidden fade card">
+            <h2>Editar Perfil</h2>
+
+            <div class="input-group">
+            <i class="fa-solid fa-user"></i>
+            <input id="novoNome">
+            </div>
+
+            <div class="input-group">
+            <i class="fa-solid fa-envelope"></i>
+            <input id="novoEmail">
+            </div>
+
+            <button onclick="salvarPerfil()">Salvar</button>
+            <button class="btn-gray" onclick="show('perfil')">Voltar</button>
+            </div>
+
+            <div id="imagem" class="hidden fade card">
+                <h2>Imagem de Perfil</h2>
+
+                <label class="upload-btn">
+                    <i class="fa-solid fa-upload"></i>
+                    Escolher ficheiro
+                    <input type="file" class="file-input" accept="image/*" onchange="carregar(event)">
+                </label>
+
+                <button class="btn-gray" onclick="show('perfil')">Voltar</button>
+            </div>
+
+        </div>
+
+    <script src="script.js"></script>
+    </body>
+</html>

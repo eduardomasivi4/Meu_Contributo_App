@@ -1,0 +1,137 @@
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Segoe UI,sans-serif
+}
+
+body{background:#f4f6fa}
+
+.container{
+max-width:1200px;
+margin:30px auto;
+padding:20px
+}
+
+.hidden{display:none}
+.fade{animation:fade .4s}
+@keyframes fade{from{opacity:0;transform:translateY(15px)}to{opacity:1}}
+
+.card{
+background:#fff;
+border-radius:18px;
+padding:25px;
+margin-bottom:25px;
+box-shadow:0 12px 30px rgba(0,0,0,.08)
+}
+
+h2{text-align:center;margin-bottom:20px}
+
+.input-group{
+display:flex;
+gap:10px;
+align-items:center;
+border:1px solid #ddd;
+border-radius:14px;
+padding:12px;
+margin:10px 0
+}
+
+.input-group i{color:#3b82f6}
+
+.input-group input,
+.input-group select,
+.input-group textarea{
+border:none;
+outline:none;
+width:100%
+}
+
+button{
+width:100%;
+padding:14px;
+border-radius:14px;
+border:none;
+background:#3b82f6;
+color:#fff;
+font-weight:600;
+cursor:pointer;
+margin-top:10px
+}
+
+.btn-gray{background:#e5e7eb;color:#000}
+.btn-red{background:#ef4444}
+
+.blue{text-align:center;background:#3b82f6;color:#fff}
+
+.credit{
+font-size:36px;
+font-weight:bold;
+margin-top:8px
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+gap:20px
+}
+
+.icon-card{
+min-height:220px;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+gap:14px;
+cursor:pointer;
+transition:.3s
+}
+
+.icon-card:hover{transform:translateY(-6px)}
+
+.icon-circle{
+width:90px;
+height:90px;
+border-radius:50%;
+background:#e0ebff;
+display:flex;
+align-items:center;
+justify-content:center
+}
+
+.icon-circle i{
+font-size:36px;
+color:#3b82f6
+}
+
+.icon-card span{
+font-weight:600;
+text-align:center
+}
+
+.profile-img{
+width:120px;
+height:120px;
+border-radius:50%;
+object-fit:cover;
+background:#ddd;
+display:block;
+margin:10px auto
+}
+
+.file-input{display:none}
+
+.upload-btn{
+background:#3b82f6;
+color:#fff;
+padding:14px;
+border-radius:14px;
+text-align:center;
+cursor:pointer
+}
+
+@media(min-width:1000px){
+.icon-card{min-height:260px}
+.icon-circle{width:100px;height:100px}
+.icon-circle i{font-size:42px}
+}

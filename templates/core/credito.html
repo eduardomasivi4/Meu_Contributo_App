@@ -1,0 +1,30 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Meu Crédito{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/credito.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <div class="card blue fade">
+    <h2>Meu Crédito</h2>
+
+    <div class="credit">
+      {{ total }}
+    </div>
+
+    <p style="margin-top:10px">
+      créditos acumulados
+    </p>
+  </div>
+
+  <a href="{% url 'dashboard' %}" class="btn-gray">
+    Voltar ao Dashboard
+  </a>
+
+</div>
+{% endblock %}

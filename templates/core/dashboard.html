@@ -1,0 +1,51 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <div class="card blue">
+    Olá, <b>{{ request.user.username }}</b>
+    <div>Créditos atuais</div>
+    <div class="credit">{{ total }}</div>
+  </div>
+
+  <div class="grid">
+
+    <a href="{% url 'atividade' %}" class="card icon-card">
+      <div class="icon-circle">
+        <i class="fa-solid fa-circle-plus"></i>
+      </div>
+      <span>Registrar Atividade</span>
+    </a>
+
+    <a href="{% url 'historico' %}" class="card icon-card">
+      <div class="icon-circle">
+        <i class="fa-solid fa-clipboard-list"></i>
+      </div>
+      <span>Consultar Atividades</span>
+    </a>
+
+    <a href="{% url 'credito' %}" class="card icon-card">
+      <div class="icon-circle">
+        <i class="fa-solid fa-database"></i>
+      </div>
+      <span>Meu Crédito</span>
+    </a>
+
+    <a href="{% url 'perfil' %}" class="card icon-card">
+      <div class="icon-circle">
+        <i class="fa-solid fa-user"></i>
+      </div>
+      <span>Perfil</span>
+    </a>
+
+  </div>
+</div>
+{% endblock %}

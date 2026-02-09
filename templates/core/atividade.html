@@ -1,0 +1,48 @@
+{% extends 'core/base.html' %}
+{% block title %}Registrar Atividade{% endblock %}
+
+{% block content %}
+<div class="container">
+<div class="card">
+
+<h2>Registrar Atividade</h2>
+
+<form method="post">
+{% csrf_token %}
+
+<div class="input-group">
+  <i class="fa-solid fa-pen"></i>
+  <input name="nome" placeholder="Nome da atividade">
+</div>
+
+<div class="input-group">
+  <i class="fa-solid fa-layer-group"></i>
+  <select name="tipo">
+    <option>Acadêmica</option>
+    <option>Projeto</option>
+    <option>Voluntariado</option>
+  </select>
+</div>
+
+<div class="input-group">
+  <i class="fa-solid fa-coins"></i>
+  <input type="number" name="creditos">
+</div>
+
+<div class="input-group">
+  <i class="fa-solid fa-calendar"></i>
+  <input type="date" name="data">
+</div>
+
+<div class="input-group">
+  <i class="fa-solid fa-align-left"></i>
+  <textarea name="descricao"></textarea>
+</div>
+
+<button type="submit">Salvar</button>
+<a href="{% url 'dashboard' %}" class="btn-gray">Voltar</a>
+
+</form>
+</div>
+</div>
+{% endblock %}

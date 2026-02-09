@@ -1,0 +1,50 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Cadastro{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/login.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="card fade">
+
+    <h2>Criar conta</h2>
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="input-group">
+        <i class="fa-solid fa-user"></i>
+        <input name="username" placeholder="Usuário" required>
+      </div>
+
+      <div class="input-group">
+        <i class="fa-solid fa-envelope"></i>
+        <input type="email" name="email" placeholder="Email" required>
+      </div>
+
+      <div class="input-group">
+        <i class="fa-solid fa-lock"></i>
+        <input type="password" name="password1" placeholder="Senha" required>
+      </div>
+
+      <div class="input-group">
+        <i class="fa-solid fa-lock"></i>
+        <input type="password" name="password2" placeholder="Confirmar senha" required>
+      </div>
+
+      <button type="submit">Cadastrar</button>
+
+    </form>
+
+    <p style="text-align:center;margin-top:15px">
+      Já tem conta?
+      <a href="{% url 'login' %}">Entrar</a>
+    </p>
+
+  </div>
+</div>
+{% endblock %}

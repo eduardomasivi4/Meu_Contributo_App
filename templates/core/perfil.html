@@ -1,0 +1,23 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/perfil.css' %}">
+{% endblock %}
+
+{% block title %}Perfil{% endblock %}
+
+{% block content %}
+<div class="container">
+<div class="card">
+
+<img src="{% static 'core/img/default.png' %}" class="profile-img">
+<h2>{{ request.user.username }}</h2>
+
+<a href="{% url 'editar_perfil' %}">Editar Perfil</a>
+<a href="{% url 'imagem' %}">Adicionar Imagem</a>
+<a href="{% url 'logout' %}" class="btn-red">Sair</a>
+
+</div>
+</div>
+{% endblock %}

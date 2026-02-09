@@ -1,0 +1,31 @@
+{% extends 'core/base.html' %}
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="card fade">
+    <h2>Bem-vindo</h2>
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="input-group">
+        <i class="fa-solid fa-user"></i>
+        <input name="username" placeholder="Usuário">
+      </div>
+
+      <div class="input-group">
+        <i class="fa-solid fa-lock"></i>
+        <input type="password" name="password" placeholder="Senha">
+      </div>
+
+      <button type="submit">Entrar</button>
+      <p style="text-align:center;margin-top:15px">
+        Não tem conta?
+        <a href="{% url 'cadastro' %}">Criar conta</a>
+      </p>
+
+    </form>
+  </div>
+</div>
+{% endblock %}

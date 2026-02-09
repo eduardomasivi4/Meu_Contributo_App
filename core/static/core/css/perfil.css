@@ -1,0 +1,14 @@
+.profile-img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #ddd;
+  display: block;
+  margin: 10px auto;
+}
+
+.card a {
+  display: block;
+  margin-top: 10px;
+}
