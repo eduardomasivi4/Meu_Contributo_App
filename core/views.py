@@ -1,86 +1,86 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
-from .models import Atividade
 from django.contrib.auth.models import User
 from django.contrib import messages
+from django.contrib.auth import authenticate, login
 
+#   USER AUTHENTICATIONS:
+#       LOGIN
 def login_view(request):
-    if request.method == "POST":
-        user = authenticate(
-            username=request.POST['username'],
-            password=request.POST['password']
-        )
-        if user:
+
+    #       RECEBER OS DADOS DO USUÁRIO
+    if request.method == 'POST':
+        nome_usuario = request.POST.get('username')
+        senha = request.POST.get('password')
+    
+        #       VERIFICAR SE EXISTE UM USUÁRIO COM AS MESMAS CREDENCIAIS INSERIDAS
+        user = authenticate(request, username= nome_usuario, password=senha)
+        if user is not None:
+        
+            #       SE JÁ EXISTE, INICIA A SESSÃO E MOSTRA A TELA DASHBOARD
             login(request, user)
             return redirect('dashboard')
-    return render(request, 'core/login.html')
 
-@login_required
+            #       SE NÃO, MOSTRE UMA MENSAGEM DE ERRO NA TELA DE LOGIN
+        else:
+            messages.error(request, 'Usuário inexistente. por favor crie uma conta')
+            return redirect ('login')
+    
+    return render (request, 'core/login.html')
+
+#       CADASTRO
+def cadastro(request):
+    
+    #       RECEBER OS DADOS DO USUARIO
+    if request.method == 'POST':
+        nome_usuario = request.POST['username']
+        email_usuario = request.POST['email']
+        senha1 = request.POST['password1']
+        senha2 = request.POST['password2']
+        
+        #       VERIFICAR SE AS SENHAS SÃO DIFERENTES:
+        if senha1 != senha2:
+            
+            #       Se FOREM DIFERENTES, MOSTRE A TELA DE CADASTRO COM UMA MENSAGEM DE ERRO
+            messages.error(request, 'As senhas são diferentes.')
+            return redirect ('cadastro')
+
+            #       SE NÃO, VERIFIQUE SE O USUÁRIO JÁ EXISTE NO BANCO DE DADOS
+        else:
+            if User.objects.filter(username=nome_usuario).exists():
+            
+                #       Se EXISTE, MOSTRE A TELA DE CADASTRO COM UMA MENSAGEM DE ERRO
+                messages.error(request, 'Nome de usuario já existe')
+                return redirect('cadastro')
+
+                #       SE NÃO, CRIE UM NOVO USUÁRIO E VÁ PARA A DASHBOARD
+            else:
+                User.objects.create_user(username=nome_usuario, email=email_usuario, password=senha1)
+                return redirect('dashboard')
+
+    return render(request, 'core/cadastro.html')
+
+#       ACTIVITY SCREENS
+#           DASHBOARD
 def dashboard(request):
-    total = sum(a.creditos for a in Atividade.objects.filter(usuario=request.user))
-    return render(request, 'core/dashboard.html', {'total': total})
+    return render(request, 'core/dashboard.html')
 
-@login_required
 def atividade(request):
-    if request.method == "POST":
-        Atividade.objects.create(
-            usuario=request.user,
-            nome=request.POST['nome'],
-            tipo=request.POST['tipo'],
-            creditos=request.POST['creditos'],
-            data=request.POST['data'],
-            descricao=request.POST['descricao']
-        )
-        return redirect('dashboard')
     return render(request, 'core/atividade.html')
 
-@login_required
 def historico(request):
-    atividades = Atividade.objects.filter(usuario=request.user)
-    return render(request, 'core/historico.html', {'atividades': atividades})
+    return render(request, 'core/historico.html')
 
-@login_required
 def credito(request):
-    total = sum(a.creditos for a in Atividade.objects.filter(usuario=request.user))
-    return render(request, 'core/credito.html', {'total': total})
+    return render(request, 'core/credito.html')
 
-@login_required
 def perfil(request):
     return render(request, 'core/perfil.html')
 
 def logout_view(request):
-    logout(request)
-    return redirect('login')
+    pass
 
 def editar_perfil(request):
     pass
 
 def imagem(request):
     pass
-
-def cadastro(request):
-    if request.method == "POST":
-        username = request.POST['username']
-        email = request.POST['email']
-        senha1 = request.POST['password1']
-        senha2 = request.POST['password2']
-
-        if senha1 != senha2:
-            messages.error(request, "As senhas não coincidem")
-            return redirect('cadastro')
-
-        if User.objects.filter(username=username).exists():
-            messages.error(request, "Usuário já existe")
-            return redirect('cadastro')
-
-        User.objects.create_user(
-            username=username,
-            email=email,
-            password=senha1
-        )
-
-        messages.success(request, "Conta criada com sucesso")
-        return redirect('login')
-
-    return render(request, 'core/cadastro.html')
