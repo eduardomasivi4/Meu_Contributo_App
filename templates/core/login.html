@@ -2,11 +2,18 @@
 {% block title %}Login{% endblock %}
 
 {% block content %}
+
 <div class="container">
   <div class="card fade">
     <h2>Bem-vindo</h2>
 
     <form method="post">
+      {% if messages %}
+        {% for message in messages %}
+          <p style="color:red;">{{ message }}</p>
+        {% endfor %}
+      {% endif %}
+      
       {% csrf_token %}
 
       <div class="input-group">
