@@ -1,0 +1,13 @@
+Django
+djangorestframework
+django-cors-headers
+django-filter
+django-crispy-forms
+crispy-bootstrap5
+psycopg2-binary
+django-allauth
+python-decouple
+whitenoise
+Pillow
+python-dateutil
+requests

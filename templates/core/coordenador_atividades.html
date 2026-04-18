@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Colégio Árvore da Felicidade - Coordenador</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/fundo.css' %}">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Inter',sans-serif; background:#FBF7E9; }
+    .dashboard-container { max-width:1400px; margin:0 auto; padding:20px; }
+    .header { background:white; border-radius:24px; padding:15px 25px; margin-bottom:25px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; border:1px solid #F5EDDA; }
+    .logo-area { display:flex; align-items:center; gap:12px; }
+    .logo-icon { width:45px; height:45px; background:#2B7A4B; border-radius:12px; display:flex; align-items:center; justify-content:center; }
+    .user-area { display:flex; align-items:center; gap:15px; background:#FBF7E9; padding:6px 18px; border-radius:40px; }
+    .user-avatar { width:38px; height:38px; background:#2B7A4B; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; }
+    .logout-btn { background:none; border:1px solid #F5EDDA; padding:6px 14px; border-radius:30px; cursor:pointer; }
+    .dashboard-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:25px; }
+    .card { background:white; border-radius:20px; padding:20px; border:1px solid #F5EDDA; }
+    .card-header { margin-bottom:15px; padding-bottom:12px; border-bottom:2px solid #FBF7E9; }
+    .card-header h3 { font-size:18px; color:#5C3A21; }
+    .form-group { margin-bottom:15px; }
+    .form-group label { display:block; margin-bottom:5px; font-weight:600; color:#5C3A21; font-size:13px; }
+    .form-group label i { margin-right:5px; color:#D4A373; }
+    .form-group input, .form-group select, .form-group textarea { width:100%; padding:10px; border:1px solid #F5EDDA; border-radius:12px; }
+    .radio-group { display:flex; gap:20px; margin-top:5px; }
+    .radio-group label { display:flex; align-items:center; gap:5px; font-weight:normal; cursor:pointer; }
+    .btn-primary { background:#2B7A4B; color:white; border:none; padding:12px; border-radius:30px; cursor:pointer; width:100%; font-weight:600; }
+    .btn-primary:hover { background:#1E5A38; }
+    .atividade-item { background:#FBF7E9; border-radius:16px; padding:15px; margin-bottom:15px; border:1px solid #F5EDDA; }
+    .atividade-header { display:flex; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; }
+    .atividade-nome { font-weight:700; color:#5C3A21; font-size:16px; }
+    .atividade-status { background:#E9F5EF; color:#2B7A4B; padding:3px 10px; border-radius:20px; font-size:11px; }
+    .atividade-info { display:flex; gap:15px; flex-wrap:wrap; margin-bottom:10px; font-size:12px; color:#8B694C; }
+    .atividade-requisitos { background:white; border-radius:12px; padding:10px; margin-top:10px; border-left:3px solid #D4A373; }
+    @media (max-width:900px){ .dashboard-grid { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+    <div class="header"><div class="logo-area"><div class="logo-icon"><img src="{% static 'images/logo-caf.png' %}" style="width:28px"></div><h1>Colégio Árvore da Felicidade</h1></div><div class="user-area"><div class="user-avatar"><i class="fas fa-calendar-alt"></i></div><div><div class="user-name">Coordenadora Ana Paula</div><div class="user-info">Atividades Culturais</div></div><button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Sair</button></div></div>
+    <div class="dashboard-grid">
+      <div class="card"><div class="card-header"><h3><i class="fas fa-plus-circle"></i> Criar Atividade</h3></div>
+        <div class="form-group"><label><i class="fas fa-tag"></i> Nome</label><input type="text" id="nomeAtividade" placeholder="Ex: Oficina de Teatro"></div>
+        <div class="form-group"><label><i class="fas fa-clipboard-list"></i> Requisitos</label><textarea id="requisitos" rows="3" placeholder="Critérios de avaliação..."></textarea></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;"><div class="form-group"><label><i class="fas fa-calendar"></i> Data</label><input type="date" id="dataAtividade"></div><div class="form-group"><label><i class="fas fa-clock"></i> Hora</label><input type="time" id="horaAtividade"></div></div>
+        <div class="form-group"><label><i class="fas fa-chalkboard"></i> Interrupção</label><div class="radio-group"><label><input type="radio" name="interrupcao" value="sim"> Sim</label><label><input type="radio" name="interrupcao" value="nao" checked> Não</label></div></div>
+        <div class="form-group"><label><i class="fas fa-star"></i> Pontuação</label><input type="number" id="pontuacao" value="100"></div>
+        <button class="btn-primary" id="btnCriar"><i class="fas fa-save"></i> Criar Atividade</button>
+      </div>
+      <div class="card"><div class="card-header"><h3><i class="fas fa-list"></i> Atividades</h3></div><div id="atividadesList"></div></div>
+    </div>
+  </div>
+  <div id="infoModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;"><div style="background:white; border-radius:24px; padding:30px; max-width:350px; text-align:center;"><div style="width:60px; height:60px; background:#2B7A4B; border-radius:50%; margin:0 auto 15px; display:flex; align-items:center; justify-content:center;"><i id="modalIcon" class="fas fa-check-circle" style="font-size:30px; color:white;"></i></div><h3 id="modalTitle">Sucesso!</h3><p id="modalMessage"></p><button id="modalCloseBtn" style="background:#2B7A4B; color:white; border:none; padding:10px 20px; border-radius:30px; cursor:pointer;">Continuar</button></div></div>
+  <script>
+    let atividades = [{ id:1, nome:"Oficina de Teatro", requisitos:"Participar ensaios\nApresentação final", data:"2024-11-15", hora:"14:00", interrupcao:"nao" }];
+    let nextId = 2;
+    function showModal(title, msg, isSuccess=true) { document.getElementById('modalTitle').innerText = title; document.getElementById('modalMessage').innerText = msg; const icon = document.querySelector('#infoModal .modal-icon'); icon.style.background = isSuccess ? '#2B7A4B' : '#D4A373'; document.getElementById('infoModal').style.display = 'flex'; }
+    function hideModal() { document.getElementById('infoModal').style.display = 'none'; }
+    function formatarData(d) { return new Date(d).toLocaleDateString('pt-BR'); }
+    function render() {
+      document.getElementById('atividadesList').innerHTML = atividades.map(a => `<div class="atividade-item"><div class="atividade-header"><span class="atividade-nome">🎭 ${a.nome}</span><span class="atividade-status">✓ Ativa</span></div><div class="atividade-info"><span><i class="fas fa-calendar"></i> ${formatarData(a.data)}</span><span><i class="fas fa-clock"></i> ${a.hora}</span><span>${a.interrupcao === 'sim' ? '⚠️ Interrompe' : '✅ Não interrompe'}</span></div><div class="atividade-requisitos"><strong><i class="fas fa-clipboard-list"></i> Critérios:</strong><br>${a.requisitos.replace(/\n/g,'<br>')}</div></div>`).join('');
+    }
+    document.getElementById('btnCriar').addEventListener('click', () => {
+      let nome = document.getElementById('nomeAtividade').value.trim(), req = document.getElementById('requisitos').value.trim(), data = document.getElementById('dataAtividade').value, hora = document.getElementById('horaAtividade').value, inter = document.querySelector('input[name="interrupcao"]:checked').value;
+      if(!nome || !req || !data || !hora) { showModal('⚠️ Atenção', 'Preencha todos os campos!', false); return; }
+      atividades.unshift({ id:nextId++, nome, requisitos:req, data, hora, interrupcao:inter });
+      render();
+      document.getElementById('nomeAtividade').value = ''; document.getElementById('requisitos').value = ''; document.getElementById('dataAtividade').value = ''; document.getElementById('horaAtividade').value = ''; document.querySelector('input[name="interrupcao"][value="nao"]').checked = true;
+      showModal('✅ Atividade Criada!', `"${nome}" cadastrada!`);
+    });
+    document.getElementById('logoutBtn').addEventListener('click', () => window.location.href = '/');
+    document.getElementById('modalCloseBtn').addEventListener('click', hideModal);
+    document.getElementById('dataAtividade').min = new Date().toISOString().split('T')[0];
+    render();
+  </script>
+</body>
+</html>
