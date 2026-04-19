@@ -1,11 +1,30 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login
-import json
-from django.http import JsonResponse
-from .models import PerfilAluno, Atividade, Inscricao, Beneficio, ResgateBeneficio, Transacao
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.urls import reverse
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import mm
+from reportlab.pdfgen import canvas
+from reportlab.lib.utils import ImageReader
+from reportlab.lib.colors import HexColor
+import qrcode
+import json
+from io import BytesIO
+from django.conf import settings
+import os
 
+# Importações dos modelos
+from .models import (
+    PerfilAluno, 
+    Turma, 
+    Atividade, 
+    Beneficio, 
+    Transacao, 
+    ResgateBeneficio,
+    Inscricao
+)
 
 def index(request):
     return render(request, 'core/index.html')
@@ -170,6 +189,135 @@ def api_resgatar_beneficio(request, beneficio_id):
             return JsonResponse({'success': False, 'erro': 'Saldo insuficiente'})
     except Beneficio.DoesNotExist:
         return JsonResponse({'success': False, 'erro': 'Benefício não encontrado'})
+
+@login_required
+def historico(request):
+    if request.user.tipo != 'aluno':
+        return redirect('index')
+    
+    transacoes = Transacao.objects.filter(aluno=request.user.perfil_aluno).order_by('-data')
+    
+    context = {
+        'transacoes': transacoes,
+        'nome': request.user.get_full_name() or request.user.username,
+        'processo': request.user.perfil_aluno.numero_processo,
+        'turma': request.user.perfil_aluno.turma.nome if request.user.perfil_aluno.turma else 'Sem turma',
+        'curso': request.user.perfil_aluno.turma.get_curso_display() if request.user.perfil_aluno.turma else 'Sem curso',
+        'saldo': request.user.perfil_aluno.saldo_pontos,
+    }
+    return render(request, 'core/historico.html', context)
+
+@login_required
+def gerar_comprovativo(request, transacao_id):
+    """Gera PDF comprovativo para uma transação"""
+    try:
+        transacao = Transacao.objects.get(id=transacao_id, aluno=request.user.perfil_aluno)
+    except Transacao.DoesNotExist:
+        return HttpResponse('Transação não encontrada', status=404)
+    
+    aluno = request.user.perfil_aluno
+    turma = aluno.turma
+    curso_nome = turma.get_curso_display() if turma else 'Não definido'
+    turma_nome = turma.nome if turma else 'Não definido'
+    
+    # Dados para o comprovativo
+    dados_comprovativo = (
+        f"O responsável pelo Meu Contributo App do CAF, João Zinga, "
+        f"confirma que o(a) estudante {request.user.get_full_name() or request.user.username}, "
+        f"estudante do curso de {curso_nome}, turma {turma_nome}, "
+        f"converteu {abs(transacao.quantidade)} pontos para obter o benefício {transacao.descricao}."
+    )
+    
+    # Construir URL completa do PDF (para o QR Code)
+    pdf_url = request.build_absolute_uri(reverse('gerar_comprovativo', args=[transacao.id]))
+    
+    # Criar resposta HTTP com PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="comprovativo_{transacao.id}.pdf"'
+    
+    # Criar PDF
+    pdf = canvas.Canvas(response, pagesize=A4)
+    width, height = A4
+    
+    # Cores institucionais
+    castanho = HexColor('#5C3A21')
+    verde = HexColor('#2B7A4B')
+    
+    # Logo
+    logo_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'logo-caf.png')
+    if os.path.exists(logo_path):
+        logo = ImageReader(logo_path)
+        pdf.drawImage(logo, (width - 60) / 2, height - 80, width=50, height=50, preserveAspectRatio=True)
+    
+    # Título
+    pdf.setFont('Helvetica-Bold', 18)
+    pdf.setFillColor(castanho)
+    pdf.drawCentredString(width / 2, height - 120, "COLÉGIO ÁRVORE DA FELICIDADE")
+    
+    pdf.setFont('Helvetica-Bold', 14)
+    pdf.drawCentredString(width / 2, height - 150, "COMPROVATIVO DE CONVERSÃO DE PONTOS")
+    
+    # Linha separadora
+    pdf.setStrokeColor(verde)
+    pdf.setLineWidth(2)
+    pdf.line(50, height - 170, width - 50, height - 170)
+    
+    # Texto do comprovativo
+    pdf.setFont('Helvetica', 12)
+    pdf.setFillColor(castanho)
+    
+    # Quebrar texto em múltiplas linhas
+    text_lines = []
+    current_line = ""
+    for word in dados_comprovativo.split():
+        if len(current_line) + len(word) + 1 < 80:
+            current_line += " " + word if current_line else word
+        else:
+            text_lines.append(current_line)
+            current_line = word
+    text_lines.append(current_line)
+    
+    y = height - 220
+    for line in text_lines:
+        pdf.drawString(50, y, line)
+        y -= 25
+    
+    # Informações adicionais
+    pdf.setFont('Helvetica-Bold', 12)
+    pdf.drawString(50, y - 20, f"Data da transação: {transacao.data.strftime('%d/%m/%Y %H:%M')}")
+    pdf.drawString(50, y - 45, f"Pontos convertidos: {abs(transacao.quantidade)}")
+    pdf.drawString(50, y - 70, f"Benefício: {transacao.descricao}")
+    
+    # Assinatura
+    y_assinatura = y - 130
+    pdf.setFont('Helvetica', 10)
+    pdf.drawString(50, y_assinatura, "_________________________________")
+    pdf.drawString(80, y_assinatura - 10, "João Zinga")
+    pdf.drawString(60, y_assinatura - 25, "Responsável pelo Meu Contributo App")
+    
+    # Gerar QR Code com a URL do PDF
+    qr = qrcode.QRCode(version=1, box_size=10, border=4)
+    qr.add_data(pdf_url)  # URL do PDF em vez do texto
+    qr.make(fit=True)
+    qr_img = qr.make_image(fill_color="#5C3A21", back_color="white")
+    
+    qr_buffer = BytesIO()
+    qr_img.save(qr_buffer, format='PNG')
+    qr_buffer.seek(0)
+    qr_reader = ImageReader(qr_buffer)
+    
+    # Posicionar QR Code no canto inferior direito
+    qr_size = 80
+    pdf.drawImage(qr_reader, width - qr_size - 50, y_assinatura - 100, width=qr_size, height=qr_size)
+    
+    # Texto explicativo do QR Code
+    pdf.setFont('Helvetica', 8)
+    pdf.setFillColor(castanho)
+    pdf.drawString(width - qr_size - 45, y_assinatura - 110, "QR Code para download")
+    pdf.drawString(width - qr_size - 55, y_assinatura - 120, "do comprovativo")
+    
+    pdf.save()
+    return response
 
 
 # ==================== PROFESSOR (placeholder) ====================

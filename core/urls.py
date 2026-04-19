@@ -10,7 +10,9 @@ urlpatterns = [
     path('aluno/dashboard/', views.dashboard_aluno, name='dashboard_aluno'),
     path('aluno/atividades/', views.atividades, name='atividades'),
     path('aluno/loja/', views.loja, name='loja'),
-
+    path('aluno/historico/', views.historico, name='historico'),
+    path('aluno/comprovativo/<int:transacao_id>/', views.gerar_comprovativo, name='gerar_comprovativo'),
+    
     # ALUNO - APIs
     path('api/aluno/verificar-processo/', views.verificar_processo, name='verificar_processo'),
     path('api/aluno/validar-senha/', views.validar_senha, name='validar_senha'),
