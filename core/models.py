@@ -86,8 +86,8 @@ class Atividade(models.Model):
     
     # Campos de data e hora
     data = models.DateField()
-    hora_inicio = models.TimeField()
-    hora_fim = models.TimeField()
+    hora_inicio = models.TimeField(default= '08:00')
+    hora_fim = models.TimeField(default= '17:00')
     
     interrompe_aula = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
