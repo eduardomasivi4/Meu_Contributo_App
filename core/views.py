@@ -1,8 +1,10 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login
+import json
 from django.http import JsonResponse
 from .models import PerfilAluno, Atividade, Inscricao, Beneficio, ResgateBeneficio, Transacao
+from django.views.decorators.csrf import csrf_exempt
 
 
 def index(request):
@@ -88,19 +90,6 @@ def atividades(request):
     return render(request, 'core/atividades.html', context)
 
 @login_required
-def loja(request):
-    # Verificar se o usuário é do tipo aluno
-    if request.user.tipo != 'aluno':
-        return redirect('index')
-    
-    beneficios_list = Beneficio.objects.filter(disponivel=True)
-    context = {
-        'beneficios': beneficios_list,
-        'saldo': request.user.perfil_aluno.saldo_pontos
-    }
-    return render(request, 'core/loja.html', context)
-
-@login_required
 def api_inscrever_atividade(request, atividade_id):
     """API para inscrever aluno em atividade"""
     if request.user.tipo != 'aluno':
@@ -126,6 +115,25 @@ def api_inscrever_atividade(request, atividade_id):
     except Atividade.DoesNotExist:
         return JsonResponse({'success': False, 'erro': 'Atividade não encontrada'})
 
+@login_required
+def loja(request):
+    if request.user.tipo != 'aluno':
+        return redirect('index')
+    
+    beneficios_list = Beneficio.objects.filter(disponivel=True)
+    
+    print(f"DEBUG: {beneficios_list.count()} benefícios encontrados")  # Para debug
+    
+    context = {
+        'beneficios': beneficios_list,
+        'saldo': request.user.perfil_aluno.saldo_pontos,
+        'nome': request.user.get_full_name() or request.user.username,
+        'processo': request.user.perfil_aluno.numero_processo,
+        'turma': request.user.perfil_aluno.turma.nome if request.user.perfil_aluno.turma else 'Sem turma',
+    }
+    return render(request, 'core/loja.html', context)
+
+@csrf_exempt
 @login_required
 def api_resgatar_beneficio(request, beneficio_id):
     """API para resgatar benefício"""

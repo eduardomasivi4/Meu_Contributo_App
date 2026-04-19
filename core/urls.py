@@ -14,6 +14,7 @@ urlpatterns = [
     # ALUNO - APIs
     path('api/aluno/verificar-processo/', views.verificar_processo, name='verificar_processo'),
     path('api/aluno/validar-senha/', views.validar_senha, name='validar_senha'),
+    path('api/aluno/resgatar/<int:beneficio_id>/', views.api_resgatar_beneficio, name='api_resgatar'),
     
     # PROFESSOR
     path('professor/login/', views.login_professor, name='login_professor'),

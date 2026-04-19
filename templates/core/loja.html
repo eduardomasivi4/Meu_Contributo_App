@@ -26,7 +26,6 @@
       padding: 20px;
     }
 
-    /* Header - TÍTULO REDUZIDO (igual ao dashboard) */
     .header {
       background: white;
       border-radius: 24px;
@@ -38,7 +37,6 @@
       flex-wrap: wrap;
       gap: 15px;
       border: 1px solid #F5EDDA;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
 
     .logo-area {
@@ -62,7 +60,6 @@
       height: 28px;
     }
 
-    /* TÍTULO REDUZIDO */
     .logo-area h1 {
       font-size: 18px;
       color: #5C3A21;
@@ -142,14 +139,8 @@
       cursor: pointer;
       font-size: 13px;
       color: #5C3A21;
-      transition: all 0.3s;
     }
 
-    .logout-btn:hover {
-      background: #FBF7E9;
-    }
-
-    /* BANNER - DIMINUÍDO E CENTRALIZADO */
     .loja-banner {
       background: linear-gradient(135deg, #2B7A4B, #1E5A38);
       border-radius: 20px;
@@ -167,7 +158,6 @@
     .banner-text h2 {
       font-size: 22px;
       font-weight: 700;
-      margin-bottom: 5px;
     }
 
     .banner-text p {
@@ -189,7 +179,6 @@
       font-size: 24px;
     }
 
-    /* Categorias */
     .categories-tabs {
       display: flex;
       gap: 15px;
@@ -206,11 +195,6 @@
       font-weight: 600;
       color: #8B694C;
       cursor: pointer;
-      transition: all 0.3s;
-    }
-
-    .category-btn i {
-      margin-right: 8px;
     }
 
     .category-btn.active {
@@ -219,12 +203,6 @@
       color: white;
     }
 
-    .category-btn:hover:not(.active) {
-      border-color: #2B7A4B;
-      color: #2B7A4B;
-    }
-
-    /* Grid de Benefícios */
     .beneficios-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -271,13 +249,6 @@
       color: #5C3A21;
     }
 
-    .beneficio-categoria {
-      font-size: 11px;
-      color: #A58E6F;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
     .beneficio-body {
       padding: 20px;
     }
@@ -286,16 +257,6 @@
       color: #8B694C;
       font-size: 14px;
       margin-bottom: 16px;
-      line-height: 1.4;
-    }
-
-    .beneficio-detalhes {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-      gap: 10px;
     }
 
     .beneficio-pontos {
@@ -310,14 +271,6 @@
       color: #2B7A4B;
     }
 
-    .beneficio-estoque {
-      font-size: 12px;
-      color: #A58E6F;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
     .btn-resgatar {
       background: #2B7A4B;
       border: none;
@@ -328,6 +281,7 @@
       font-weight: 700;
       font-size: 14px;
       cursor: pointer;
+      margin-top: 15px;
       transition: all 0.3s;
     }
 
@@ -336,87 +290,20 @@
       transform: scale(1.02);
     }
 
-    .sem-beneficios {
-      text-align: center;
-      padding: 60px;
-      color: #8B694C;
-    }
-
-    /* Modal */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(92, 58, 33, 0.6);
-      backdrop-filter: blur(4px);
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-
-    .modal-container {
-      background: white;
-      border-radius: 24px;
-      padding: 30px;
-      max-width: 350px;
-      width: 90%;
-      text-align: center;
-    }
-
-    .modal-icon {
-      width: 60px;
-      height: 60px;
-      background: #2B7A4B;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 15px;
-    }
-
-    .modal-icon i {
-      font-size: 30px;
-      color: white;
-    }
-
-    .modal-container h3 {
-      color: #5C3A21;
-      margin-bottom: 10px;
-    }
-
-    .modal-container p {
-      color: #8B694C;
-      margin-bottom: 20px;
-    }
-
-    .btn-modal {
-      background: #2B7A4B;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 30px;
-      cursor: pointer;
+    .btn-resgatar:disabled {
+      background: #A58E6F;
+      cursor: not-allowed;
     }
 
     @media (max-width: 768px) {
       .beneficios-grid {
         grid-template-columns: 1fr;
       }
-      .loja-banner {
-        padding: 15px 20px;
-      }
-      .banner-text h2 {
-        font-size: 18px;
-      }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- Header - TÍTULO REDUZIDO -->
     <div class="header">
       <div class="logo-area">
         <div class="logo-icon">
@@ -434,11 +321,11 @@
           <i class="fas fa-user-graduate"></i>
         </div>
         <div>
-          <div class="user-name">Ricardo Oliveira</div>
-          <div class="user-info">PROC: #20230814 | 12° B</div>
+          <div class="user-name">{{ nome }}</div>
+          <div class="user-info">PROC: {{ processo }} | {{ turma }}</div>
         </div>
         <div class="saldo-card">
-          <i class="fas fa-star"></i> <span id="saldoValor">2.450</span> pts
+          <i class="fas fa-star"></i> <span id="saldoValor">{{ saldo }}</span> pts
         </div>
         <button class="logout-btn" id="logoutBtn">
           <i class="fas fa-sign-out-alt"></i> Sair
@@ -446,7 +333,6 @@
       </div>
     </div>
 
-    <!-- BANNER - DIMINUÍDO E CENTRALIZADO -->
     <div class="loja-banner">
       <div class="banner-icon">
         <i class="fas fa-gift"></i>
@@ -457,7 +343,6 @@
       </div>
     </div>
 
-    <!-- Categorias -->
     <div class="categories-tabs">
       <button class="category-btn active" data-categoria="todos">
         <i class="fas fa-th-large"></i> Todos
@@ -470,208 +355,177 @@
       </button>
     </div>
 
-    <!-- Grid de Benefícios -->
-    <div id="beneficiosGrid" class="beneficios-grid"></div>
+    <div id="beneficiosGrid" class="beneficios-grid">
+        {% if beneficios %}
+            {% for beneficio in beneficios %}
+            <div class="beneficio-card" data-id="{{ beneficio.id }}" data-categoria="{{ beneficio.categoria }}">
+                <div class="beneficio-header">
+                    <div class="beneficio-icon">
+                        {% if beneficio.categoria == 'academico' %}
+                            <i class="fas fa-graduation-cap"></i>
+                        {% else %}
+                            <i class="fas fa-wifi"></i>
+                        {% endif %}
+                    </div>
+                    <h3>{{ beneficio.nome }}</h3>
+                </div>
+                <div class="beneficio-body">
+                    <p class="beneficio-descricao">{{ beneficio.descricao }}</p>
+                    <div class="beneficio-pontos">
+                        <i class="fas fa-star"></i> {{ beneficio.custo_pontos }} pts
+                    </div>
+                    <button class="btn-resgatar" data-id="{{ beneficio.id }}" data-nome="{{ beneficio.nome }}" data-pontos="{{ beneficio.custo_pontos }}">
+                        <i class="fas fa-exchange-alt"></i> Resgatar
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="text-align:center; padding:40px; grid-column:1/-1;">
+                <i class="fas fa-box-open" style="font-size:48px; color:#D4A373; margin-bottom:16px; display:block;"></i>
+                Nenhum benefício disponível no momento.
+            </p>
+        {% endif %}
+    </div>
+
   </div>
 
-  <!-- Modal -->
-  <div id="infoModal" class="modal-overlay">
-    <div class="modal-container">
-      <div class="modal-icon">
-        <i class="fas fa-check-circle"></i>
+  <div id="infoModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(92,58,33,0.6); backdrop-filter:blur(4px); align-items:center; justify-content:center; z-index:1000;">
+    <div style="background:white; border-radius:24px; padding:30px; max-width:350px; width:90%; text-align:center;">
+      <div style="width:60px; height:60px; background:#2B7A4B; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 15px;">
+        <i id="modalIcon" class="fas fa-check-circle" style="font-size:30px; color:white;"></i>
       </div>
-      <h3 id="modalTitle">Resgate Confirmado!</h3>
-      <p id="modalMessage">Benefício resgatado com sucesso.</p>
-      <button id="modalCloseBtn" class="btn-modal">Continuar</button>
+      <h3 id="modalTitle" style="color:#5C3A21; margin-bottom:10px;">Resgate Confirmado!</h3>
+      <p id="modalMessage" style="color:#8B694C; margin-bottom:20px;">Benefício resgatado com sucesso.</p>
+      <button id="modalCloseBtn" style="background:#2B7A4B; color:white; border:none; padding:10px 20px; border-radius:30px; cursor:pointer;">Continuar</button>
     </div>
   </div>
 
   <script>
-    // Dados dos benefícios
-    const beneficios = [
-      {
-        id: 1,
-        nome: "Boletim de Notas Oficial",
-        categoria: "academico",
-        descricao: "Impressão colorida do boletim de notas oficial com selo do colégio.",
-        pontos: 200,
-        icone: "fa-file-alt",
-        validade: "30 dias"
-      },
-      {
-        id: 2,
-        nome: "Folhas para Provas (Professor)",
-        categoria: "academico",
-        descricao: "10 folhas pautadas para provas do professor, com identificação oficial.",
-        pontos: 30,
-        icone: "fa-copy",
-        validade: "Uso imediato"
-      },
-      {
-        id: 3,
-        nome: "Folhas para Provas Trimestrais",
-        categoria: "academico",
-        descricao: "20 folhas pautadas para as provas trimestrais oficiais.",
-        pontos: 60,
-        icone: "fa-scroll",
-        validade: "Uso imediato"
-      },
-      {
-        id: 4,
-        nome: "Internet Grátis (7 dias)",
-        categoria: "tecnologia",
-        descricao: "Acesso Wi-Fi de alta velocidade em todo o campus por 7 dias consecutivos.",
-        pontos: 300,
-        icone: "fa-wifi",
-        validade: "Ativação imediata"
-      },
-      {
-        id: 5,
-        nome: "Internet Grátis (30 dias)",
-        categoria: "tecnologia",
-        descricao: "Acesso Wi-Fi de alta velocidade em todo o campus por um mês inteiro.",
-        pontos: 1000,
-        icone: "fa-wifi",
-        validade: "Ativação imediata"
-      }
-    ];
-
-    let saldoAtual = 2450;
-
-    // Elementos
-    const beneficiosGrid = document.getElementById('beneficiosGrid');
-    const saldoValor = document.getElementById('saldoValor');
+    const saldoSpan = document.getElementById('saldoValor');
     const logoutBtn = document.getElementById('logoutBtn');
     const modal = document.getElementById('infoModal');
     const modalTitle = document.getElementById('modalTitle');
     const modalMessage = document.getElementById('modalMessage');
+    const modalIcon = document.getElementById('modalIcon');
     const modalCloseBtn = document.getElementById('modalCloseBtn');
     const categoryBtns = document.querySelectorAll('.category-btn');
+    const beneficiosGrid = document.getElementById('beneficiosGrid');
 
+    let saldoAtual = {{ saldo }};
     let categoriaAtiva = 'todos';
 
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
     function showModal(title, message, isSuccess = true) {
-      modalTitle.textContent = title;
-      modalMessage.textContent = message;
-      const modalIcon = modal.querySelector('.modal-icon');
-      modalIcon.style.background = isSuccess ? '#2B7A4B' : '#D4A373';
-      modalIcon.innerHTML = isSuccess ? '<i class="fas fa-check-circle"></i>' : '<i class="fas fa-exclamation-triangle"></i>';
-      modal.style.display = 'flex';
+        modalTitle.textContent = title;
+        modalMessage.textContent = message;
+        modalIcon.parentElement.style.background = isSuccess ? '#2B7A4B' : '#D4A373';
+        modalIcon.className = isSuccess ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle';
+        modal.style.display = 'flex';
     }
 
     function hideModal() {
-      modal.style.display = 'none';
+        modal.style.display = 'none';
     }
 
-    function atualizarSaldoDisplay() {
-      saldoValor.textContent = saldoAtual.toLocaleString();
+    function atualizarSaldo(novoSaldo) {
+        saldoAtual = novoSaldo;
+        saldoSpan.textContent = saldoAtual;
     }
 
-    function resgatarBeneficio(id, nome, pontos) {
-      if (saldoAtual >= pontos) {
-        saldoAtual -= pontos;
-        atualizarSaldoDisplay();
-        showModal('🎉 Resgate Confirmado!', `Você resgatou "${nome}" por ${pontos} pontos.\n\nDirija-se à secretaria para retirar o benefício.`);
-        renderBeneficios();
-        return true;
-      } else {
-        showModal('❌ Saldo Insuficiente', `Você precisa de ${pontos} pontos para resgatar "${nome}".\nSeu saldo atual é ${saldoAtual} pontos.`, false);
-        return false;
-      }
+    async function resgatarBeneficio(id, nome, pontos) {
+        if (saldoAtual < pontos) {
+            showModal('❌ Saldo Insuficiente', `Você precisa de ${pontos} pontos. Seu saldo é ${saldoAtual}.`, false);
+            return false;
+        }
+
+        try {
+            const response = await fetch(`/api/aluno/resgatar/${id}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                credentials: 'include'
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                atualizarSaldo(data.novo_saldo);
+                showModal('🎉 Resgate Confirmado!', `${nome} resgatado por ${pontos} pontos! Dirija-se à secretaria.`);
+                return true;
+            } else {
+                showModal('❌ Erro', data.erro || 'Não foi possível resgatar o benefício.', false);
+                return false;
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            showModal('❌ Erro', 'Erro de conexão com o servidor.', false);
+            return false;
+        }
     }
 
-    function renderBeneficios() {
-      let filtered = [...beneficios];
-      
-      if (categoriaAtiva !== 'todos') {
-        filtered = beneficios.filter(b => b.categoria === categoriaAtiva);
-      }
-      
-      if (filtered.length === 0) {
-        beneficiosGrid.innerHTML = `
-          <div class="sem-beneficios">
-            <i class="fas fa-box-open" style="font-size: 48px; margin-bottom: 16px; color: #D4A373;"></i>
-            <h3>Nenhum benefício encontrado</h3>
-            <p>Não há benefícios disponíveis nesta categoria no momento.</p>
-          </div>
-        `;
-        return;
-      }
-      
-      beneficiosGrid.innerHTML = filtered.map(b => {
-        const categoriaNome = b.categoria === 'academico' ? 'Acadêmico' : 'Tecnologia';
-        const categoriaIcon = b.categoria === 'academico' ? '📚' : '💻';
-        
-        return `
-          <div class="beneficio-card">
-            <div class="beneficio-header">
-              <div class="beneficio-icon">
-                <i class="fas ${b.icone}"></i>
-              </div>
-              <h3>${b.nome}</h3>
-              <div class="beneficio-categoria">${categoriaIcon} ${categoriaNome}</div>
-            </div>
-            <div class="beneficio-body">
-              <p class="beneficio-descricao">${b.descricao}</p>
-              <div class="beneficio-detalhes">
-                <div class="beneficio-pontos">
-                  <i class="fas fa-star"></i> ${b.pontos} pts
-                </div>
-                <div class="beneficio-estoque">
-                  <i class="fas fa-clock"></i> ${b.validade}
-                </div>
-              </div>
-              <button class="btn-resgatar" data-id="${b.id}" data-nome="${b.nome}" data-pontos="${b.pontos}">
-                <i class="fas fa-exchange-alt"></i> Resgatar
-              </button>
-            </div>
-          </div>
-        `;
-      }).join('');
-      
-      // Adicionar eventos aos botões
-      document.querySelectorAll('.btn-resgatar').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const id = parseInt(btn.dataset.id);
-          const nome = btn.dataset.nome;
-          const pontos = parseInt(btn.dataset.pontos);
-          
-          btn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i>';
-          btn.disabled = true;
-          
-          setTimeout(() => {
-            resgatarBeneficio(id, nome, pontos);
-            btn.innerHTML = '<i class="fas fa-exchange-alt"></i> Resgatar';
-            btn.disabled = false;
-          }, 500);
+    function filtrarBeneficios() {
+        const cards = document.querySelectorAll('.beneficio-card');
+        cards.forEach(card => {
+            const categoria = card.dataset.categoria;
+            if (categoriaAtiva === 'todos' || categoria === categoriaAtiva) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
         });
-      });
     }
 
-    // Categorias
     categoryBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        categoryBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        categoriaAtiva = btn.dataset.categoria;
-        renderBeneficios();
-      });
+        btn.addEventListener('click', () => {
+            categoryBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            categoriaAtiva = btn.dataset.categoria;
+            filtrarBeneficios();
+        });
     });
 
-    // Logout
+    document.querySelectorAll('.btn-resgatar').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const id = parseInt(btn.dataset.id);
+            const nome = btn.dataset.nome;
+            const pontos = parseInt(btn.dataset.pontos);
+            
+            btn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Processando...';
+            btn.disabled = true;
+            
+            await resgatarBeneficio(id, nome, pontos);
+            
+            btn.innerHTML = '<i class="fas fa-exchange-alt"></i> Resgatar';
+            btn.disabled = false;
+        });
+    });
+
     logoutBtn.addEventListener('click', () => {
-      window.location.href = '/';
+        window.location.href = '/';
     });
 
     modalCloseBtn.addEventListener('click', hideModal);
     modal.addEventListener('click', (e) => {
-      if (e.target === modal) hideModal();
+        if (e.target === modal) hideModal();
     });
-
-    // Inicializar
-    atualizarSaldoDisplay();
-    renderBeneficios();
   </script>
 </body>
 </html>
