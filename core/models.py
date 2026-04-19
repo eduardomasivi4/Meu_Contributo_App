@@ -32,7 +32,7 @@ class Usuario(AbstractUser):
 
 class Turma(models.Model):
     CURSO_CHOICES = (
-        ('eletronica', 'Eletrónica'),
+        ('eletronica', 'Eletrónica e Telecomunicações'),
         ('informatica', 'Informática'),
     )
     
