@@ -26,7 +26,6 @@
       padding: 20px;
     }
 
-    /* Header */
     .header {
       background: white;
       border-radius: 24px;
@@ -139,7 +138,6 @@
       background: #FBF7E9;
     }
 
-    /* Stats Cards - 4 cards */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -190,7 +188,6 @@
       color: #2B7A4B;
     }
 
-    /* Grid de conteúdo */
     .content-grid {
       display: grid;
       grid-template-columns: 1fr;
@@ -223,7 +220,6 @@
       color: #D4A373;
     }
 
-    /* Atividades Realizadas Recentemente */
     .atividade-item {
       display: flex;
       justify-content: space-between;
@@ -266,7 +262,6 @@
       text-decoration: underline;
     }
 
-    /* Responsivo */
     @media (max-width: 1000px) {
       .stats-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -308,8 +303,8 @@
           <i class="fas fa-user-graduate"></i>
         </div>
         <div>
-          <div class="user-name" id="alunoNomeDisplay">Ricardo Oliveira</div>
-          <div class="user-info">PROC: <span id="alunoProcessoDisplay">20230814</span> | 12° B</div>
+          <div class="user-name">{{ nome }}</div>
+          <div class="user-info">PROC: {{ processo }} | {{ turma }}</div>
         </div>
         <button class="logout-btn" id="logoutBtn">
           <i class="fas fa-sign-out-alt"></i> Sair
@@ -317,14 +312,14 @@
       </div>
     </div>
 
-    <!-- Stats Cards (4 cards) -->
+    <!-- Stats Cards -->
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-header">
           <h3>Saldo de Pontos</h3>
           <i class="fas fa-star"></i>
         </div>
-        <div class="stat-value" id="saldoPontos">2.450</div>
+        <div class="stat-value" id="saldoPontos">{{ saldo }}</div>
         <div class="stat-change"><i class="fas fa-arrow-up"></i> +180 este mês</div>
       </div>
       <div class="stat-card">
@@ -332,7 +327,7 @@
           <h3>Atividades Realizadas</h3>
           <i class="fas fa-check-circle"></i>
         </div>
-        <div class="stat-value" id="totalAtividades">12</div>
+        <div class="stat-value">12</div>
         <div class="stat-change">Participou de 12 atividades</div>
       </div>
       <div class="stat-card">
@@ -340,7 +335,7 @@
           <h3>Benefícios Resgatados</h3>
           <i class="fas fa-gift"></i>
         </div>
-        <div class="stat-value" id="beneficiosResgatados">3</div>
+        <div class="stat-value">3</div>
         <div class="stat-change">Último: Boletim de Notas</div>
       </div>
       <div class="stat-card">
@@ -348,7 +343,7 @@
           <h3>Ranking na Turma</h3>
           <i class="fas fa-trophy"></i>
         </div>
-        <div class="stat-value" id="ranking">5º</div>
+        <div class="stat-value">5º</div>
         <div class="stat-change">Entre 28 alunos</div>
       </div>
     </div>
@@ -382,20 +377,12 @@
             </div>
             <div class="atividade-pontos">Concluída</div>
           </div>
-          <div class="atividade-item">
-            <div class="atividade-info">
-              <h4>📐 Olimpíada de Matemática</h4>
-              <p>Concluída em 05/12/2023 · +250 pts</p>
-            </div>
-            <div class="atividade-pontos">Concluída</div>
-          </div>
         </div>
         <a href="/aluno/atividades/" class="ver-todos">Ver todas as atividades →</a>
       </div>
     </div>
   </div>
 
-  <!-- Modal -->
   <div id="infoModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(92,58,33,0.6); backdrop-filter:blur(4px); align-items:center; justify-content:center; z-index:1000;">
     <div style="background:white; border-radius:24px; padding:30px; max-width:350px; width:90%; text-align:center;">
       <div style="width:60px; height:60px; background:#2B7A4B; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 15px;">
@@ -408,40 +395,13 @@
   </div>
 
   <script>
-    // Dados do aluno logado (vindos do login)
-    const alunoLogado = {
-      nome: 'Ricardo Oliveira',
-      processo: '20230814',
-      turma: '12° B',
-      saldo: 2450,
-      atividadesRealizadas: 12,
-      beneficiosResgatados: 3,
-      ranking: 5
-    };
-
-    // Elementos
-    const saldoElement = document.getElementById('saldoPontos');
-    const totalAtividades = document.getElementById('totalAtividades');
-    const beneficiosResgatados = document.getElementById('beneficiosResgatados');
-    const ranking = document.getElementById('ranking');
-    const alunoNomeDisplay = document.getElementById('alunoNomeDisplay');
-    const alunoProcessoDisplay = document.getElementById('alunoProcessoDisplay');
     const logoutBtn = document.getElementById('logoutBtn');
     const modal = document.getElementById('infoModal');
     const modalTitle = document.getElementById('modalTitle');
     const modalMessage = document.getElementById('modalMessage');
     const modalIcon = document.getElementById('modalIcon');
     const modalCloseBtn = document.getElementById('modalCloseBtn');
-
-    // Atualizar dados do aluno
-    function atualizarDados() {
-      saldoElement.textContent = alunoLogado.saldo.toLocaleString();
-      totalAtividades.textContent = alunoLogado.atividadesRealizadas;
-      beneficiosResgatados.textContent = alunoLogado.beneficiosResgatados;
-      ranking.textContent = `${alunoLogado.ranking}º`;
-      alunoNomeDisplay.textContent = alunoLogado.nome;
-      alunoProcessoDisplay.textContent = alunoLogado.processo;
-    }
+    const saldoElement = document.getElementById('saldoPontos');
 
     function showModal(title, message, isSuccess = true) {
       modalTitle.textContent = title;
@@ -455,7 +415,6 @@
       modal.style.display = 'none';
     }
 
-    // Logout
     logoutBtn.addEventListener('click', () => {
       window.location.href = '/';
     });
@@ -465,8 +424,8 @@
       if (e.target === modal) hideModal();
     });
 
-    // Inicializar
-    atualizarDados();
+    // Exibir mensagem de boas-vindas
+    showModal('👋 Bem-vindo!', '{{ nome }}, seja bem-vindo ao seu dashboard!');
   </script>
 </body>
 </html>
