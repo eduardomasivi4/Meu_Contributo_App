@@ -1,5 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.utils import timezone
+from datetime import datetime, time, date
+
 
 class Usuario(AbstractUser):
     TIPO_USUARIO = (
@@ -71,22 +74,76 @@ class Atividade(models.Model):
     
     STATUS_CHOICES = (
         ('disponivel', 'Disponível'),
-        ('andamento', 'Em Andamento'),
-        ('concluida', 'Concluída'),
+        ('hoje', 'Hoje'),
+        ('em_andamento', 'Em Andamento'),
+        ('encerrada', 'Encerrada'),
     )
     
     nome = models.CharField(max_length=200)
     categoria = models.CharField(max_length=20, choices=CATEGORIA_CHOICES)
     requisitos = models.TextField()
     pontuacao_total = models.IntegerField(default=0)
+    
+    # Campos de data e hora
     data = models.DateField()
-    hora = models.TimeField()
+    hora_inicio = models.TimeField()
+    hora_fim = models.TimeField()
+    
     interrompe_aula = models.BooleanField(default=False)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='disponivel')
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
         return self.nome
+    
+    def calcular_status(self):
+        """
+        Calcula o status da atividade com base na data e hora atual
+        """
+        agora = timezone.localtime(timezone.now())
+        data_atual = agora.date()
+        hora_atual = agora.time()
+        
+        # Data da atividade
+        data_atividade = self.data
+        
+        # 1. Se a data atual for ANTES da data da atividade
+        if data_atual < data_atividade:
+            return 'disponivel'
+        
+        # 2. Se a data atual for IGUAL à data da atividade
+        if data_atual == data_atividade:
+            # Se a hora atual for ANTES da hora de início
+            if hora_atual < self.hora_inicio:
+                return 'hoje'
+            # Se a hora atual estiver ENTRE início e fim
+            elif self.hora_inicio <= hora_atual <= self.hora_fim:
+                return 'em_andamento'
+            # Se a hora atual for DEPOIS da hora de fim
+            else:
+                return 'encerrada'
+        
+        # 3. Se a data atual for DEPOIS da data da atividade
+        return 'encerrada'
+    
+    def get_status_display_text(self):
+        """Retorna o texto amigável do status"""
+        status_map = {
+            'disponivel': 'Disponível',
+            'hoje': 'Começa Hoje',
+            'em_andamento': 'Em Andamento',
+            'encerrada': 'Encerrada',
+        }
+        return status_map.get(self.calcular_status(), 'Disponível')
+    
+    def get_status_class(self):
+        """Retorna a classe CSS para o status"""
+        status_class_map = {
+            'disponivel': 'status-disponivel',
+            'hoje': 'status-hoje',
+            'em_andamento': 'status-em_andamento',
+            'encerrada': 'status-encerrada',
+        }
+        return status_class_map.get(self.calcular_status(), 'status-disponivel')
 
 class Inscricao(models.Model):
     STATUS_CHOICES = (
