@@ -7,13 +7,11 @@ class Usuario(AbstractUser):
         ('professor', 'Professor'),
         ('diretor_turma', 'Diretor de Turma'),
         ('coordenador', 'Coordenador de Atividades'),
-        ('admin', 'Administrador'),
     )
     
     tipo = models.CharField(max_length=20, choices=TIPO_USUARIO, default='aluno')
     telefone = models.CharField(max_length=15, blank=True)
     foto = models.ImageField(upload_to='fotos/', null=True, blank=True)
-    data_nascimento = models.DateField(null=True, blank=True)
     
     groups = models.ManyToManyField(
         'auth.Group',
@@ -29,7 +27,6 @@ class Usuario(AbstractUser):
     def __str__(self):
         return f"{self.username} - {self.get_tipo_display()}"
 
-
 class Turma(models.Model):
     CURSO_CHOICES = (
         ('eletronica', 'Eletrónica'),
@@ -41,12 +38,8 @@ class Turma(models.Model):
     horario = models.CharField(max_length=100, blank=True)
     ano_letivo = models.CharField(max_length=9, default='2025')
     
-    class Meta:
-        unique_together = ['nome', 'curso', 'ano_letivo']
-    
     def __str__(self):
         return f"{self.nome} - {self.get_curso_display()}"
-
 
 class PerfilAluno(models.Model):
     usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, related_name='perfil_aluno')
@@ -57,7 +50,7 @@ class PerfilAluno(models.Model):
     documento = models.CharField(max_length=20, blank=True)
     
     def __str__(self):
-        return f"{self.usuario.username} - {self.numero_processo}"
+        return f"{self.usuario.get_full_name()} - {self.numero_processo}"
     
     def atualizar_nivel(self):
         if self.saldo_pontos >= 3000:
@@ -70,45 +63,16 @@ class PerfilAluno(models.Model):
             self.nivel = 'Iniciante'
         self.save()
 
-
-class PerfilProfessor(models.Model):
-    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, related_name='perfil_professor')
-    disciplina = models.CharField(max_length=100)
-    turmas = models.ManyToManyField(Turma, blank=True, related_name='professores')
-    
-    def __str__(self):
-        return f"{self.usuario.username} - {self.disciplina}"
-
-
-class PerfilDiretorTurma(models.Model):
-    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, related_name='perfil_diretor')
-    turma = models.OneToOneField(Turma, on_delete=models.SET_NULL, null=True, blank=True, related_name='diretor')
-    
-    def __str__(self):
-        return f"{self.usuario.username}"
-
-
-class PerfilCoordenador(models.Model):
-    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, related_name='perfil_coordenador')
-    departamento = models.CharField(max_length=100)
-    
-    def __str__(self):
-        return f"{self.usuario.username} - {self.departamento}"
-
-
 class Atividade(models.Model):
     CATEGORIA_CHOICES = (
         ('ciencia', 'Ciência e Tecnologia'),
         ('cultura', 'Culturais'),
-        ('desporto', 'Desporto'),
-        ('voluntariado', 'Voluntariado'),
     )
     
     STATUS_CHOICES = (
         ('disponivel', 'Disponível'),
         ('andamento', 'Em Andamento'),
         ('concluida', 'Concluída'),
-        ('cancelada', 'Cancelada'),
     )
     
     nome = models.CharField(max_length=200)
@@ -119,12 +83,10 @@ class Atividade(models.Model):
     hora = models.TimeField()
     interrompe_aula = models.BooleanField(default=False)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='disponivel')
-    coordenador = models.ForeignKey(PerfilCoordenador, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
         return self.nome
-
 
 class Inscricao(models.Model):
     STATUS_CHOICES = (
@@ -146,13 +108,10 @@ class Inscricao(models.Model):
     def __str__(self):
         return f"{self.aluno.usuario.username} - {self.atividade.nome}"
 
-
 class Beneficio(models.Model):
     CATEGORIA_CHOICES = (
         ('academico', 'Académico'),
         ('tecnologia', 'Tecnologia'),
-        ('premios', 'Prêmios'),
-        ('eventos', 'Eventos'),
     )
     
     nome = models.CharField(max_length=100)
@@ -165,13 +124,11 @@ class Beneficio(models.Model):
     def __str__(self):
         return f"{self.nome} - {self.custo_pontos} pts"
 
-
 class ResgateBeneficio(models.Model):
     STATUS_CHOICES = (
         ('pendente', 'Pendente'),
         ('confirmado', 'Confirmado'),
         ('entregue', 'Entregue'),
-        ('cancelado', 'Cancelado'),
     )
     
     aluno = models.ForeignKey(PerfilAluno, on_delete=models.CASCADE, related_name='resgates')
@@ -183,19 +140,15 @@ class ResgateBeneficio(models.Model):
     def __str__(self):
         return f"{self.aluno.usuario.username} - {self.beneficio.nome}"
 
-
 class Transacao(models.Model):
     TIPO_CHOICES = (
         ('adicao', 'Adição'),
         ('remocao', 'Remoção'),
-        ('transferencia', 'Transferência'),
         ('resgate', 'Resgate'),
-        ('distribuicao', 'Distribuição'),
+        ('inscricao', 'Inscrição'),
     )
     
     aluno = models.ForeignKey(PerfilAluno, on_delete=models.CASCADE, related_name='transacoes')
-    professor = models.ForeignKey(PerfilProfessor, on_delete=models.SET_NULL, null=True, blank=True)
-    diretor_turma = models.ForeignKey(PerfilDiretorTurma, on_delete=models.SET_NULL, null=True, blank=True)
     quantidade = models.IntegerField()
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
     descricao = models.TextField()
@@ -206,3 +159,28 @@ class Transacao(models.Model):
     
     def __str__(self):
         return f"{self.aluno.usuario.username} - {self.tipo}: {self.quantidade} pts"
+
+
+
+class PerfilProfessor(models.Model):
+    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, related_name='perfil_professor')
+    disciplina = models.CharField(max_length=100)
+    turmas = models.ManyToManyField(Turma, blank=True, related_name='professores')
+    
+    def __str__(self):
+        return f"{self.usuario.username} - {self.disciplina}"
+
+class PerfilDiretorTurma(models.Model):
+    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, related_name='perfil_diretor')
+    turma = models.OneToOneField(Turma, on_delete=models.SET_NULL, null=True, blank=True, related_name='diretor')
+    
+    def __str__(self):
+        return f"{self.usuario.username}"
+
+class PerfilCoordenador(models.Model):
+    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, related_name='perfil_coordenador')
+    departamento = models.CharField(max_length=100)
+    
+    def __str__(self):
+        return f"{self.usuario.username} - {self.departamento}"
+

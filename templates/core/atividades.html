@@ -9,69 +9,660 @@
   {% load static %}
   <link rel="stylesheet" href="{% static 'css/fundo.css' %}">
   <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:'Inter',sans-serif; background:#FBF7E9; }
-    .container { max-width:1400px; margin:0 auto; padding:20px; }
-    .header { background:white; border-radius:24px; padding:15px 25px; margin-bottom:25px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; border:1px solid #F5EDDA; }
-    .logo-area { display:flex; align-items:center; gap:12px; }
-    .logo-icon { width:45px; height:45px; background:#2B7A4B; border-radius:12px; display:flex; align-items:center; justify-content:center; }
-    .nav-links { display:flex; gap:8px; }
-    .nav-link { padding:8px 18px; text-decoration:none; color:#8B694C; font-weight:500; border-radius:10px; }
-    .nav-link.active { background:#2B7A4B; color:white; }
-    .user-area { display:flex; align-items:center; gap:15px; background:#FBF7E9; padding:6px 18px; border-radius:40px; }
-    .user-avatar { width:38px; height:38px; background:#2B7A4B; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; }
-    .categories-tabs { display:flex; gap:15px; margin-bottom:25px; flex-wrap:wrap; justify-content:center; }
-    .category-btn { background:white; border:2px solid #F5EDDA; padding:10px 24px; border-radius:40px; font-weight:600; color:#8B694C; cursor:pointer; }
-    .category-btn.active { background:#2B7A4B; border-color:#2B7A4B; color:white; }
-    .atividades-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(350px,1fr)); gap:25px; }
-    .atividade-card { background:white; border-radius:20px; overflow:hidden; cursor:pointer; border:1px solid #F5EDDA; transition:0.3s; }
-    .atividade-card:hover { transform:translateY(-5px); box-shadow:0 10px 25px rgba(0,0,0,0.1); }
-    .atividade-header { padding:20px 24px; color:white; }
-    .atividade-header.ciencia { background:linear-gradient(135deg,#2B7A4B,#1E5A38); }
-    .atividade-header.cultura { background:linear-gradient(135deg,#D4A373,#B5835A); }
-    .atividade-categoria { display:inline-block; background:rgba(255,255,255,0.2); padding:4px 12px; border-radius:20px; font-size:11px; margin-bottom:10px; }
-    .atividade-header h3 { font-size:18px; }
-    .atividade-body { padding:20px; }
-    .atividade-pontos { display:inline-block; background:#FBF7E9; padding:6px 14px; border-radius:20px; font-weight:700; color:#2B7A4B; margin-bottom:15px; }
-    .requisitos-section { background:#f8f9fa; border-radius:16px; padding:15px; margin-bottom:15px; }
-    .requisitos-lista { list-style:none; }
-    .requisitos-lista li { font-size:13px; color:#8B694C; padding:6px 0; display:flex; align-items:center; gap:8px; }
-    .requisitos-lista li i { color:#2B7A4B; }
-    .atividade-footer { display:flex; justify-content:space-between; padding-top:15px; border-top:1px solid #F5EDDA; }
-    .status-badge { padding:4px 12px; border-radius:20px; font-size:12px; }
-    .status-disponivel { background:#FBF7E9; color:#2B7A4B; }
-    .sem-atividades { text-align:center; padding:60px; color:#8B694C; }
-    @media (max-width:768px){ .atividades-grid { grid-template-columns:1fr; } }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #FBF7E9;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* Header - TAMANHO DO TÍTULO REDUZIDO (igual ao dashboard) */
+    .header {
+      background: white;
+      border-radius: 24px;
+      padding: 15px 25px;
+      margin-bottom: 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      border: 1px solid #F5EDDA;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 45px;
+      height: 45px;
+      background: #2B7A4B;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-icon img {
+      width: 28px;
+      height: 28px;
+    }
+
+    /* TÍTULO REDUZIDO - mesmo tamanho do dashboard */
+    .logo-area h1 {
+      font-size: 18px;
+      color: #5C3A21;
+      font-weight: 700;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 8px;
+    }
+
+    .nav-link {
+      padding: 8px 18px;
+      text-decoration: none;
+      color: #8B694C;
+      font-weight: 500;
+      border-radius: 10px;
+      transition: all 0.3s;
+      font-size: 14px;
+    }
+
+    .nav-link:hover {
+      background: #FBF7E9;
+      color: #5C3A21;
+    }
+
+    .nav-link.active {
+      background: #2B7A4B;
+      color: white;
+    }
+
+    .user-area {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      background: #FBF7E9;
+      padding: 6px 18px;
+      border-radius: 40px;
+    }
+
+    .user-avatar {
+      width: 38px;
+      height: 38px;
+      background: #2B7A4B;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .user-name {
+      font-weight: 600;
+      color: #5C3A21;
+      font-size: 14px;
+    }
+
+    .user-info {
+      font-size: 11px;
+      color: #8B694C;
+    }
+
+    .logout-btn {
+      background: none;
+      border: 1px solid #F5EDDA;
+      padding: 6px 14px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #5C3A21;
+      transition: all 0.3s;
+    }
+
+    .logout-btn:hover {
+      background: #FBF7E9;
+    }
+
+    /* Categorias */
+    .categories-tabs {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 25px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .category-btn {
+      background: white;
+      border: 2px solid #F5EDDA;
+      padding: 10px 24px;
+      border-radius: 40px;
+      font-weight: 600;
+      color: #8B694C;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .category-btn i {
+      margin-right: 8px;
+    }
+
+    .category-btn.active {
+      background: #2B7A4B;
+      border-color: #2B7A4B;
+      color: white;
+    }
+
+    .category-btn:hover:not(.active) {
+      border-color: #2B7A4B;
+      color: #2B7A4B;
+    }
+
+    /* Grid de Atividades */
+    .atividades-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 25px;
+    }
+
+    .atividade-card {
+      background: white;
+      border-radius: 20px;
+      overflow: hidden;
+      cursor: pointer;
+      border: 1px solid #F5EDDA;
+      transition: all 0.3s;
+    }
+
+    .atividade-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+
+    .atividade-header {
+      padding: 20px 24px;
+      color: white;
+    }
+
+    .atividade-header.ciencia {
+      background: linear-gradient(135deg, #2B7A4B, #1E5A38);
+    }
+
+    .atividade-header.cultura {
+      background: linear-gradient(135deg, #D4A373, #B5835A);
+    }
+
+    .atividade-categoria {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .atividade-header h3 {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .atividade-body {
+      padding: 20px;
+    }
+
+    .atividade-pontos {
+      display: inline-block;
+      background: #FBF7E9;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 14px;
+      color: #2B7A4B;
+      margin-bottom: 15px;
+    }
+
+    .requisitos-section {
+      background: #f8f9fa;
+      border-radius: 16px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+
+    .requisitos-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #5C3A21;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .requisitos-lista {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .requisitos-lista li {
+      font-size: 13px;
+      color: #8B694C;
+      padding: 6px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .requisitos-lista li i {
+      color: #2B7A4B;
+      font-size: 12px;
+    }
+
+    .atividade-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 15px;
+      border-top: 1px solid #F5EDDA;
+    }
+
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .status-disponivel {
+      background: #FBF7E9;
+      color: #2B7A4B;
+    }
+
+    .status-andamento {
+      background: #fff3e0;
+      color: #D4A373;
+    }
+
+    .info-text {
+      font-size: 12px;
+      color: #8B694C;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sem-atividades {
+      text-align: center;
+      padding: 60px;
+      color: #8B694C;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(92, 58, 33, 0.6);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-container {
+      background: white;
+      border-radius: 24px;
+      padding: 30px;
+      max-width: 380px;
+      width: 90%;
+      text-align: center;
+    }
+
+    .modal-icon {
+      width: 60px;
+      height: 60px;
+      background: #2B7A4B;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 15px;
+    }
+
+    .modal-icon i {
+      font-size: 30px;
+      color: white;
+    }
+
+    .modal-container h3 {
+      color: #5C3A21;
+      margin-bottom: 10px;
+    }
+
+    .modal-container p {
+      color: #8B694C;
+      margin-bottom: 20px;
+      white-space: pre-line;
+    }
+
+    .btn-modal {
+      background: #2B7A4B;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 30px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+      .atividades-grid {
+        grid-template-columns: 1fr;
+      }
+      .categories-tabs {
+        gap: 10px;
+      }
+      .category-btn {
+        padding: 8px 16px;
+        font-size: 13px;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="container">
+    <!-- Header - TÍTULO REDUZIDO -->
     <div class="header">
-      <div class="logo-area"><div class="logo-icon"><img src="{% static 'images/logo-caf.png' %}" style="width:28px"></div><h1>Colégio Árvore da Felicidade</h1></div>
-      <div class="nav-links"><a href="/aluno/dashboard/" class="nav-link"><i class="fas fa-home"></i> Início</a><a href="#" class="nav-link active"><i class="fas fa-calendar-alt"></i> Atividades</a><a href="/aluno/loja/" class="nav-link"><i class="fas fa-store"></i> Loja</a></div>
-      <div class="user-area"><div class="user-avatar"><i class="fas fa-user-graduate"></i></div><div><div class="user-name">Ricardo Oliveira</div><div class="user-info">PROC: #20230814 | 12° B</div></div><button class="logout-btn" id="logoutBtn" style="background:none; border:1px solid #F5EDDA; padding:6px 14px; border-radius:30px; cursor:pointer;"><i class="fas fa-sign-out-alt"></i> Sair</button></div>
+      <div class="logo-area">
+        <div class="logo-icon">
+          <img src="{% static 'images/logo-caf.png' %}" alt="Logo">
+        </div>
+        <h1>Colégio Árvore da Felicidade</h1>
+      </div>
+      <div class="nav-links">
+        <a href="/aluno/dashboard/" class="nav-link"><i class="fas fa-home"></i> Início</a>
+        <a href="#" class="nav-link active"><i class="fas fa-calendar-alt"></i> Atividades</a>
+        <a href="/aluno/loja/" class="nav-link"><i class="fas fa-store"></i> Loja</a>
+      </div>
+      <div class="user-area">
+        <div class="user-avatar">
+          <i class="fas fa-user-graduate"></i>
+        </div>
+        <div>
+          <div class="user-name">Ricardo Oliveira</div>
+          <div class="user-info">PROC: #20230814 | 12° B</div>
+        </div>
+        <button class="logout-btn" id="logoutBtn">
+          <i class="fas fa-sign-out-alt"></i> Sair
+        </button>
+      </div>
     </div>
-    <div class="categories-tabs"><button class="category-btn active" data-categoria="todas"><i class="fas fa-th-large"></i> Todas</button><button class="category-btn" data-categoria="ciencia"><i class="fas fa-flask"></i> Ciência</button><button class="category-btn" data-categoria="cultura"><i class="fas fa-palette"></i> Culturais</button></div>
+
+    <!-- Categorias -->
+    <div class="categories-tabs">
+      <button class="category-btn active" data-categoria="todas">
+        <i class="fas fa-th-large"></i> Todas
+      </button>
+      <button class="category-btn" data-categoria="ciencia">
+        <i class="fas fa-flask"></i> Ciência e Tecnologia
+      </button>
+      <button class="category-btn" data-categoria="cultura">
+        <i class="fas fa-palette"></i> Culturais
+      </button>
+    </div>
+
+    <!-- Grid de Atividades -->
     <div id="atividadesGrid" class="atividades-grid"></div>
   </div>
-  <div id="infoModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;"><div style="background:white; border-radius:24px; padding:30px; max-width:350px; text-align:center;"><div style="width:60px; height:60px; background:#2B7A4B; border-radius:50%; margin:0 auto 15px; display:flex; align-items:center; justify-content:center;"><i id="modalIcon" class="fas fa-info-circle" style="font-size:30px; color:white;"></i></div><h3 id="modalTitle">Detalhes</h3><p id="modalMessage"></p><button id="modalCloseBtn" style="background:#2B7A4B; color:white; border:none; padding:10px 20px; border-radius:30px; cursor:pointer;">Fechar</button></div></div>
+
+  <!-- Modal -->
+  <div id="infoModal" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-icon">
+        <i class="fas fa-info-circle"></i>
+      </div>
+      <h3 id="modalTitle">Informação</h3>
+      <p id="modalMessage">Detalhes da atividade.</p>
+      <button id="modalCloseBtn" class="btn-modal">Continuar</button>
+    </div>
+  </div>
+
   <script>
-    const atividades = [{ id:1, nome:"Workshop de Robótica", categoria:"ciencia", requisitos:["Conhecimentos básicos","4 sessões","Trabalho em equipe"], pontos:200, status:"disponivel", data:"Novembro 2023" },{ id:2, nome:"Feira de Ciências", categoria:"ciencia", requisitos:["Desenvolver protótipo","Apresentação oral","Relatório"], pontos:300, status:"disponivel", data:"Dezembro 2023" },{ id:3, nome:"Oficina de Teatro", categoria:"cultura", requisitos:["Disponibilidade ensaios","Apresentação final","Criar cena"], pontos:180, status:"disponivel", data:"Novembro 2023" }];
+    // Dados das atividades
+    const atividades = [
+      {
+        id: 1,
+        nome: "Workshop de Robótica com Arduino",
+        categoria: "ciencia",
+        descricao: "Aprenda a programar microcontroladores e construir robôs autônomos.",
+        requisitos: [
+          "Conhecimentos básicos de lógica de programação",
+          "Disponibilidade para 4 sessões de 3 horas",
+          "Trazer computador portátil (opcional)",
+          "Trabalho em equipe para projeto final"
+        ],
+        pontos: 200,
+        status: "disponivel",
+        data: "Novembro 2023"
+      },
+      {
+        id: 2,
+        nome: "Feira de Ciências: Sustentabilidade",
+        categoria: "ciencia",
+        descricao: "Apresentação de projetos sobre energias renováveis e conservação ambiental.",
+        requisitos: [
+          "Desenvolver um protótipo ou pesquisa científica",
+          "Apresentação oral de 10 minutos",
+          "Relatório escrito do projeto",
+          "Participação em todas as sessões de orientação"
+        ],
+        pontos: 300,
+        status: "disponivel",
+        data: "Dezembro 2023"
+      },
+      {
+        id: 3,
+        nome: "Oficina de Teatro e Expressão Artística",
+        categoria: "cultura",
+        descricao: "Desenvolva habilidades de atuação, expressão corporal e improvisação.",
+        requisitos: [
+          "Disponibilidade para ensaios semanais",
+          "Participar da apresentação final",
+          "Criar uma pequena cena em grupo",
+          "Trazer roupa preta para o ensaio geral"
+        ],
+        pontos: 180,
+        status: "disponivel",
+        data: "Novembro 2023"
+      },
+      {
+        id: 4,
+        nome: "Concurso de Fotografia Artística",
+        categoria: "cultura",
+        descricao: "Registre momentos únicos e concorra a prêmios com sua criatividade.",
+        requisitos: [
+          "Enviar 3 fotografias originais",
+          "Tema: 'A beleza do quotidiano'",
+          "Participar da exposição final no auditório",
+          "As fotos devem ser tiradas durante o período do concurso"
+        ],
+        pontos: 150,
+        status: "disponivel",
+        data: "Janeiro 2024"
+      },
+      {
+        id: 5,
+        nome: "Olimpíada de Matemática",
+        categoria: "ciencia",
+        descricao: "Competição de resolução de problemas matemáticos desafiadores.",
+        requisitos: [
+          "Inscrição prévia com o professor de matemática",
+          "Realizar prova escrita de 2 horas",
+          "Participar de 2 sessões de treino",
+          "Classificação mínima de 60% na fase eliminatória"
+        ],
+        pontos: 250,
+        status: "andamento",
+        data: "Em andamento"
+      },
+      {
+        id: 6,
+        nome: "Clube de Leitura e Debate Literário",
+        categoria: "cultura",
+        descricao: "Encontros semanais para discutir obras clássicas e contemporâneas.",
+        requisitos: [
+          "Ler o livro proposto antes de cada encontro",
+          "Participar ativamente dos debates",
+          "Apresentar uma análise crítica de uma obra",
+          "Frequência mínima de 75%"
+        ],
+        pontos: 160,
+        status: "andamento",
+        data: "Em andamento"
+      }
+    ];
+
+    // Elementos
+    const atividadesGrid = document.getElementById('atividadesGrid');
+    const categoryBtns = document.querySelectorAll('.category-btn');
+    const modal = document.getElementById('infoModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalMessage = document.getElementById('modalMessage');
+    const modalCloseBtn = document.getElementById('modalCloseBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+
     let categoriaAtiva = 'todas';
-    const modal = document.getElementById('infoModal'), modalTitle = document.getElementById('modalTitle'), modalMessage = document.getElementById('modalMessage'), modalIcon = document.getElementById('modalIcon'), modalCloseBtn = document.getElementById('modalCloseBtn');
-    function showModal(title, msg) { modalTitle.textContent = title; modalMessage.textContent = msg; modal.style.display = 'flex'; }
-    function hideModal() { modal.style.display = 'none'; }
-    function render() {
-      let filtered = categoriaAtiva === 'todas' ? [...atividades] : atividades.filter(a => a.categoria === categoriaAtiva);
-      const grid = document.getElementById('atividadesGrid');
-      if(filtered.length === 0) { grid.innerHTML = '<div class="sem-atividades"><i class="fas fa-calendar-times"></i><h3>Nenhuma atividade</h3></div>'; return; }
-      grid.innerHTML = filtered.map(a => `<div class="atividade-card" data-id="${a.id}"><div class="atividade-header ${a.categoria === 'ciencia' ? 'ciencia' : 'cultura'}"><div class="atividade-categoria">${a.categoria === 'ciencia' ? '🔬 Ciência' : '🎭 Cultura'}</div><h3>${a.nome}</h3></div><div class="atividade-body"><div class="requisitos-section"><strong><i class="fas fa-clipboard-list"></i> Critérios:</strong><ul class="requisitos-lista">${a.requisitos.map(r => `<li><i class="fas fa-check-circle"></i> ${r}</li>`).join('')}</ul></div><div class="atividade-pontos"><i class="fas fa-star"></i> ${a.pontos} pontos</div><div class="atividade-footer"><span class="status-badge status-disponivel"><i class="fas fa-calendar-check"></i> Disponível</span><span><i class="fas fa-calendar"></i> ${a.data}</span></div></div></div>`).join('');
-      document.querySelectorAll('.atividade-card').forEach(card => { card.addEventListener('click', () => { const id = parseInt(card.dataset.id); const a = atividades.find(x => x.id === id); showModal(`📋 ${a.nome}`, `Pontuação: ${a.pontos} pts\n\nRequisitos:\n${a.requisitos.map(r => `• ${r}`).join('\n')}`); }); });
+
+    function showModal(title, message) {
+      modalTitle.textContent = title;
+      modalMessage.textContent = message;
+      modal.style.display = 'flex';
     }
-    document.querySelectorAll('.category-btn').forEach(btn => { btn.addEventListener('click', () => { document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); categoriaAtiva = btn.dataset.categoria; render(); }); });
-    document.getElementById('logoutBtn').addEventListener('click', () => { window.location.href = '/'; });
+
+    function hideModal() {
+      modal.style.display = 'none';
+    }
+
+    function getStatusInfo(status) {
+      if (status === 'disponivel') {
+        return { text: 'Disponível', class: 'status-disponivel', icon: 'fa-calendar-check' };
+      }
+      return { text: 'Em Andamento', class: 'status-andamento', icon: 'fa-spinner' };
+    }
+
+    function renderAtividades() {
+      let filtered = [...atividades];
+      
+      if (categoriaAtiva !== 'todas') {
+        filtered = atividades.filter(a => a.categoria === categoriaAtiva);
+      }
+      
+      if (filtered.length === 0) {
+        atividadesGrid.innerHTML = `
+          <div class="sem-atividades">
+            <i class="fas fa-calendar-times" style="font-size: 48px; margin-bottom: 16px; color: #D4A373;"></i>
+            <h3>Nenhuma atividade encontrada</h3>
+            <p>Não há atividades disponíveis nesta categoria no momento.</p>
+          </div>
+        `;
+        return;
+      }
+      
+      atividadesGrid.innerHTML = filtered.map(a => {
+        const statusInfo = getStatusInfo(a.status);
+        const headerClass = a.categoria === 'ciencia' ? 'ciencia' : 'cultura';
+        const categoriaNome = a.categoria === 'ciencia' ? 'Ciência e Tecnologia' : 'Culturais';
+        const categoriaIcon = a.categoria === 'ciencia' ? '🔬' : '🎭';
+        
+        return `
+          <div class="atividade-card" data-id="${a.id}">
+            <div class="atividade-header ${headerClass}">
+              <div class="atividade-categoria">
+                ${categoriaIcon} ${categoriaNome}
+              </div>
+              <h3>${a.nome}</h3>
+            </div>
+            <div class="atividade-body">
+              <div class="requisitos-section">
+                <div class="requisitos-title">
+                  <i class="fas fa-clipboard-list"></i> Critérios de Avaliação
+                </div>
+                <ul class="requisitos-lista">
+                  ${a.requisitos.map(r => `<li><i class="fas fa-check-circle"></i> ${r}</li>`).join('')}
+                </ul>
+              </div>
+              <div class="atividade-pontos">
+                <i class="fas fa-star"></i> ${a.pontos} pontos
+              </div>
+              <div class="atividade-footer">
+                <span class="status-badge ${statusInfo.class}">
+                  <i class="fas ${statusInfo.icon}"></i> ${statusInfo.text}
+                </span>
+                <span class="info-text">
+                  <i class="fas fa-calendar"></i> ${a.data}
+                </span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      // Adicionar evento de clique nos cards
+      document.querySelectorAll('.atividade-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const id = parseInt(card.dataset.id);
+          const atividade = atividades.find(a => a.id === id);
+          if (atividade) {
+            showModal(
+              `📋 ${atividade.nome}`,
+              `Pontuação: ${atividade.pontos} pontos\n\nRequisitos:\n${atividade.requisitos.map(r => `• ${r}`).join('\n')}`
+            );
+          }
+        });
+      });
+    }
+
+    // Categorias
+    categoryBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        categoryBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        categoriaAtiva = btn.dataset.categoria;
+        renderAtividades();
+      });
+    });
+
+    // Logout
+    logoutBtn.addEventListener('click', () => {
+      window.location.href = '/';
+    });
+
     modalCloseBtn.addEventListener('click', hideModal);
-    render();
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) hideModal();
+    });
+
+    // Inicializar
+    renderAtividades();
   </script>
 </body>
 </html>

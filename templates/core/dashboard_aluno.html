@@ -139,7 +139,7 @@
       background: #FBF7E9;
     }
 
-    /* Stats Cards - 4 cards como na imagem */
+    /* Stats Cards - 4 cards */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -190,77 +190,10 @@
       color: #2B7A4B;
     }
 
-    /* Chart Section - como na imagem */
-    .chart-section {
-      background: white;
-      border-radius: 20px;
-      padding: 20px;
-      margin-bottom: 25px;
-      border: 1px solid #F5EDDA;
-    }
-
-    .chart-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-
-    .chart-header h3 {
-      font-size: 18px;
-      color: #5C3A21;
-      font-weight: 600;
-    }
-
-    .chart-header select {
-      padding: 8px 15px;
-      border: 1px solid #F5EDDA;
-      border-radius: 12px;
-      background: white;
-      color: #5C3A21;
-      font-size: 13px;
-    }
-
-    /* Gráfico de barras */
-    .chart-bars {
-      display: flex;
-      justify-content: space-around;
-      align-items: flex-end;
-      height: 250px;
-      margin-top: 20px;
-    }
-
-    .bar-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 60px;
-    }
-
-    .bar {
-      width: 40px;
-      background: #2B7A4B;
-      border-radius: 8px 8px 0 0;
-      transition: height 0.3s ease;
-      margin-bottom: 10px;
-    }
-
-    .bar-label {
-      font-size: 12px;
-      color: #8B694C;
-    }
-
-    .bar-value {
-      font-size: 11px;
-      font-weight: 600;
-      color: #5C3A21;
-      margin-bottom: 5px;
-    }
-
-    /* Grid de conteúdo (Atividades e Benefícios) */
+    /* Grid de conteúdo */
     .content-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr;
       gap: 25px;
     }
 
@@ -290,8 +223,8 @@
       color: #D4A373;
     }
 
-    /* Itens de lista */
-    .atividade-item, .beneficio-item {
+    /* Atividades Realizadas Recentemente */
+    .atividade-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -299,43 +232,25 @@
       border-bottom: 1px solid #F5EDDA;
     }
 
-    .atividade-info h4, .beneficio-info strong {
+    .atividade-info h4 {
       font-size: 14px;
       font-weight: 600;
       color: #5C3A21;
     }
 
-    .atividade-info p, .beneficio-info small {
+    .atividade-info p {
       font-size: 11px;
       color: #8B694C;
       margin-top: 3px;
     }
 
-    .atividade-pontos, .beneficio-custo {
+    .atividade-pontos {
       background: #FBF7E9;
       padding: 4px 10px;
       border-radius: 20px;
       font-size: 12px;
       font-weight: 600;
       color: #2B7A4B;
-    }
-
-    .btn-acao {
-      background: #2B7A4B;
-      border: none;
-      padding: 5px 12px;
-      border-radius: 20px;
-      color: white;
-      font-size: 11px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-left: 10px;
-      transition: all 0.3s;
-    }
-
-    .btn-acao:hover {
-      background: #1E5A38;
-      transform: scale(1.02);
     }
 
     .ver-todos {
@@ -351,58 +266,10 @@
       text-decoration: underline;
     }
 
-    /* Noticeboard */
-    .noticeboard {
-      background: #FBF7E9;
-      border-radius: 16px;
-      padding: 20px;
-      margin-top: 25px;
-      border: 1px solid #F5EDDA;
-    }
-
-    .noticeboard h4 {
-      color: #5C3A21;
-      margin-bottom: 15px;
-      font-size: 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .noticeboard ul {
-      list-style: none;
-    }
-
-    .noticeboard li {
-      padding: 8px 0;
-      border-bottom: 1px solid #F5EDDA;
-      color: #8B694C;
-      font-size: 13px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .noticeboard li i {
-      color: #D4A373;
-      width: 20px;
-    }
-
     /* Responsivo */
     @media (max-width: 1000px) {
       .stats-grid {
         grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    @media (max-width: 800px) {
-      .content-grid {
-        grid-template-columns: 1fr;
-      }
-      .chart-bars {
-        flex-wrap: wrap;
-        height: auto;
-        gap: 15px;
       }
     }
 
@@ -441,8 +308,8 @@
           <i class="fas fa-user-graduate"></i>
         </div>
         <div>
-          <div class="user-name">Ricardo Oliveira</div>
-          <div class="user-info">PROC: #20230814 | 12° B</div>
+          <div class="user-name" id="alunoNomeDisplay">Ricardo Oliveira</div>
+          <div class="user-info">PROC: <span id="alunoProcessoDisplay">20230814</span> | 12° B</div>
         </div>
         <button class="logout-btn" id="logoutBtn">
           <i class="fas fa-sign-out-alt"></i> Sair
@@ -465,7 +332,7 @@
           <h3>Atividades Realizadas</h3>
           <i class="fas fa-check-circle"></i>
         </div>
-        <div class="stat-value">12</div>
+        <div class="stat-value" id="totalAtividades">12</div>
         <div class="stat-change">Participou de 12 atividades</div>
       </div>
       <div class="stat-card">
@@ -473,7 +340,7 @@
           <h3>Benefícios Resgatados</h3>
           <i class="fas fa-gift"></i>
         </div>
-        <div class="stat-value">3</div>
+        <div class="stat-value" id="beneficiosResgatados">3</div>
         <div class="stat-change">Último: Boletim de Notas</div>
       </div>
       <div class="stat-card">
@@ -481,116 +348,50 @@
           <h3>Ranking na Turma</h3>
           <i class="fas fa-trophy"></i>
         </div>
-        <div class="stat-value">5º</div>
+        <div class="stat-value" id="ranking">5º</div>
         <div class="stat-change">Entre 28 alunos</div>
       </div>
     </div>
 
-    <!-- Gráfico (como na imagem) -->
-    <div class="chart-section">
-      <div class="chart-header">
-        <h3><i class="fas fa-chart-line"></i> Evolução de Pontos</h3>
-        <select id="periodoSelect">
-          <option value="7">Últimos 7 dias</option>
-          <option value="30" selected>Últimos 30 dias</option>
-          <option value="90">Últimos 90 dias</option>
-        </select>
-      </div>
-      <div class="chart-bars" id="chartBars">
-        <!-- Gráfico gerado via JS -->
-      </div>
-    </div>
-
-    <!-- Grid de Conteúdo (Atividades e Benefícios) -->
+    <!-- Atividades Realizadas Recentemente -->
     <div class="content-grid">
-      <!-- Atividades em Destaque -->
       <div class="card">
         <div class="card-header">
-          <h3><i class="fas fa-calendar-alt"></i> Atividades em Destaque</h3>
+          <h3><i class="fas fa-history"></i> Atividades Realizadas Recentemente</h3>
           <i class="fas fa-chevron-right"></i>
         </div>
-        <div class="atividade-item">
-          <div class="atividade-info">
-            <h4>🏆 Workshop de Robótica</h4>
-            <p>Ciência e Tecnologia · até 28/10</p>
+        <div id="atividadesList">
+          <div class="atividade-item">
+            <div class="atividade-info">
+              <h4>🏆 Workshop de Robótica</h4>
+              <p>Concluída em 25/10/2023 · +180 pts</p>
+            </div>
+            <div class="atividade-pontos">Concluída</div>
           </div>
-          <div>
-            <span class="atividade-pontos">+180 pts</span>
-            <button class="btn-acao btn-participar">Inscrever</button>
+          <div class="atividade-item">
+            <div class="atividade-info">
+              <h4>🎭 Oficina de Teatro</h4>
+              <p>Concluída em 15/11/2023 · +150 pts</p>
+            </div>
+            <div class="atividade-pontos">Concluída</div>
           </div>
-        </div>
-        <div class="atividade-item">
-          <div class="atividade-info">
-            <h4>🎭 Oficina de Teatro</h4>
-            <p>Culturais · até 15/11</p>
+          <div class="atividade-item">
+            <div class="atividade-info">
+              <h4>🔬 Feira de Ciências</h4>
+              <p>Concluída em 10/12/2023 · +200 pts</p>
+            </div>
+            <div class="atividade-pontos">Concluída</div>
           </div>
-          <div>
-            <span class="atividade-pontos">+150 pts</span>
-            <button class="btn-acao btn-participar">Inscrever</button>
-          </div>
-        </div>
-        <div class="atividade-item">
-          <div class="atividade-info">
-            <h4>🔬 Feira de Ciências</h4>
-            <p>Ciência · até 10/12</p>
-          </div>
-          <div>
-            <span class="atividade-pontos">+200 pts</span>
-            <button class="btn-acao btn-participar">Inscrever</button>
+          <div class="atividade-item">
+            <div class="atividade-info">
+              <h4>📐 Olimpíada de Matemática</h4>
+              <p>Concluída em 05/12/2023 · +250 pts</p>
+            </div>
+            <div class="atividade-pontos">Concluída</div>
           </div>
         </div>
         <a href="/aluno/atividades/" class="ver-todos">Ver todas as atividades →</a>
       </div>
-
-      <!-- Benefícios Populares -->
-      <div class="card">
-        <div class="card-header">
-          <h3><i class="fas fa-store"></i> Benefícios Populares</h3>
-          <i class="fas fa-gift"></i>
-        </div>
-        <div class="beneficio-item">
-          <div class="beneficio-info">
-            <strong>📄 Boletim de Notas</strong>
-            <br><small>Impressão oficial com selo</small>
-          </div>
-          <div>
-            <span class="beneficio-custo">200 pts</span>
-            <button class="btn-acao btn-resgatar" data-custo="200">Resgatar</button>
-          </div>
-        </div>
-        <div class="beneficio-item">
-          <div class="beneficio-info">
-            <strong>🌐 Internet Grátis</strong>
-            <br><small>7 dias de Wi-Fi</small>
-          </div>
-          <div>
-            <span class="beneficio-custo">300 pts</span>
-            <button class="btn-acao btn-resgatar" data-custo="300">Resgatar</button>
-          </div>
-        </div>
-        <div class="beneficio-item">
-          <div class="beneficio-info">
-            <strong>📚 Folhas para Provas</strong>
-            <br><small>10 folhas pautadas</small>
-          </div>
-          <div>
-            <span class="beneficio-custo">50 pts</span>
-            <button class="btn-acao btn-resgatar" data-custo="50">Resgatar</button>
-          </div>
-        </div>
-        <a href="/aluno/loja/" class="ver-todos">Ver todos os benefícios →</a>
-      </div>
-    </div>
-
-    <!-- Noticeboard -->
-    <div class="noticeboard">
-      <h4><i class="fas fa-bullhorn"></i> NOTICEBOARD</h4>
-      <ul>
-        <li><i class="fas fa-star"></i> Feira de Ciências será no dia 15/12 - Inscreva-se!</li>
-        <li><i class="fas fa-star"></i> Workshop de Robótica - Últimas vagas disponíveis</li>
-        <li><i class="fas fa-star"></i> Concurso de Fotografia - Prazo até 30/11</li>
-        <li><i class="fas fa-star"></i> Novos benefícios adicionados à loja!</li>
-      </ul>
     </div>
   </div>
 
@@ -600,56 +401,46 @@
       <div style="width:60px; height:60px; background:#2B7A4B; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 15px;">
         <i id="modalIcon" class="fas fa-check-circle" style="font-size:30px; color:white;"></i>
       </div>
-      <h3 id="modalTitle" style="color:#5C3A21; margin-bottom:10px;">Sucesso!</h3>
-      <p id="modalMessage" style="color:#8B694C; margin-bottom:20px;">Operação realizada com sucesso.</p>
+      <h3 id="modalTitle" style="color:#5C3A21; margin-bottom:10px;">Informação</h3>
+      <p id="modalMessage" style="color:#8B694C; margin-bottom:20px;">Mensagem do sistema</p>
       <button id="modalCloseBtn" style="background:#2B7A4B; color:white; border:none; padding:10px 20px; border-radius:30px; cursor:pointer;">Continuar</button>
     </div>
   </div>
 
   <script>
-    let saldoAtual = 2450;
+    // Dados do aluno logado (vindos do login)
+    const alunoLogado = {
+      nome: 'Ricardo Oliveira',
+      processo: '20230814',
+      turma: '12° B',
+      saldo: 2450,
+      atividadesRealizadas: 12,
+      beneficiosResgatados: 3,
+      ranking: 5
+    };
+
+    // Elementos
     const saldoElement = document.getElementById('saldoPontos');
+    const totalAtividades = document.getElementById('totalAtividades');
+    const beneficiosResgatados = document.getElementById('beneficiosResgatados');
+    const ranking = document.getElementById('ranking');
+    const alunoNomeDisplay = document.getElementById('alunoNomeDisplay');
+    const alunoProcessoDisplay = document.getElementById('alunoProcessoDisplay');
+    const logoutBtn = document.getElementById('logoutBtn');
     const modal = document.getElementById('infoModal');
     const modalTitle = document.getElementById('modalTitle');
     const modalMessage = document.getElementById('modalMessage');
     const modalIcon = document.getElementById('modalIcon');
     const modalCloseBtn = document.getElementById('modalCloseBtn');
-    const periodoSelect = document.getElementById('periodoSelect');
 
-    // Dados para o gráfico
-    const dadosGrafico = {
-      7: [120, 180, 150, 200, 220, 250, 280],
-      30: [120, 150, 180, 200, 220, 250, 280, 300, 320, 350, 380, 400, 420, 450, 480, 500, 520, 550, 580, 600, 620, 650, 680, 700, 720, 750, 780, 800, 820, 850],
-      90: [100, 120, 150, 180, 200, 220, 250, 280, 300, 320, 350, 380, 400, 420, 450, 480, 500, 520, 550, 580, 600, 620, 650, 680, 700, 720, 750, 780, 800, 820, 850, 880, 900, 920, 950, 980, 1000, 1020, 1050, 1080, 1100, 1120, 1150, 1180, 1200, 1220, 1250, 1280, 1300, 1320, 1350, 1380, 1400, 1420, 1450, 1480, 1500, 1520, 1550, 1580, 1600, 1620, 1650, 1680, 1700, 1720, 1750, 1780, 1800, 1820, 1850, 1880, 1900, 1920, 1950, 1980, 2000, 2020, 2050, 2080, 2100, 2120, 2150, 2180, 2200, 2220, 2250, 2280, 2300, 2320, 2350, 2380, 2400, 2420, 2450]
-    };
-
-    function renderGrafico(periodo) {
-      const dados = dadosGrafico[periodo];
-      const maxValor = Math.max(...dados);
-      const chartBars = document.getElementById('chartBars');
-      
-      // Pegar últimos N dias (mostrar apenas 12 barras para não poluir)
-      const mostrarDados = dados.slice(-12);
-      const labels = mostrarDados.map((_, i) => `${i+1}`);
-      
-      chartBars.innerHTML = mostrarDados.map((valor, index) => {
-        const altura = (valor / maxValor) * 180;
-        return `
-          <div class="bar-item">
-            <div class="bar-value">${valor}</div>
-            <div class="bar" style="height: ${altura}px;"></div>
-            <div class="bar-label">${index === 0 ? 'Hoje' : index === 1 ? 'Ontem' : `${index}d`}</div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    periodoSelect.addEventListener('change', (e) => {
-      renderGrafico(e.target.value);
-    });
-
-    function atualizarSaldo() {
-      saldoElement.textContent = saldoAtual.toLocaleString();
+    // Atualizar dados do aluno
+    function atualizarDados() {
+      saldoElement.textContent = alunoLogado.saldo.toLocaleString();
+      totalAtividades.textContent = alunoLogado.atividadesRealizadas;
+      beneficiosResgatados.textContent = alunoLogado.beneficiosResgatados;
+      ranking.textContent = `${alunoLogado.ranking}º`;
+      alunoNomeDisplay.textContent = alunoLogado.nome;
+      alunoProcessoDisplay.textContent = alunoLogado.processo;
     }
 
     function showModal(title, message, isSuccess = true) {
@@ -664,43 +455,8 @@
       modal.style.display = 'none';
     }
 
-    // Participar de atividades
-    document.querySelectorAll('.btn-participar').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const originalText = btn.textContent;
-        btn.textContent = '✓';
-        btn.disabled = true;
-        setTimeout(() => {
-          btn.textContent = originalText;
-          btn.disabled = false;
-        }, 1500);
-        showModal('✅ Inscrição Realizada!', 'Você se inscreveu na atividade. Ao concluir, receberá os pontos.');
-      });
-    });
-
-    // Resgatar benefícios
-    document.querySelectorAll('.btn-resgatar').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const custo = parseInt(btn.dataset.custo);
-        if (saldoAtual >= custo) {
-          saldoAtual -= custo;
-          atualizarSaldo();
-          const originalText = btn.textContent;
-          btn.textContent = '✓';
-          btn.disabled = true;
-          setTimeout(() => {
-            btn.textContent = originalText;
-            btn.disabled = false;
-          }, 1500);
-          showModal('🎉 Resgate Confirmado!', 'Benefício resgatado com sucesso! Dirija-se à secretaria.');
-        } else {
-          showModal('❌ Saldo Insuficiente', `Você precisa de ${custo} pontos. Seu saldo é ${saldoAtual}.`, false);
-        }
-      });
-    });
-
     // Logout
-    document.getElementById('logoutBtn').addEventListener('click', () => {
+    logoutBtn.addEventListener('click', () => {
       window.location.href = '/';
     });
 
@@ -709,8 +465,8 @@
       if (e.target === modal) hideModal();
     });
 
-    // Inicializar gráfico
-    renderGrafico(30);
+    // Inicializar
+    atualizarDados();
   </script>
 </body>
 </html>
