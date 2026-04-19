@@ -311,161 +311,183 @@
   </div>
 
   <script>
-    // Dados simulados do banco de dados (alunos existentes com nome e senha)
-    const alunosDB = {
-      '20230814': { nome: 'Ricardo Oliveira', senha: '123456' },
-      '20241005': { nome: 'Ana Beatriz', senha: 'abc123' },
-      '20241122': { nome: 'João Silva', senha: 'joao2024' },
-      '20240915': { nome: 'Carla Souza', senha: 'carla123' }
-    };
+      // Elementos
+      const processoInput = document.getElementById('processoInput');
+      const senhaGroup = document.getElementById('senhaGroup');
+      const alunoInfoArea = document.getElementById('alunoInfoArea');
+      const alunoNome = document.getElementById('alunoNome');
+      const btnLogin = document.getElementById('btnLogin');
+      const stepDescription = document.getElementById('stepDescription');
+      const errorArea = document.getElementById('errorArea');
+      const professorLink = document.getElementById('professorLink');
+      const modal = document.getElementById('infoModal');
+      const modalTitle = document.getElementById('modalTitle');
+      const modalMessage = document.getElementById('modalMessage');
+      const modalIcon = document.getElementById('modalIcon');
+      const modalCloseBtn = document.getElementById('modalCloseBtn');
 
-    // Elementos
-    const processoInput = document.getElementById('processoInput');
-    const senhaGroup = document.getElementById('senhaGroup');
-    const alunoInfoArea = document.getElementById('alunoInfoArea');
-    const alunoNome = document.getElementById('alunoNome');
-    const btnLogin = document.getElementById('btnLogin');
-    const stepDescription = document.getElementById('stepDescription');
-    const errorArea = document.getElementById('errorArea');
-    const professorLink = document.getElementById('professorLink');
-    const modal = document.getElementById('infoModal');
-    const modalTitle = document.getElementById('modalTitle');
-    const modalMessage = document.getElementById('modalMessage');
-    const modalIcon = document.getElementById('modalIcon');
-    const modalCloseBtn = document.getElementById('modalCloseBtn');
+      let processoVerificado = false;
+      let alunoAtual = null;
 
-    let processoVerificado = false;
-    let alunoAtual = null;
-
-    function showModal(title, message, isSuccess = true) {
-      modalTitle.textContent = title;
-      modalMessage.textContent = message;
-      modalIcon.parentElement.style.background = isSuccess ? '#2B7A4B' : '#D4A373';
-      modalIcon.className = isSuccess ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle';
-      modal.style.display = 'flex';
-    }
-
-    function hideModal() {
-      modal.style.display = 'none';
-    }
-
-    function showError(message) {
-      errorArea.textContent = message;
-      errorArea.classList.remove('hidden');
-      setTimeout(() => {
-        errorArea.classList.add('hidden');
-      }, 5000);
-    }
-
-    function verificarProcesso(processo) {
-      return alunosDB[processo] || null;
-    }
-
-    function fazerLogin(processo, senha) {
-      const aluno = alunosDB[processo];
-      if (aluno && aluno.senha === senha) {
-        showModal('✅ Login realizado!', `Bem-vindo(a), ${aluno.nome}! Redirecionando para o dashboard...`);
-        setTimeout(() => {
-          window.location.href = '/aluno/dashboard/';
-        }, 1500);
-      } else {
-        showError('Senha incorreta! Tente novamente.');
-        document.getElementById('senhaInput').value = '';
-        document.getElementById('senhaInput').focus();
+      function showModal(title, message, isSuccess = true) {
+          modalTitle.textContent = title;
+          modalMessage.textContent = message;
+          modalIcon.parentElement.style.background = isSuccess ? '#2B7A4B' : '#D4A373';
+          modalIcon.className = isSuccess ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle';
+          modal.style.display = 'flex';
       }
-    }
 
-    function resetToInitialState() {
-      processoVerificado = false;
-      alunoAtual = null;
-      senhaGroup.classList.add('hidden');
-      alunoInfoArea.classList.add('hidden');
-      errorArea.classList.add('hidden');
-      btnLogin.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i> Verificar';
-      stepDescription.textContent = 'Digite seu Número de Processo';
-      processoInput.disabled = false;
-      processoInput.value = '';
-      document.getElementById('senhaInput').value = '';
-    }
+      function hideModal() {
+          modal.style.display = 'none';
+      }
 
-    btnLogin.addEventListener('click', (e) => {
-      e.preventDefault();
-      const processo = processoInput.value.trim();
-
-      if (!processoVerificado) {
-        // PRIMEIRA ETAPA: Verificar se o processo existe
-        if (!processo) {
-          showError('Por favor, digite o Número de Processo.');
-          return;
-        }
-
-        const aluno = verificarProcesso(processo);
-
-        if (aluno) {
-          // Processo existe -> mostrar nome e pedir senha
-          alunoAtual = aluno;
-          processoVerificado = true;
-          
-          // Mostrar nome do aluno
-          alunoNome.textContent = aluno.nome;
-          alunoInfoArea.classList.remove('hidden');
-          
-          // Mostrar campo de senha
-          senhaGroup.classList.remove('hidden');
-          errorArea.classList.add('hidden');
-          
-          // Atualizar texto e botão
-          stepDescription.textContent = 'Digite sua senha para acessar';
-          btnLogin.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i> Entrar';
-          processoInput.disabled = true;
-          
-          // Focar no campo senha
-          document.getElementById('senhaInput').focus();
-        } else {
-          // Processo NÃO existe - mostra erro e não permite cadastro
-          showError('Número de processo não encontrado. Se o erro persistir, contacte a secretaria.');
-          // Limpar campo para nova tentativa
+      function showError(message) {
+          errorArea.textContent = message;
+          errorArea.classList.remove('hidden');
           setTimeout(() => {
-            processoInput.value = '';
-            processoInput.focus();
-          }, 3000);
-        }
-      } else {
-        // SEGUNDA ETAPA: Validar senha
-        const senha = document.getElementById('senhaInput').value;
-        const processo = processoInput.value.trim();
-
-        if (!senha) {
-          showError('Por favor, digite sua senha.');
-          return;
-        }
-
-        fazerLogin(processo, senha);
+              errorArea.classList.add('hidden');
+          }, 5000);
       }
-    });
 
-    professorLink.addEventListener('click', (e) => {
-      e.preventDefault();
-      window.location.href = '/professor/login/';
-    });
-
-    modalCloseBtn.addEventListener('click', hideModal);
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) hideModal();
-    });
-
-    // Permitir pressionar Enter para continuar
-    document.getElementById('senhaInput').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter' && processoVerificado) {
-        btnLogin.click();
+      async function verificarProcesso(processo) {
+          try {
+              const response = await fetch('/api/aluno/verificar-processo/', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'X-CSRFToken': getCookie('csrftoken')
+                  },
+                  body: JSON.stringify({ processo: processo })
+              });
+              const data = await response.json();
+              return data;
+          } catch (error) {
+              console.error('Erro na verificação:', error);
+              showError('Erro de conexão com o servidor. Tente novamente.');
+              return null;
+          }
       }
-    });
 
-    processoInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter' && !processoVerificado) {
-        btnLogin.click();
+      async function fazerLogin(processo, senha) {
+          try {
+              const response = await fetch('/api/aluno/validar-senha/', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'X-CSRFToken': getCookie('csrftoken')
+                  },
+                  body: JSON.stringify({ processo: processo, senha: senha })
+              });
+              const data = await response.json();
+              
+              if (data.success) {
+                  showModal('✅ Login realizado!', `Redirecionando para o dashboard...`);
+                  setTimeout(() => {
+                      window.location.href = data.redirect;
+                  }, 1500);
+              } else {
+                  showError(data.erro || 'Senha incorreta!');
+                  document.getElementById('senhaInput').value = '';
+                  document.getElementById('senhaInput').focus();
+              }
+          } catch (error) {
+              console.error('Erro no login:', error);
+              showError('Erro de conexão com o servidor. Tente novamente.');
+          }
       }
-    });
+
+      function getCookie(name) {
+          let cookieValue = null;
+          if (document.cookie && document.cookie !== '') {
+              const cookies = document.cookie.split(';');
+              for (let i = 0; i < cookies.length; i++) {
+                  const cookie = cookies[i].trim();
+                  if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                      cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                      break;
+                  }
+              }
+          }
+          return cookieValue;
+      }
+
+      btnLogin.addEventListener('click', async (e) => {
+          e.preventDefault();
+          const processo = processoInput.value.trim();
+
+          if (!processoVerificado) {
+              if (!processo) {
+                  showError('Por favor, digite o Número de Processo.');
+                  return;
+              }
+
+              // Mostrar loading
+              btnLogin.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Verificando...';
+              btnLogin.disabled = true;
+
+              const resultado = await verificarProcesso(processo);
+              
+              btnLogin.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i> Verificar';
+              btnLogin.disabled = false;
+
+              if (resultado && resultado.existe) {
+                  alunoAtual = resultado;
+                  processoVerificado = true;
+                  
+                  alunoNome.textContent = resultado.nome;
+                  alunoInfoArea.classList.remove('hidden');
+                  senhaGroup.classList.remove('hidden');
+                  errorArea.classList.add('hidden');
+                  stepDescription.textContent = 'Digite sua senha para acessar';
+                  btnLogin.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i> Entrar';
+                  processoInput.disabled = true;
+                  document.getElementById('senhaInput').focus();
+              } else if (resultado && !resultado.existe) {
+                  showError(resultado.erro || 'Número de processo não encontrado. Se o erro persistir, contacte a secretaria.');
+                  processoInput.value = '';
+                  processoInput.focus();
+              }
+          } else {
+              const senha = document.getElementById('senhaInput').value;
+              const processo = processoInput.value.trim();
+
+              if (!senha) {
+                  showError('Por favor, digite sua senha.');
+                  return;
+              }
+
+              btnLogin.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Entrando...';
+              btnLogin.disabled = true;
+
+              await fazerLogin(processo, senha);
+              
+              btnLogin.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i> Entrar';
+              btnLogin.disabled = false;
+          }
+      });
+
+      professorLink.addEventListener('click', (e) => {
+          e.preventDefault();
+          window.location.href = '/professor/login/';
+      });
+
+      modalCloseBtn.addEventListener('click', hideModal);
+      modal.addEventListener('click', (e) => {
+          if (e.target === modal) hideModal();
+      });
+
+      document.getElementById('senhaInput').addEventListener('keypress', (e) => {
+          if (e.key === 'Enter' && processoVerificado) {
+              btnLogin.click();
+          }
+      });
+
+      processoInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter' && !processoVerificado) {
+              btnLogin.click();
+          }
+      });
   </script>
+
 </body>
 </html>

@@ -26,7 +26,7 @@
       padding: 20px;
     }
 
-    /* Header - TAMANHO DO TÍTULO REDUZIDO (igual ao dashboard) */
+    /* Header */
     .header {
       background: white;
       border-radius: 24px;
@@ -62,7 +62,6 @@
       height: 28px;
     }
 
-    /* TÍTULO REDUZIDO - mesmo tamanho do dashboard */
     .logo-area h1 {
       font-size: 18px;
       color: #5C3A21;
@@ -281,23 +280,39 @@
       align-items: center;
       padding-top: 15px;
       border-top: 1px solid #F5EDDA;
+      flex-wrap: wrap;
+      gap: 10px;
     }
 
+    /* Status badges */
     .status-badge {
       padding: 4px 12px;
       border-radius: 20px;
       font-size: 12px;
       font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .status-disponivel {
-      background: #FBF7E9;
+      background: #E9F5EF;
       color: #2B7A4B;
     }
 
-    .status-andamento {
-      background: #fff3e0;
+    .status-hoje {
+      background: #FEF3C7;
       color: #D4A373;
+    }
+
+    .status-em_andamento {
+      background: #FFE4D6;
+      color: #FF6B35;
+    }
+
+    .status-encerrada {
+      background: #F5EDDA;
+      color: #8B694C;
     }
 
     .info-text {
@@ -311,7 +326,15 @@
     .sem-atividades {
       text-align: center;
       padding: 60px;
+      background: white;
+      border-radius: 20px;
       color: #8B694C;
+    }
+
+    .sem-atividades i {
+      font-size: 48px;
+      margin-bottom: 16px;
+      color: #D4A373;
     }
 
     /* Modal */
@@ -385,12 +408,16 @@
         padding: 8px 16px;
         font-size: 13px;
       }
+      .atividade-footer {
+        flex-direction: column;
+        align-items: flex-start;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- Header - TÍTULO REDUZIDO -->
+    <!-- Header -->
     <div class="header">
       <div class="logo-area">
         <div class="logo-icon">
@@ -447,7 +474,7 @@
   </div>
 
   <script>
-    // Dados das atividades
+    // Dados das atividades com data e hora
     const atividades = [
       {
         id: 1,
@@ -461,8 +488,9 @@
           "Trabalho em equipe para projeto final"
         ],
         pontos: 200,
-        status: "disponivel",
-        data: "Novembro 2023"
+        data: "2024-11-25",
+        hora_inicio: "14:00",
+        hora_fim: "17:00"
       },
       {
         id: 2,
@@ -476,8 +504,9 @@
           "Participação em todas as sessões de orientação"
         ],
         pontos: 300,
-        status: "disponivel",
-        data: "Dezembro 2023"
+        data: "2025-01-15",
+        hora_inicio: "09:00",
+        hora_fim: "12:00"
       },
       {
         id: 3,
@@ -491,8 +520,9 @@
           "Trazer roupa preta para o ensaio geral"
         ],
         pontos: 180,
-        status: "disponivel",
-        data: "Novembro 2023"
+        data: "2024-10-20",
+        hora_inicio: "15:00",
+        hora_fim: "18:00"
       },
       {
         id: 4,
@@ -506,8 +536,9 @@
           "As fotos devem ser tiradas durante o período do concurso"
         ],
         pontos: 150,
-        status: "disponivel",
-        data: "Janeiro 2024"
+        data: "2024-12-10",
+        hora_inicio: "10:00",
+        hora_fim: "16:00"
       },
       {
         id: 5,
@@ -521,8 +552,9 @@
           "Classificação mínima de 60% na fase eliminatória"
         ],
         pontos: 250,
-        status: "andamento",
-        data: "Em andamento"
+        data: new Date().toISOString().split('T')[0],
+        hora_inicio: "14:00",
+        hora_fim: "16:00"
       },
       {
         id: 6,
@@ -536,10 +568,58 @@
           "Frequência mínima de 75%"
         ],
         pontos: 160,
-        status: "andamento",
-        data: "Em andamento"
+        data: new Date().toISOString().split('T')[0],
+        hora_inicio: "09:00",
+        hora_fim: "11:00"
       }
     ];
+
+    // Função para calcular o status com base na data e hora atual
+    function calcularStatus(dataAtividade, horaInicio, horaFim) {
+      const agora = new Date();
+      const hoje = agora.toISOString().split('T')[0];
+      
+      // Converter para Date para comparação
+      const dataAtividadeObj = new Date(dataAtividade);
+      const dataHojeObj = new Date(hoje);
+      
+      // Zerar horas para comparar apenas as datas
+      dataAtividadeObj.setHours(0, 0, 0, 0);
+      dataHojeObj.setHours(0, 0, 0, 0);
+      
+      const horaAtual = agora.getHours();
+      const minutoAtual = agora.getMinutes();
+      const horaAtualDecimal = horaAtual + minutoAtual / 60;
+      
+      const [horaInicioH, horaInicioM] = horaInicio.split(':').map(Number);
+      const [horaFimH, horaFimM] = horaFim.split(':').map(Number);
+      const horaInicioDecimal = horaInicioH + horaInicioM / 60;
+      const horaFimDecimal = horaFimH + horaFimM / 60;
+      
+      // 1. Data atual ANTES da data da atividade
+      if (dataHojeObj < dataAtividadeObj) {
+        return { status: 'disponivel', texto: 'Disponível', icon: 'fa-calendar-check' };
+      }
+      
+      // 2. Data atual IGUAL à data da atividade
+      if (dataHojeObj.getTime() === dataAtividadeObj.getTime()) {
+        if (horaAtualDecimal < horaInicioDecimal) {
+          return { status: 'hoje', texto: 'Começa Hoje', icon: 'fa-calendar-day' };
+        } else if (horaAtualDecimal >= horaInicioDecimal && horaAtualDecimal <= horaFimDecimal) {
+          return { status: 'em_andamento', texto: 'Em Andamento', icon: 'fa-play-circle' };
+        } else {
+          return { status: 'encerrada', texto: 'Encerrada', icon: 'fa-clock' };
+        }
+      }
+      
+      // 3. Data atual DEPOIS da data da atividade
+      return { status: 'encerrada', texto: 'Encerrada', icon: 'fa-clock' };
+    }
+
+    function formatarData(dataStr) {
+      const data = new Date(dataStr);
+      return data.toLocaleDateString('pt-BR');
+    }
 
     // Elementos
     const atividadesGrid = document.getElementById('atividadesGrid');
@@ -562,11 +642,14 @@
       modal.style.display = 'none';
     }
 
-    function getStatusInfo(status) {
-      if (status === 'disponivel') {
-        return { text: 'Disponível', class: 'status-disponivel', icon: 'fa-calendar-check' };
-      }
-      return { text: 'Em Andamento', class: 'status-andamento', icon: 'fa-spinner' };
+    function getStatusClass(status) {
+      const classes = {
+        'disponivel': 'status-disponivel',
+        'hoje': 'status-hoje',
+        'em_andamento': 'status-em_andamento',
+        'encerrada': 'status-encerrada'
+      };
+      return classes[status] || 'status-disponivel';
     }
 
     function renderAtividades() {
@@ -579,7 +662,7 @@
       if (filtered.length === 0) {
         atividadesGrid.innerHTML = `
           <div class="sem-atividades">
-            <i class="fas fa-calendar-times" style="font-size: 48px; margin-bottom: 16px; color: #D4A373;"></i>
+            <i class="fas fa-calendar-times"></i>
             <h3>Nenhuma atividade encontrada</h3>
             <p>Não há atividades disponíveis nesta categoria no momento.</p>
           </div>
@@ -588,7 +671,7 @@
       }
       
       atividadesGrid.innerHTML = filtered.map(a => {
-        const statusInfo = getStatusInfo(a.status);
+        const statusInfo = calcularStatus(a.data, a.hora_inicio, a.hora_fim);
         const headerClass = a.categoria === 'ciencia' ? 'ciencia' : 'cultura';
         const categoriaNome = a.categoria === 'ciencia' ? 'Ciência e Tecnologia' : 'Culturais';
         const categoriaIcon = a.categoria === 'ciencia' ? '🔬' : '🎭';
@@ -614,11 +697,12 @@
                 <i class="fas fa-star"></i> ${a.pontos} pontos
               </div>
               <div class="atividade-footer">
-                <span class="status-badge ${statusInfo.class}">
-                  <i class="fas ${statusInfo.icon}"></i> ${statusInfo.text}
+                <span class="status-badge ${getStatusClass(statusInfo.status)}">
+                  <i class="fas ${statusInfo.icon}"></i> ${statusInfo.texto}
                 </span>
                 <span class="info-text">
-                  <i class="fas fa-calendar"></i> ${a.data}
+                  <i class="fas fa-calendar"></i> ${formatarData(a.data)}
+                  <i class="fas fa-clock"></i> ${a.hora_inicio} - ${a.hora_fim}
                 </span>
               </div>
             </div>
@@ -632,9 +716,10 @@
           const id = parseInt(card.dataset.id);
           const atividade = atividades.find(a => a.id === id);
           if (atividade) {
+            const statusInfo = calcularStatus(atividade.data, atividade.hora_inicio, atividade.hora_fim);
             showModal(
               `📋 ${atividade.nome}`,
-              `Pontuação: ${atividade.pontos} pontos\n\nRequisitos:\n${atividade.requisitos.map(r => `• ${r}`).join('\n')}`
+              `📅 Data: ${formatarData(atividade.data)}\n🕐 Horário: ${atividade.hora_inicio} - ${atividade.hora_fim}\n⭐ Pontuação: ${atividade.pontos} pontos\n📌 Status: ${statusInfo.texto}\n\n📋 Requisitos:\n${atividade.requisitos.map(r => `• ${r}`).join('\n')}`
             );
           }
         });
