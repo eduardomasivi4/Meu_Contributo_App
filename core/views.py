@@ -14,6 +14,8 @@ import json
 from io import BytesIO
 from django.conf import settings
 import os
+from .config import REDE_IP, PORTA
+
 
 # Importações dos modelos
 from .models import (
@@ -228,8 +230,8 @@ def gerar_comprovativo(request, transacao_id):
         f"converteu {abs(transacao.quantidade)} pontos para obter o benefício {transacao.descricao}."
     )
     
-    # Construir URL completa do PDF (para o QR Code)
-    pdf_url = request.build_absolute_uri(reverse('gerar_comprovativo', args=[transacao.id]))
+    # URL para o QR Code - usando IP do arquivo de configuração
+    pdf_url = f"http://{REDE_IP}:{PORTA}/aluno/comprovativo/{transacao.id}/"
     
     # Criar resposta HTTP com PDF
     response = HttpResponse(content_type='application/pdf')
@@ -297,7 +299,7 @@ def gerar_comprovativo(request, transacao_id):
     
     # Gerar QR Code com a URL do PDF
     qr = qrcode.QRCode(version=1, box_size=10, border=4)
-    qr.add_data(pdf_url)  # URL do PDF em vez do texto
+    qr.add_data(pdf_url)
     qr.make(fit=True)
     qr_img = qr.make_image(fill_color="#5C3A21", back_color="white")
     
@@ -306,11 +308,11 @@ def gerar_comprovativo(request, transacao_id):
     qr_buffer.seek(0)
     qr_reader = ImageReader(qr_buffer)
     
-    # Posicionar QR Code no canto inferior direito
+    # Posicionar QR Code
     qr_size = 80
     pdf.drawImage(qr_reader, width - qr_size - 50, y_assinatura - 100, width=qr_size, height=qr_size)
     
-    # Texto explicativo do QR Code
+    # Texto explicativo
     pdf.setFont('Helvetica', 8)
     pdf.setFillColor(castanho)
     pdf.drawString(width - qr_size - 45, y_assinatura - 110, "QR Code para download")
