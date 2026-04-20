@@ -10,11 +10,19 @@ class Usuario(AbstractUser):
         ('professor', 'Professor'),
         ('diretor_turma', 'Diretor de Turma'),
         ('coordenador', 'Coordenador de Atividades'),
+        ('admin', 'Administrador'),
     )
     
     tipo = models.CharField(max_length=20, choices=TIPO_USUARIO, default='aluno')
     telefone = models.CharField(max_length=15, blank=True)
-    foto = models.ImageField(upload_to='fotos/', null=True, blank=True)
+    
+    # Cargos adicionais (para usuários que acumulam funções)
+    is_professor = models.BooleanField(default=False)
+    is_coordenador = models.BooleanField(default=False)
+    is_diretor_turma = models.BooleanField(default=False)
+    
+    # Turma vinculada (para diretores de turma)
+    turma_vinculada = models.CharField(max_length=20, blank=True, null=True)
     
     groups = models.ManyToManyField(
         'auth.Group',
@@ -29,6 +37,21 @@ class Usuario(AbstractUser):
     
     def __str__(self):
         return f"{self.username} - {self.get_tipo_display()}"
+    
+    def get_cargos(self):
+        """Retorna lista de cargos que o usuário possui"""
+        cargos = []
+        if self.is_professor:
+            cargos.append('professor')
+        if self.is_coordenador:
+            cargos.append('coordenador')
+        if self.is_diretor_turma:
+            cargos.append('diretor_turma')
+        return cargos
+    
+    def tem_multiplos_cargos(self):
+        """Verifica se usuário tem mais de um cargo"""
+        return len(self.get_cargos()) > 1
 
 class Turma(models.Model):
     CURSO_CHOICES = (
@@ -43,6 +66,9 @@ class Turma(models.Model):
     
     def __str__(self):
         return f"{self.nome} - {self.get_curso_display()}"
+
+
+# ==================== ALUNO ====================
 
 class PerfilAluno(models.Model):
     usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, related_name='perfil_aluno')
@@ -218,6 +244,7 @@ class Transacao(models.Model):
         return f"{self.aluno.usuario.username} - {self.tipo}: {self.quantidade} pts"
 
 
+# ==================== PROFESSOR (placeholder) ====================
 
 class PerfilProfessor(models.Model):
     usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, related_name='perfil_professor')

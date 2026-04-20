@@ -19,6 +19,7 @@ from .config import REDE_IP, PORTA
 
 # Importações dos modelos
 from .models import (
+    Usuario,
     PerfilAluno, 
     Turma, 
     Atividade, 
@@ -322,20 +323,179 @@ def gerar_comprovativo(request, transacao_id):
     return response
 
 
-# ==================== PROFESSOR (placeholder) ====================
+# ==================== PROFESSOR ====================
 
 def login_professor(request):
     return render(request, 'core/login_professor.html')
 
+@csrf_exempt
+def verificar_credenciais_professor(request):
+    """API para verificar credenciais do professor e redirecionar"""
+    if request.method == 'POST':
+        try:
+            import json
+            data = json.loads(request.body)
+            email = data.get('email', '')
+            senha = data.get('senha', '')
+            
+            print(f"[DEBUG] Tentativa de login - Email: {email}")
+            
+            if not email or not senha:
+                return JsonResponse({'success': False, 'erro': 'Preencha e-mail e senha'})
+            
+            from django.contrib.auth import authenticate
+            from django.contrib.auth import login as auth_login
+            
+            # Tentar autenticar com email
+            user = authenticate(request, username=email, password=senha)
+            
+            # Se não funcionou, tentar com username
+            if not user:
+                username = email.split('@')[0]
+                print(f"[DEBUG] Tentando com username: {username}")
+                user = authenticate(request, username=username, password=senha)
+            
+            if not user:
+                print(f"[DEBUG] Falha na autenticação para: {email}")
+                return JsonResponse({'success': False, 'erro': 'E-mail ou senha inválidos'})
+            
+            print(f"[DEBUG] Usuário autenticado: {user.username}")
+            print(f"[DEBUG] is_professor: {user.is_professor}")
+            print(f"[DEBUG] is_coordenador: {user.is_coordenador}")
+            print(f"[DEBUG] is_diretor_turma: {user.is_diretor_turma}")
+            
+            # Verificar se tem algum cargo válido
+            if not user.is_professor and not user.is_coordenador and not user.is_diretor_turma:
+                return JsonResponse({'success': False, 'erro': 'Usuário não tem permissão de acesso'})
+            
+            # Fazer login
+            auth_login(request, user)
+            
+            # Determinar redirecionamento baseado nos cargos
+            cargos = []
+            if user.is_professor:
+                cargos.append('professor')
+            if user.is_coordenador:
+                cargos.append('coordenador')
+            if user.is_diretor_turma:
+                cargos.append('diretor_turma')
+            
+            print(f"[DEBUG] Cargos: {cargos}")
+            
+            # Se for apenas diretor de turma
+            if user.is_diretor_turma and not user.is_professor and not user.is_coordenador:
+                print("[DEBUG] Redirecionando para diretor/dashboard/")
+                return JsonResponse({'success': True, 'redirect': '/diretor/dashboard/'})
+            
+            # Se for apenas professor
+            if user.is_professor and not user.is_coordenador and not user.is_diretor_turma:
+                print("[DEBUG] Redirecionando para professor/dashboard/")
+                return JsonResponse({'success': True, 'redirect': '/professor/dashboard/'})
+            
+            # Se for apenas coordenador
+            if user.is_coordenador and not user.is_professor and not user.is_diretor_turma:
+                print("[DEBUG] Redirecionando para coordenador/dashboard/")
+                return JsonResponse({'success': True, 'redirect': '/coordenador/dashboard/'})
+            
+            # Se tem múltiplos cargos, vai para tela de seleção
+            request.session['cargos_disponiveis'] = cargos
+            print("[DEBUG] Redirecionando para selecionar-perfil/")
+            return JsonResponse({'success': True, 'redirect': '/professor/selecionar-perfil/'})
+            
+        except Exception as e:
+            print(f"[DEBUG] Erro: {str(e)}")
+            return JsonResponse({'success': False, 'erro': f'Erro no servidor: {str(e)}'}, status=500)
+    
+    return JsonResponse({'erro': 'Método não permitido'}, status=405)
+
+def processar_login_nao_diretor(request, user):
+    """Processa login quando usuário escolhe 'Não sou diretor de turma'"""
+    cargos = user.get_cargos()
+    
+    # Login do usuário
+    login(request, user)
+    
+    # Se tem apenas 1 cargo, redireciona direto
+    if len(cargos) == 1:
+        cargo = cargos[0]
+        if cargo == 'professor':
+            return JsonResponse({'success': True, 'redirect': '/professor/dashboard/', 'direto': True})
+        elif cargo == 'coordenador':
+            return JsonResponse({'success': True, 'redirect': '/coordenador/dashboard/', 'direto': True})
+        else:
+            return JsonResponse({'success': False, 'erro': 'Cargo não reconhecido'})
+    
+    # Se tem múltiplos cargos, vai para tela de seleção
+    else:
+        # Salvar cargos na sessão
+        request.session['cargos_disponiveis'] = cargos
+        return JsonResponse({'success': True, 'redirect': '/professor/selecionar-perfil/', 'direto': False})
+
+def processar_login_diretor(request, user, turma):
+    """Processa login quando usuário escolhe uma turma (diretor de turma)"""
+    cargos = user.get_cargos()
+    
+    # Verificar se o usuário é diretor de turma
+    if not user.is_diretor_turma:
+        return JsonResponse({'success': False, 'erro': 'Você não tem permissão de diretor de turma'})
+    
+    # Login do usuário
+    login(request, user)
+    
+    # Salvar turma na sessão
+    request.session['turma_selecionada'] = turma
+    
+    # Se tem apenas o cargo de diretor de turma, redireciona direto
+    if len(cargos) == 1 and cargos[0] == 'diretor_turma':
+        return JsonResponse({'success': True, 'redirect': '/diretor/dashboard/', 'direto': True})
+    
+    # Se tem múltiplos cargos (incluindo diretor), vai para tela de seleção
+    else:
+        request.session['cargos_disponiveis'] = cargos
+        return JsonResponse({'success': True, 'redirect': '/professor/selecionar-perfil/', 'direto': False})
+
+@csrf_exempt
+def redirecionar_perfil(request):
+    """Redireciona para o dashboard do perfil escolhido"""
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        perfil = data.get('perfil')
+        
+        if perfil == 'professor':
+            return JsonResponse({'redirect': '/professor/dashboard/'})
+        elif perfil == 'coordenador':
+            return JsonResponse({'redirect': '/coordenador/dashboard/'})
+        elif perfil == 'diretor_turma':
+            return JsonResponse({'redirect': '/diretor/dashboard/'})
+    
+    return JsonResponse({'erro': 'Perfil inválido'}, status=400)
+
+@csrf_exempt
 def selecionar_perfil(request):
-    return render(request, 'core/selecionar_perfil.html')
+    """Tela de seleção de perfil para usuários com múltiplos cargos"""
+    cargos = request.session.get('cargos_disponiveis', [])
+    turma = request.session.get('turma_selecionada', '')
+    
+    context = {
+        'cargos': cargos,
+        'tem_professor': 'professor' in cargos,
+        'tem_coordenador': 'coordenador' in cargos,
+        'tem_diretor': 'diretor_turma' in cargos,
+        'turma': turma,
+    }
+    return render(request, 'core/selecionar_perfil.html', context)
 
 def dashboard_professor(request):
     return render(request, 'core/dashboard_professor.html')
 
+
+# ==================== DIRETOR DE TURMA ====================
+
 def diretor_turma(request):
     return render(request, 'core/diretor_turma.html')
 
+
+# ==================== COORDENADOR DE ATIVIDADES ====================
+
 def coordenador_atividades(request):
-    return render(request, 'core/coordenador_atividades.html')
     return render(request, 'core/coordenador_atividades.html')

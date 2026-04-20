@@ -1,66 +1,177 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Colégio Árvore da Felicidade - Login Professor</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  {% load static %}
-  <link rel="stylesheet" href="{% static 'css/fundo.css' %}">
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:'Inter',sans-serif; display:flex; align-items:center; justify-content:center; padding:20px; }
-    .login-container { max-width:500px; width:100%; }
-    .login-card { background:rgba(255,255,255,0.95); backdrop-filter:blur(10px); border-radius:32px; padding:40px; }
-    .back-link { display:inline-flex; align-items:center; gap:8px; color:#8B694C; text-decoration:none; margin-bottom:25px; }
-    .login-header { text-align:center; margin-bottom:30px; }
-    .login-logo { width:70px; height:70px; margin-bottom:15px; }
-    .login-header h2 { font-size:28px; color:#5C3A21; margin-bottom:8px; }
-    .login-header p { color:#8B694C; font-size:14px; }
-    .form-group { margin-bottom:20px; }
-    .form-group label { display:block; margin-bottom:8px; font-weight:600; color:#5C3A21; }
-    .form-group label i { margin-right:8px; color:#D4A373; }
-    .input-field, .select-field { width:100%; padding:14px 18px; border:2px solid #F5EDDA; border-radius:16px; font-size:14px; background:white; }
-    .input-field:focus, .select-field:focus { outline:none; border-color:#2B7A4B; }
-    .info-message { background:#FBF7E9; padding:12px 16px; border-radius:16px; font-size:13px; color:#8B694C; margin:16px 0; text-align:center; }
-    .btn-login { width:100%; background:#2B7A4B; color:white; border:none; padding:14px; border-radius:40px; font-size:16px; font-weight:600; cursor:pointer; }
-    .btn-login:hover { background:#1E5A38; }
-    .divider { text-align:center; margin:25px 0; position:relative; }
-    .divider::before { content:''; position:absolute; top:50%; left:0; right:0; height:1px; background:#F5EDDA; }
-    .divider span { background:white; padding:0 15px; position:relative; color:#A58E6F; }
-    .link-aluno { text-align:center; }
-    .link-aluno a { color:#2B7A4B; text-decoration:none; }
-    .conditional-field { display:none; }
-    .conditional-field.visible { display:block; }
-    @media (max-width:500px){ .login-card { padding:25px; } .login-header h2 { font-size:24px; } }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Professor - Colégio Árvore da Felicidade</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/fundo.css' %}">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; display: flex; align-items: center; justify-content: center; padding: 20px; min-height: 100vh; }
+        .login-container { max-width: 500px; width: 100%; }
+        .login-card { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-radius: 32px; padding: 40px; border: 1px solid #F5EDDA; }
+        .back-link { display: inline-flex; align-items: center; gap: 8px; color: #8B694C; text-decoration: none; margin-bottom: 25px; }
+        .back-link:hover { color: #5C3A21; }
+        .login-header { text-align: center; margin-bottom: 30px; }
+        .login-logo { width: 70px; height: 70px; margin-bottom: 15px; }
+        .login-header h2 { font-size: 28px; color: #5C3A21; margin-bottom: 8px; }
+        .login-header p { color: #8B694C; font-size: 14px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #5C3A21; }
+        .form-group label i { margin-right: 8px; color: #D4A373; }
+        .input-field { width: 100%; padding: 14px 18px; border: 2px solid #F5EDDA; border-radius: 16px; font-size: 14px; background: white; transition: all 0.3s; }
+        .input-field:focus { outline: none; border-color: #2B7A4B; }
+        .btn-login { width: 100%; background: #2B7A4B; color: white; border: none; padding: 14px; border-radius: 40px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px; transition: all 0.3s; }
+        .btn-login:hover { background: #1E5A38; transform: translateY(-2px); }
+        .divider { text-align: center; margin: 25px 0; position: relative; }
+        .divider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: #F5EDDA; }
+        .divider span { background: white; padding: 0 15px; position: relative; color: #A58E6F; }
+        .link-aluno { text-align: center; }
+        .link-aluno a { color: #2B7A4B; text-decoration: none; }
+        .link-aluno a:hover { text-decoration: underline; }
+        .info-message { background: #FBF7E9; padding: 12px 16px; border-radius: 16px; font-size: 13px; color: #8B694C; margin: 16px 0; text-align: center; }
+        @media (max-width: 500px) { .login-card { padding: 25px; } .login-header h2 { font-size: 24px; } }
+    </style>
 </head>
 <body>
-  <div class="login-container">
-    <div class="login-card">
-      <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Voltar ao início</a>
-      <div class="login-header"><img src="{% static 'images/logo-caf.png' %}" class="login-logo"><h2>Acesso do Professor</h2><p>Selecione uma opção e insira as credenciais</p></div>
-      <div class="form-group"><label><i class="fas fa-user-tie"></i> Opção de Acesso</label><select id="opcaoSelect" class="select-field"><option value="" disabled selected>— Selecione uma opção —</option><option value="nao_diretor" style="color:#2B7A4B; font-weight:600;">🚫 Não sou diretor de turma</option><option disabled style="background:#FBF7E9; font-weight:700;">— Para diretores de turma —</option><optgroup label="Eletrónica"><option value="10ª EA">10ª EA</option><option value="10ª EE">10ª EE</option><option value="11ª EA">11ª EA</option><option value="11ª EE">11ª EE</option><option value="12ª EA">12ª EA</option><option value="12ª EE">12ª EE</option></optgroup><optgroup label="Informática"><option value="10ª ID">10ª ID</option><option value="10ª IB">10ª IB</option><option value="11ª ID">11ª ID</option><option value="11ª IB">11ª IB</option><option value="12ª ID">12ª ID</option><option value="12ª IB">12ª IB</option></optgroup></select></div>
-      <div id="camposProfessor" class="conditional-field"><div class="form-group"><label><i class="fas fa-envelope"></i> E-mail</label><input type="email" id="emailInput" class="input-field" placeholder="professor@colegioarvore.ao"></div><div class="form-group"><label><i class="fas fa-lock"></i> Senha</label><input type="password" id="senhaInput" class="input-field" placeholder="••••••••"></div></div>
-      <div id="camposDiretor" class="conditional-field"><div class="form-group"><label><i class="fas fa-key"></i> Palavra-passe</label><input type="password" id="palavraPasseInput" class="input-field" placeholder="••••••••"></div></div>
-      <div class="info-message" id="infoMessage"><i class="fas fa-info-circle"></i> Selecione uma opção</div>
-      <button class="btn-login" id="btnLogin"><i class="fas fa-arrow-right-to-bracket"></i> ENTRAR</button>
-      <div class="divider"><span>ou</span></div>
-      <div class="link-aluno"><a href="#" id="alunoLink"><i class="fas fa-user-graduate"></i> Acessar área do aluno</a></div>
+    <div class="login-container">
+        <div class="login-card">
+            <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Voltar ao início</a>
+            
+            <div class="login-header">
+                <img src="{% static 'images/logo-caf.png' %}" class="login-logo">
+                <h2>Acesso do Professor</h2>
+                <p>Digite suas credenciais para acessar o sistema</p>
+            </div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> E-mail Institucional</label>
+                    <input type="email" id="emailInput" class="input-field" placeholder="professor@colegioarvore.ao" required>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Senha</label>
+                    <input type="password" id="senhaInput" class="input-field" placeholder="••••••••" required>
+                </div>
+
+                <div class="info-message" id="infoMessage">
+                    <i class="fas fa-info-circle"></i> Insira seu e-mail e senha
+                </div>
+
+                <button type="submit" class="btn-login" id="btnLogin">
+                    <i class="fas fa-arrow-right-to-bracket"></i> ENTRAR
+                </button>
+            </form>
+
+            <div class="divider">
+                <span>ou</span>
+            </div>
+
+            <div class="link-aluno">
+                <a href="/aluno/login/">
+                    <i class="fas fa-user-graduate"></i> Acessar área do aluno
+                </a>
+            </div>
+        </div>
     </div>
-  </div>
-  <div id="infoModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;"><div style="background:white; border-radius:24px; padding:30px; max-width:350px; text-align:center;"><div style="width:60px; height:60px; background:#2B7A4B; border-radius:50%; margin:0 auto 15px; display:flex; align-items:center; justify-content:center;"><i id="modalIcon" class="fas fa-check-circle" style="font-size:30px; color:white;"></i></div><h3 id="modalTitle">Acesso</h3><p id="modalMessage"></p><button id="modalCloseBtn" style="background:#2B7A4B; color:white; border:none; padding:10px 20px; border-radius:30px; cursor:pointer;">Continuar</button></div></div>
-  <script>
-    const opcaoSelect = document.getElementById('opcaoSelect'), camposProfessor = document.getElementById('camposProfessor'), camposDiretor = document.getElementById('camposDiretor'), infoMessage = document.getElementById('infoMessage'), btnLogin = document.getElementById('btnLogin'), alunoLink = document.getElementById('alunoLink'), modal = document.getElementById('infoModal'), modalTitle = document.getElementById('modalTitle'), modalMessage = document.getElementById('modalMessage'), modalIcon = document.getElementById('modalIcon'), modalCloseBtn = document.getElementById('modalCloseBtn');
-    function showModal(title, msg, isSuccess=true) { modalTitle.textContent = title; modalMessage.textContent = msg; modal.style.display = 'flex'; modalIcon.parentElement.style.background = isSuccess ? '#2B7A4B' : '#D4A373'; }
-    function hideModal() { modal.style.display = 'none'; }
-    function atualizarCampos() { const v = opcaoSelect.value; if(v === 'nao_diretor') { camposProfessor.classList.add('visible'); camposDiretor.classList.remove('visible'); infoMessage.innerHTML = '<i class="fas fa-envelope"></i> Digite e-mail e senha'; } else if(v && v !== 'nao_diretor') { camposProfessor.classList.remove('visible'); camposDiretor.classList.add('visible'); infoMessage.innerHTML = '<i class="fas fa-lock"></i> Digite palavra-passe'; } else { camposProfessor.classList.remove('visible'); camposDiretor.classList.remove('visible'); infoMessage.innerHTML = 'Selecione uma opção'; } }
-    opcaoSelect.addEventListener('change', atualizarCampos);
-    btnLogin.addEventListener('click', () => { const opcao = opcaoSelect.value; if(!opcao) { showModal('⚠️ Atenção', 'Selecione uma opção.', false); return; } btnLogin.innerHTML = '<i class="fas fa-spinner fa-pulse"></i>'; setTimeout(() => { btnLogin.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i> ENTRAR'; if(opcao === 'nao_diretor') { const email = document.getElementById('emailInput').value.trim(); const senha = document.getElementById('senhaInput').value; if(!email || !senha) { showModal('⚠️ Atenção', 'Preencha e-mail e senha.', false); return; } showModal('✅ Acesso Professor', `Bem-vindo, ${email}`); setTimeout(() => { window.location.href = '/professor/selecionar-perfil/'; }, 1500); } else { const pw = document.getElementById('palavraPasseInput').value; if(!pw) { showModal('⚠️ Atenção', 'Digite palavra-passe.', false); return; } showModal('✅ Acesso Diretor', `Turma: ${opcao}`); setTimeout(() => { window.location.href = '/diretor/dashboard/'; }, 1500); } }, 800); });
-    alunoLink.addEventListener('click', (e) => { e.preventDefault(); window.location.href = '/aluno/login/'; });
-    modalCloseBtn.addEventListener('click', hideModal);
-    atualizarCampos();
-  </script>
+
+    <div id="infoModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(92,58,33,0.6); backdrop-filter:blur(4px); align-items:center; justify-content:center; z-index:1000;">
+        <div style="background:white; border-radius:24px; padding:30px; max-width:350px; width:90%; text-align:center;">
+            <div style="width:60px; height:60px; background:#2B7A4B; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 15px;">
+                <i id="modalIcon" class="fas fa-check-circle" style="font-size:30px; color:white;"></i>
+            </div>
+            <h3 id="modalTitle" style="color:#5C3A21; margin-bottom:10px;">Processando</h3>
+            <p id="modalMessage" style="color:#8B694C; margin-bottom:20px;"></p>
+            <button id="modalCloseBtn" style="background:#2B7A4B; color:white; border:none; padding:10px 20px; border-radius:30px; cursor:pointer;">Fechar</button>
+        </div>
+    </div>
+
+    <script>
+        const emailInput = document.getElementById('emailInput');
+        const senhaInput = document.getElementById('senhaInput');
+        const btnLogin = document.getElementById('btnLogin');
+        const modal = document.getElementById('infoModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalMessage = document.getElementById('modalMessage');
+        const modalIcon = document.getElementById('modalIcon');
+        const modalCloseBtn = document.getElementById('modalCloseBtn');
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function showModal(title, message, isSuccess = true) {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            modalIcon.parentElement.style.background = isSuccess ? '#2B7A4B' : '#D4A373';
+            modalIcon.className = isSuccess ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle';
+            modal.style.display = 'flex';
+        }
+
+        function hideModal() {
+            modal.style.display = 'none';
+        }
+
+        btnLogin.addEventListener('click', async (e) => {
+            e.preventDefault();
+
+            const email = emailInput.value.trim();
+            const senha = senhaInput.value;
+
+            if (!email || !senha) {
+                showModal('Atenção', 'Preencha e-mail e senha.', false);
+                return;
+            }
+
+            btnLogin.disabled = true;
+            btnLogin.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Processando...';
+
+            try {
+                const response = await fetch('/api/professor/verificar/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        opcao: 'nao_diretor',
+                        email: email,
+                        senha: senha
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    window.location.href = data.redirect;
+                } else {
+                    showModal('Erro', data.erro || 'Credenciais inválidas', false);
+                }
+            } catch (error) {
+                showModal('Erro', 'Erro de conexão com o servidor', false);
+            } finally {
+                btnLogin.disabled = false;
+                btnLogin.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i> ENTRAR';
+            }
+        });
+
+        modalCloseBtn.addEventListener('click', hideModal);
+        modal.addEventListener('click', (e) => { if (e.target === modal) hideModal(); });
+    </script>
 </body>
 </html>

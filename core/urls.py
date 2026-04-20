@@ -20,9 +20,15 @@ urlpatterns = [
     
     # PROFESSOR
     path('professor/login/', views.login_professor, name='login_professor'),
-    path('professor/selecionar-perfil/', views.selecionar_perfil, name='selecionar_perfil'),
     path('professor/dashboard/', views.dashboard_professor, name='dashboard_professor'),
     
+    # PROFESSOR - APIs
+    path('api/professor/verificar/', views.verificar_credenciais_professor, name='verificar_credenciais_professor'),
+    path('api/professor/redirecionar/', views.redirecionar_perfil, name='redirecionar_perfil'),
+
+    # SELECIONAR PERFIL
+    path('professor/selecionar-perfil/', views.selecionar_perfil, name='selecionar_perfil'),
+
     # DIRETOR DE TURMA
     path('diretor/dashboard/', views.diretor_turma, name='diretor_turma'),
     
