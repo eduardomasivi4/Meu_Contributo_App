@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distribuir Pontos - Colégio Árvore da Felicidade</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/fundo.css' %}">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #FBF7E9; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+        
+        .header {
+            background: white;
+            border-radius: 24px;
+            padding: 15px 25px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            border: 1px solid #F5EDDA;
+        }
+        .logo-area { display: flex; align-items: center; gap: 12px; }
+        .logo-icon { width: 45px; height: 45px; background: #2B7A4B; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+        .logo-icon img { width: 28px; height: 28px; }
+        .logo-area h1 { font-size: 18px; color: #5C3A21; font-weight: 700; }
+        .back-link { background: #FBF7E9; border: none; padding: 8px 16px; border-radius: 30px; cursor: pointer; font-size: 13px; color: #5C3A21; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+        .user-area { display: flex; align-items: center; gap: 15px; background: #FBF7E9; padding: 6px 18px; border-radius: 40px; }
+        .user-avatar { width: 38px; height: 38px; background: #2B7A4B; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; }
+        .user-name { font-weight: 600; color: #5C3A21; font-size: 14px; }
+        .logout-btn { background: none; border: 1px solid #F5EDDA; padding: 6px 14px; border-radius: 30px; cursor: pointer; }
+
+        .atividade-header {
+            background: linear-gradient(135deg, #2B7A4B, #1E5A38);
+            border-radius: 20px;
+            padding: 20px 25px;
+            margin-bottom: 25px;
+            color: white;
+        }
+        .atividade-header h2 { font-size: 24px; margin-bottom: 5px; }
+        .atividade-header p { opacity: 0.9; font-size: 14px; }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid #F5EDDA;
+        }
+        .card-header { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #FBF7E9; }
+        .card-header h3 { font-size: 18px; color: #5C3A21; }
+
+        .aluno-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #F5EDDA;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .aluno-nome { font-weight: 600; color: #5C3A21; }
+        .aluno-pontos { background: #E9F5EF; padding: 4px 10px; border-radius: 20px; font-size: 12px; color: #2B7A4B; }
+        .pontos-input { width: 100px; padding: 8px; border: 1px solid #F5EDDA; border-radius: 12px; text-align: center; }
+
+        .btn-distribuir {
+            width: 100%;
+            background: #2B7A4B;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 40px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 25px;
+            transition: all 0.3s;
+        }
+        .btn-distribuir:hover { background: #1E5A38; transform: translateY(-2px); }
+
+        .info-box {
+            background: #FBF7E9;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .info-box span { font-weight: 700; color: #2B7A4B; }
+
+        @media (max-width: 600px) {
+            .container { padding: 15px; }
+            .aluno-item { flex-direction: column; align-items: flex-start; }
+            .pontos-input { width: 100%; margin-top: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo-area">
+                <div class="logo-icon"><img src="{% static 'images/logo-caf.png' %}" alt="Logo"></div>
+                <h1>Colégio Árvore da Felicidade</h1>
+            </div>
+            <div>
+                <a href="{% url 'turma_detail' turma.id %}?disciplina_id={{ atividade.disciplina.id }}" class="back-link"><i class="fas fa-arrow-left"></i> Voltar para Turma</a>
+            </div>
+            <div class="user-area">
+                <div class="user-avatar"><i class="fas fa-chalkboard-user"></i></div>
+                <div><div class="user-name">{{ request.user.get_full_name|default:request.user.username }}</div></div>
+                <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Sair</button>
+            </div>
+        </div>
+
+        <div class="atividade-header">
+            <h2><i class="fas fa-tasks"></i> {{ atividade.nome }}</h2>
+            <p><i class="fas fa-calendar"></i> Período: {{ atividade.data_inicio|date:"d/m/Y" }} até {{ atividade.data_fim|date:"d/m/Y" }}</p>
+            <p><i class="fas fa-clock"></i> {{ atividade.hora_inicio|time:"H:i" }} - {{ atividade.hora_fim|time:"H:i" }}</p>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-user-graduate"></i> Distribuir Pontos para os Alunos</h3>
+            </div>
+            <div class="info-box">
+                <i class="fas fa-info-circle"></i> Máximo de pontos por aluno: <span>{{ atividade.max_pontos_por_aluno }} pontos</span>
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                {% for aluno in alunos %}
+                <div class="aluno-item">
+                    <div>
+                        <div class="aluno-nome">{{ aluno.usuario.get_full_name|default:aluno.usuario.username }}</div>
+                        <div style="font-size: 12px; color: #8B694C;">{{ aluno.numero_processo }}</div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                        <span class="aluno-pontos">Saldo atual: {{ aluno.saldo_pontos }} pts</span>
+                        <input type="number" name="pontos_{{ aluno.id }}" class="pontos-input" placeholder="Pontos" min="0" max="{{ atividade.max_pontos_por_aluno }}" value="0">
+                    </div>
+                </div>
+                {% endfor %}
+                <button type="submit" class="btn-distribuir"><i class="fas fa-share-alt"></i> Distribuir Pontos</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            window.location.href = "{% url 'index' %}";
+        });
+    </script>
+</body>
+</html>

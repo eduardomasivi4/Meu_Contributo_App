@@ -9,24 +9,10 @@
   {% load static %}
   <link rel="stylesheet" href="{% static 'css/fundo.css' %}">
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Inter', sans-serif;
-      background: #FBF7E9;
-    }
-
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-
-    /* Header */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #FBF7E9; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+    
     .header {
       background: white;
       border-radius: 24px;
@@ -38,719 +24,137 @@
       flex-wrap: wrap;
       gap: 15px;
       border: 1px solid #F5EDDA;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
+    .logo-area { display: flex; align-items: center; gap: 12px; }
+    .logo-icon { width: 45px; height: 45px; background: #2B7A4B; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+    .logo-icon img { width: 28px; height: 28px; }
+    .logo-area h1 { font-size: 18px; color: #5C3A21; font-weight: 700; }
+    .nav-links { display: flex; gap: 8px; }
+    .nav-link { padding: 8px 18px; text-decoration: none; color: #8B694C; font-weight: 500; border-radius: 10px; font-size: 14px; }
+    .nav-link:hover { background: #FBF7E9; color: #5C3A21; }
+    .nav-link.active { background: #2B7A4B; color: white; }
+    .user-area { display: flex; align-items: center; gap: 15px; background: #FBF7E9; padding: 6px 18px; border-radius: 40px; }
+    .user-avatar { width: 38px; height: 38px; background: #2B7A4B; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; }
+    .user-name { font-weight: 600; color: #5C3A21; font-size: 14px; }
+    .user-info { font-size: 11px; color: #8B694C; }
+    .saldo-card { background: #2B7A4B; padding: 6px 16px; border-radius: 30px; color: white; font-size: 14px; font-weight: 600; }
+    .logout-btn { background: none; border: 1px solid #F5EDDA; padding: 6px 14px; border-radius: 30px; cursor: pointer; }
 
-    .logo-area {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .logo-icon {
-      width: 45px;
-      height: 45px;
-      background: #2B7A4B;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .logo-icon img {
-      width: 28px;
-      height: 28px;
-    }
-
-    .logo-area h1 {
-      font-size: 18px;
-      color: #5C3A21;
-      font-weight: 700;
-    }
-
-    .nav-links {
-      display: flex;
-      gap: 8px;
-    }
-
-    .nav-link {
-      padding: 8px 18px;
-      text-decoration: none;
-      color: #8B694C;
-      font-weight: 500;
-      border-radius: 10px;
-      transition: all 0.3s;
-      font-size: 14px;
-    }
-
-    .nav-link:hover {
-      background: #FBF7E9;
-      color: #5C3A21;
-    }
-
-    .nav-link.active {
-      background: #2B7A4B;
-      color: white;
-    }
-
-    .user-area {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      background: #FBF7E9;
-      padding: 6px 18px;
-      border-radius: 40px;
-    }
-
-    .user-avatar {
-      width: 38px;
-      height: 38px;
-      background: #2B7A4B;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-    }
-
-    .user-name {
-      font-weight: 600;
-      color: #5C3A21;
-      font-size: 14px;
-    }
-
-    .user-info {
-      font-size: 11px;
-      color: #8B694C;
-    }
-
-    .logout-btn {
-      background: none;
-      border: 1px solid #F5EDDA;
-      padding: 6px 14px;
-      border-radius: 30px;
-      cursor: pointer;
-      font-size: 13px;
-      color: #5C3A21;
-      transition: all 0.3s;
-    }
-
-    .logout-btn:hover {
-      background: #FBF7E9;
-    }
-
-    /* Categorias */
-    .categories-tabs {
-      display: flex;
-      gap: 15px;
-      margin-bottom: 25px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .category-btn {
-      background: white;
-      border: 2px solid #F5EDDA;
-      padding: 10px 24px;
-      border-radius: 40px;
-      font-weight: 600;
-      color: #8B694C;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
-
-    .category-btn i {
-      margin-right: 8px;
-    }
-
-    .category-btn.active {
-      background: #2B7A4B;
-      border-color: #2B7A4B;
-      color: white;
-    }
-
-    .category-btn:hover:not(.active) {
-      border-color: #2B7A4B;
-      color: #2B7A4B;
-    }
-
-    /* Grid de Atividades */
-    .atividades-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-      gap: 25px;
-    }
-
-    .atividade-card {
-      background: white;
-      border-radius: 20px;
-      overflow: hidden;
-      cursor: pointer;
-      border: 1px solid #F5EDDA;
-      transition: all 0.3s;
-    }
-
-    .atividade-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    }
-
-    .atividade-header {
-      padding: 20px 24px;
-      color: white;
-    }
-
-    .atividade-header.ciencia {
-      background: linear-gradient(135deg, #2B7A4B, #1E5A38);
-    }
-
-    .atividade-header.cultura {
-      background: linear-gradient(135deg, #D4A373, #B5835A);
-    }
-
-    .atividade-categoria {
-      display: inline-block;
-      background: rgba(255, 255, 255, 0.2);
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 600;
-      margin-bottom: 10px;
-    }
-
-    .atividade-header h3 {
-      font-size: 18px;
-      font-weight: 700;
-    }
-
-    .atividade-body {
-      padding: 20px;
-    }
-
-    .atividade-pontos {
-      display: inline-block;
-      background: #FBF7E9;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-weight: 700;
-      font-size: 14px;
-      color: #2B7A4B;
-      margin-bottom: 15px;
-    }
-
-    .requisitos-section {
-      background: #f8f9fa;
-      border-radius: 16px;
-      padding: 15px;
-      margin-bottom: 15px;
-    }
-
-    .requisitos-title {
-      font-size: 13px;
-      font-weight: 700;
-      color: #5C3A21;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .requisitos-lista {
-      list-style: none;
-      padding-left: 0;
-    }
-
-    .requisitos-lista li {
-      font-size: 13px;
-      color: #8B694C;
-      padding: 6px 0;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .requisitos-lista li i {
-      color: #2B7A4B;
-      font-size: 12px;
-    }
-
-    .atividade-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-top: 15px;
-      border-top: 1px solid #F5EDDA;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    /* Status badges */
-    .status-badge {
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .status-disponivel {
-      background: #E9F5EF;
-      color: #2B7A4B;
-    }
-
-    .status-hoje {
-      background: #FEF3C7;
-      color: #D4A373;
-    }
-
-    .status-em_andamento {
-      background: #FFE4D6;
-      color: #FF6B35;
-    }
-
-    .status-encerrada {
-      background: #F5EDDA;
-      color: #8B694C;
-    }
-
-    .info-text {
-      font-size: 12px;
-      color: #8B694C;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .sem-atividades {
-      text-align: center;
-      padding: 60px;
-      background: white;
-      border-radius: 20px;
-      color: #8B694C;
-    }
-
-    .sem-atividades i {
-      font-size: 48px;
-      margin-bottom: 16px;
-      color: #D4A373;
-    }
-
-    /* Modal */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(92, 58, 33, 0.6);
-      backdrop-filter: blur(4px);
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-
-    .modal-container {
-      background: white;
-      border-radius: 24px;
-      padding: 30px;
-      max-width: 380px;
-      width: 90%;
-      text-align: center;
-    }
-
-    .modal-icon {
-      width: 60px;
-      height: 60px;
-      background: #2B7A4B;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 15px;
-    }
-
-    .modal-icon i {
-      font-size: 30px;
-      color: white;
-    }
-
-    .modal-container h3 {
-      color: #5C3A21;
-      margin-bottom: 10px;
-    }
-
-    .modal-container p {
-      color: #8B694C;
-      margin-bottom: 20px;
-      white-space: pre-line;
-    }
-
-    .btn-modal {
-      background: #2B7A4B;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 30px;
-      cursor: pointer;
-    }
+    .atividades-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 25px; }
+    .atividade-card { background: white; border-radius: 20px; overflow: hidden; border: 1px solid #F5EDDA; transition: all 0.3s; }
+    .atividade-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    .atividade-header { padding: 20px 24px; background: linear-gradient(135deg, #2B7A4B, #1E5A38); color: white; }
+    .atividade-disciplina { display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; margin-bottom: 10px; }
+    .atividade-header h3 { font-size: 18px; font-weight: 700; }
+    .atividade-body { padding: 20px; }
+    .atividade-pontos { display: inline-block; background: #FBF7E9; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 14px; color: #2B7A4B; margin-bottom: 15px; }
+    .requisitos-section { background: #f8f9fa; border-radius: 16px; padding: 15px; margin-bottom: 15px; }
+    .requisitos-title { font-size: 13px; font-weight: 700; color: #5C3A21; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+    .requisitos-lista { list-style: none; padding-left: 0; }
+    .requisitos-lista li { font-size: 13px; color: #8B694C; padding: 6px 0; display: flex; align-items: center; gap: 8px; }
+    .requisitos-lista li i { color: #2B7A4B; font-size: 12px; }
+    .atividade-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 15px; border-top: 1px solid #F5EDDA; flex-wrap: wrap; gap: 10px; }
+    .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+    .status-disponivel { background: #E9F5EF; color: #2B7A4B; }
+    .status-em_andamento { background: #FFE4D6; color: #FF6B35; }
+    .status-encerrada { background: #F5EDDA; color: #8B694C; }
+    .info-text { font-size: 12px; color: #8B694C; display: flex; align-items: center; gap: 6px; }
+    .sem-atividades { text-align: center; padding: 60px; background: white; border-radius: 20px; color: #8B694C; }
 
     @media (max-width: 768px) {
-      .atividades-grid {
-        grid-template-columns: 1fr;
-      }
-      .categories-tabs {
-        gap: 10px;
-      }
-      .category-btn {
-        padding: 8px 16px;
-        font-size: 13px;
-      }
-      .atividade-footer {
-        flex-direction: column;
-        align-items: flex-start;
-      }
+      .atividades-grid { grid-template-columns: 1fr; }
+      .header { flex-direction: column; text-align: center; }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- Header -->
     <div class="header">
       <div class="logo-area">
-        <div class="logo-icon">
-          <img src="{% static 'images/logo-caf.png' %}" alt="Logo">
-        </div>
+        <div class="logo-icon"><img src="{% static 'images/logo-caf.png' %}" alt="Logo"></div>
         <h1>Colégio Árvore da Felicidade</h1>
       </div>
-
       <div class="nav-links">
-          <a href="/aluno/dashboard/" class="nav-link"><i class="fas fa-home"></i> Início</a>
-          <a href="/aluno/atividades/" class="nav-link active"><i class="fas fa-calendar-alt"></i> Atividades</a>
-          <a href="/aluno/loja/" class="nav-link"><i class="fas fa-store"></i> Loja</a>
-          <a href="/aluno/historico/" class="nav-link"><i class="fas fa-history"></i> Histórico</a>
+        <a href="{% url 'dashboard_aluno' %}" class="nav-link"><i class="fas fa-home"></i> Início</a>
+        <a href="{% url 'atividades' %}" class="nav-link active"><i class="fas fa-calendar-alt"></i> Atividades</a>
+        <a href="{% url 'loja' %}" class="nav-link"><i class="fas fa-store"></i> Loja</a>
+        <a href="{% url 'historico' %}" class="nav-link"><i class="fas fa-history"></i> Histórico</a>
       </div>
-
       <div class="user-area">
-        <div class="user-avatar">
-          <i class="fas fa-user-graduate"></i>
-        </div>
+        <div class="user-avatar"><i class="fas fa-user-graduate"></i></div>
         <div>
-          <div class="user-name">Ricardo Oliveira</div>
-          <div class="user-info">PROC: #20230814 | 12° B</div>
+          <div class="user-name">{{ nome }}</div>
+          <div class="user-info">PROC: {{ processo }} | {{ turma }}</div>
         </div>
-        <button class="logout-btn" id="logoutBtn">
-          <i class="fas fa-sign-out-alt"></i> Sair
-        </button>
+        <div class="saldo-card"><i class="fas fa-star"></i> {{ saldo }} pts</div>
+        <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Sair</button>
       </div>
     </div>
 
-    <!-- Categorias -->
-    <div class="categories-tabs">
-      <button class="category-btn active" data-categoria="todas">
-        <i class="fas fa-th-large"></i> Todas
-      </button>
-      <button class="category-btn" data-categoria="ciencia">
-        <i class="fas fa-flask"></i> Ciência e Tecnologia
-      </button>
-      <button class="category-btn" data-categoria="cultura">
-        <i class="fas fa-palette"></i> Culturais
-      </button>
-    </div>
-
-    <!-- Grid de Atividades -->
-    <div id="atividadesGrid" class="atividades-grid"></div>
-  </div>
-
-  <!-- Modal -->
-  <div id="infoModal" class="modal-overlay">
-    <div class="modal-container">
-      <div class="modal-icon">
-        <i class="fas fa-info-circle"></i>
-      </div>
-      <h3 id="modalTitle">Informação</h3>
-      <p id="modalMessage">Detalhes da atividade.</p>
-      <button id="modalCloseBtn" class="btn-modal">Continuar</button>
+    <div class="atividades-grid">
+      {% if atividades %}
+        {% for atividade in atividades %}
+        <div class="atividade-card">
+          <div class="atividade-header">
+            <div class="atividade-disciplina">
+              <i class="fas fa-book"></i> {{ atividade.disciplina.nome|default:"Sem disciplina" }}
+            </div>
+            <h3>{{ atividade.nome }}</h3>
+          </div>
+          <div class="atividade-body">
+            <div class="requisitos-section">
+              <div class="requisitos-title">
+                <i class="fas fa-clipboard-list"></i> Critérios de Avaliação
+              </div>
+              <ul class="requisitos-lista">
+                {% for criterio in atividade.criterios_avaliacao|linebreaksbr %}
+                  <li><i class="fas fa-check-circle"></i> {{ criterio }}</li>
+                {% empty %}
+                  <li><i class="fas fa-check-circle"></i> {{ atividade.criterios_avaliacao|truncatechars:100 }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+            <div class="atividade-pontos">
+              <i class="fas fa-star"></i> {{ atividade.max_pontos_por_aluno }} pontos
+            </div>
+            <div class="atividade-footer">
+              <span class="status-badge 
+                {% if atividade.data_fim and atividade.data_fim < now %}status-encerrada
+                {% elif atividade.data_inicio and atividade.data_inicio <= now.date and atividade.data_fim >= now.date %}status-em_andamento
+                {% else %}status-disponivel{% endif %}">
+                <i class="fas 
+                  {% if atividade.data_fim and atividade.data_fim < now %}fa-clock
+                  {% elif atividade.data_inicio and atividade.data_inicio <= now.date and atividade.data_fim >= now.date %}fa-play-circle
+                  {% else %}fa-calendar-check{% endif %}"></i>
+                {% if atividade.data_fim and atividade.data_fim < now %}
+                  Encerrada
+                {% elif atividade.data_inicio and atividade.data_inicio <= now.date and atividade.data_fim >= now.date %}
+                  Em Andamento
+                {% else %}
+                  Disponível
+                {% endif %}
+              </span>
+              <span class="info-text">
+                <i class="fas fa-calendar"></i> {{ atividade.data_inicio|date:"d/m/Y"|default:"-" }} - {{ atividade.data_fim|date:"d/m/Y"|default:"-" }}
+              </span>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="sem-atividades">
+          <i class="fas fa-calendar-times" style="font-size: 48px; margin-bottom: 16px; color: #D4A373;"></i>
+          <h3>Nenhuma atividade encontrada</h3>
+          <p>Não há atividades disponíveis no momento.</p>
+        </div>
+      {% endif %}
     </div>
   </div>
 
   <script>
-    // Dados das atividades com data e hora
-    const atividades = [
-      {
-        id: 1,
-        nome: "Workshop de Robótica com Arduino",
-        categoria: "ciencia",
-        descricao: "Aprenda a programar microcontroladores e construir robôs autônomos.",
-        requisitos: [
-          "Conhecimentos básicos de lógica de programação",
-          "Disponibilidade para 4 sessões de 3 horas",
-          "Trazer computador portátil (opcional)",
-          "Trabalho em equipe para projeto final"
-        ],
-        pontos: 200,
-        data: "2024-11-25",
-        hora_inicio: "14:00",
-        hora_fim: "17:00"
-      },
-      {
-        id: 2,
-        nome: "Feira de Ciências: Sustentabilidade",
-        categoria: "ciencia",
-        descricao: "Apresentação de projetos sobre energias renováveis e conservação ambiental.",
-        requisitos: [
-          "Desenvolver um protótipo ou pesquisa científica",
-          "Apresentação oral de 10 minutos",
-          "Relatório escrito do projeto",
-          "Participação em todas as sessões de orientação"
-        ],
-        pontos: 300,
-        data: "2025-01-15",
-        hora_inicio: "09:00",
-        hora_fim: "12:00"
-      },
-      {
-        id: 3,
-        nome: "Oficina de Teatro e Expressão Artística",
-        categoria: "cultura",
-        descricao: "Desenvolva habilidades de atuação, expressão corporal e improvisação.",
-        requisitos: [
-          "Disponibilidade para ensaios semanais",
-          "Participar da apresentação final",
-          "Criar uma pequena cena em grupo",
-          "Trazer roupa preta para o ensaio geral"
-        ],
-        pontos: 180,
-        data: "2024-10-20",
-        hora_inicio: "15:00",
-        hora_fim: "18:00"
-      },
-      {
-        id: 4,
-        nome: "Concurso de Fotografia Artística",
-        categoria: "cultura",
-        descricao: "Registre momentos únicos e concorra a prêmios com sua criatividade.",
-        requisitos: [
-          "Enviar 3 fotografias originais",
-          "Tema: 'A beleza do quotidiano'",
-          "Participar da exposição final no auditório",
-          "As fotos devem ser tiradas durante o período do concurso"
-        ],
-        pontos: 150,
-        data: "2024-12-10",
-        hora_inicio: "10:00",
-        hora_fim: "16:00"
-      },
-      {
-        id: 5,
-        nome: "Olimpíada de Matemática",
-        categoria: "ciencia",
-        descricao: "Competição de resolução de problemas matemáticos desafiadores.",
-        requisitos: [
-          "Inscrição prévia com o professor de matemática",
-          "Realizar prova escrita de 2 horas",
-          "Participar de 2 sessões de treino",
-          "Classificação mínima de 60% na fase eliminatória"
-        ],
-        pontos: 250,
-        data: new Date().toISOString().split('T')[0],
-        hora_inicio: "14:00",
-        hora_fim: "16:00"
-      },
-      {
-        id: 6,
-        nome: "Clube de Leitura e Debate Literário",
-        categoria: "cultura",
-        descricao: "Encontros semanais para discutir obras clássicas e contemporâneas.",
-        requisitos: [
-          "Ler o livro proposto antes de cada encontro",
-          "Participar ativamente dos debates",
-          "Apresentar uma análise crítica de uma obra",
-          "Frequência mínima de 75%"
-        ],
-        pontos: 160,
-        data: new Date().toISOString().split('T')[0],
-        hora_inicio: "09:00",
-        hora_fim: "11:00"
-      }
-    ];
-
-    // Função para calcular o status com base na data e hora atual
-    function calcularStatus(dataAtividade, horaInicio, horaFim) {
-      const agora = new Date();
-      const hoje = agora.toISOString().split('T')[0];
-      
-      // Converter para Date para comparação
-      const dataAtividadeObj = new Date(dataAtividade);
-      const dataHojeObj = new Date(hoje);
-      
-      // Zerar horas para comparar apenas as datas
-      dataAtividadeObj.setHours(0, 0, 0, 0);
-      dataHojeObj.setHours(0, 0, 0, 0);
-      
-      const horaAtual = agora.getHours();
-      const minutoAtual = agora.getMinutes();
-      const horaAtualDecimal = horaAtual + minutoAtual / 60;
-      
-      const [horaInicioH, horaInicioM] = horaInicio.split(':').map(Number);
-      const [horaFimH, horaFimM] = horaFim.split(':').map(Number);
-      const horaInicioDecimal = horaInicioH + horaInicioM / 60;
-      const horaFimDecimal = horaFimH + horaFimM / 60;
-      
-      // 1. Data atual ANTES da data da atividade
-      if (dataHojeObj < dataAtividadeObj) {
-        return { status: 'disponivel', texto: 'Disponível', icon: 'fa-calendar-check' };
-      }
-      
-      // 2. Data atual IGUAL à data da atividade
-      if (dataHojeObj.getTime() === dataAtividadeObj.getTime()) {
-        if (horaAtualDecimal < horaInicioDecimal) {
-          return { status: 'hoje', texto: 'Começa Hoje', icon: 'fa-calendar-day' };
-        } else if (horaAtualDecimal >= horaInicioDecimal && horaAtualDecimal <= horaFimDecimal) {
-          return { status: 'em_andamento', texto: 'Em Andamento', icon: 'fa-play-circle' };
-        } else {
-          return { status: 'encerrada', texto: 'Encerrada', icon: 'fa-clock' };
-        }
-      }
-      
-      // 3. Data atual DEPOIS da data da atividade
-      return { status: 'encerrada', texto: 'Encerrada', icon: 'fa-clock' };
-    }
-
-    function formatarData(dataStr) {
-      const data = new Date(dataStr);
-      return data.toLocaleDateString('pt-BR');
-    }
-
-    // Elementos
-    const atividadesGrid = document.getElementById('atividadesGrid');
-    const categoryBtns = document.querySelectorAll('.category-btn');
-    const modal = document.getElementById('infoModal');
-    const modalTitle = document.getElementById('modalTitle');
-    const modalMessage = document.getElementById('modalMessage');
-    const modalCloseBtn = document.getElementById('modalCloseBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
-
-    let categoriaAtiva = 'todas';
-
-    function showModal(title, message) {
-      modalTitle.textContent = title;
-      modalMessage.textContent = message;
-      modal.style.display = 'flex';
-    }
-
-    function hideModal() {
-      modal.style.display = 'none';
-    }
-
-    function getStatusClass(status) {
-      const classes = {
-        'disponivel': 'status-disponivel',
-        'hoje': 'status-hoje',
-        'em_andamento': 'status-em_andamento',
-        'encerrada': 'status-encerrada'
-      };
-      return classes[status] || 'status-disponivel';
-    }
-
-    function renderAtividades() {
-      let filtered = [...atividades];
-      
-      if (categoriaAtiva !== 'todas') {
-        filtered = atividades.filter(a => a.categoria === categoriaAtiva);
-      }
-      
-      if (filtered.length === 0) {
-        atividadesGrid.innerHTML = `
-          <div class="sem-atividades">
-            <i class="fas fa-calendar-times"></i>
-            <h3>Nenhuma atividade encontrada</h3>
-            <p>Não há atividades disponíveis nesta categoria no momento.</p>
-          </div>
-        `;
-        return;
-      }
-      
-      atividadesGrid.innerHTML = filtered.map(a => {
-        const statusInfo = calcularStatus(a.data, a.hora_inicio, a.hora_fim);
-        const headerClass = a.categoria === 'ciencia' ? 'ciencia' : 'cultura';
-        const categoriaNome = a.categoria === 'ciencia' ? 'Ciência e Tecnologia' : 'Culturais';
-        const categoriaIcon = a.categoria === 'ciencia' ? '🔬' : '🎭';
-        
-        return `
-          <div class="atividade-card" data-id="${a.id}">
-            <div class="atividade-header ${headerClass}">
-              <div class="atividade-categoria">
-                ${categoriaIcon} ${categoriaNome}
-              </div>
-              <h3>${a.nome}</h3>
-            </div>
-            <div class="atividade-body">
-              <div class="requisitos-section">
-                <div class="requisitos-title">
-                  <i class="fas fa-clipboard-list"></i> Critérios de Avaliação
-                </div>
-                <ul class="requisitos-lista">
-                  ${a.requisitos.map(r => `<li><i class="fas fa-check-circle"></i> ${r}</li>`).join('')}
-                </ul>
-              </div>
-              <div class="atividade-pontos">
-                <i class="fas fa-star"></i> ${a.pontos} pontos
-              </div>
-              <div class="atividade-footer">
-                <span class="status-badge ${getStatusClass(statusInfo.status)}">
-                  <i class="fas ${statusInfo.icon}"></i> ${statusInfo.texto}
-                </span>
-                <span class="info-text">
-                  <i class="fas fa-calendar"></i> ${formatarData(a.data)}
-                  <i class="fas fa-clock"></i> ${a.hora_inicio} - ${a.hora_fim}
-                </span>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-      
-      // Adicionar evento de clique nos cards
-      document.querySelectorAll('.atividade-card').forEach(card => {
-        card.addEventListener('click', () => {
-          const id = parseInt(card.dataset.id);
-          const atividade = atividades.find(a => a.id === id);
-          if (atividade) {
-            const statusInfo = calcularStatus(atividade.data, atividade.hora_inicio, atividade.hora_fim);
-            showModal(
-              `📋 ${atividade.nome}`,
-              `📅 Data: ${formatarData(atividade.data)}\n🕐 Horário: ${atividade.hora_inicio} - ${atividade.hora_fim}\n⭐ Pontuação: ${atividade.pontos} pontos\n📌 Status: ${statusInfo.texto}\n\n📋 Requisitos:\n${atividade.requisitos.map(r => `• ${r}`).join('\n')}`
-            );
-          }
-        });
-      });
-    }
-
-    // Categorias
-    categoryBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        categoryBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        categoriaAtiva = btn.dataset.categoria;
-        renderAtividades();
-      });
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      window.location.href = "{% url 'index' %}";
     });
-
-    // Logout
-    logoutBtn.addEventListener('click', () => {
-      window.location.href = '/';
-    });
-
-    modalCloseBtn.addEventListener('click', hideModal);
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) hideModal();
-    });
-
-    // Inicializar
-    renderAtividades();
   </script>
 </body>
 </html>

@@ -40,21 +40,8 @@
     .saldo-card { background: #2B7A4B; padding: 6px 16px; border-radius: 30px; color: white; font-size: 14px; font-weight: 600; }
     .logout-btn { background: none; border: 1px solid #F5EDDA; padding: 6px 14px; border-radius: 30px; cursor: pointer; }
 
-    .card {
-      background: white;
-      border-radius: 20px;
-      padding: 20px;
-      margin-bottom: 20px;
-      border: 1px solid #F5EDDA;
-    }
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-      padding-bottom: 12px;
-      border-bottom: 2px solid #FBF7E9;
-    }
+    .card { background: white; border-radius: 20px; padding: 20px; border: 1px solid #F5EDDA; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 12px; border-bottom: 2px solid #FBF7E9; }
     .card-header h3 { font-size: 18px; color: #5C3A21; }
     
     table { width: 100%; border-collapse: collapse; }
@@ -82,17 +69,18 @@
         <div class="logo-icon"><img src="{% static 'images/logo-caf.png' %}" alt="Logo"></div>
         <h1>Colégio Árvore da Felicidade</h1>
       </div>
-
       <div class="nav-links">
-          <a href="/aluno/dashboard/" class="nav-link"><i class="fas fa-home"></i> Início</a>
-          <a href="/aluno/atividades/" class="nav-link"><i class="fas fa-calendar-alt"></i> Atividades</a>
-          <a href="/aluno/loja/" class="nav-link"><i class="fas fa-store"></i> Loja</a>
-          <a href="/aluno/historico/" class="nav-link active"><i class="fas fa-history"></i> Histórico</a>
+        <a href="{% url 'dashboard_aluno' %}" class="nav-link"><i class="fas fa-home"></i> Início</a>
+        <a href="{% url 'atividades' %}" class="nav-link"><i class="fas fa-calendar-alt"></i> Atividades</a>
+        <a href="{% url 'loja' %}" class="nav-link"><i class="fas fa-store"></i> Loja</a>
+        <a href="{% url 'historico' %}" class="nav-link active"><i class="fas fa-history"></i> Histórico</a>
       </div>
-
       <div class="user-area">
         <div class="user-avatar"><i class="fas fa-user-graduate"></i></div>
-        <div><div class="user-name">{{ nome }}</div><div class="user-info">PROC: {{ processo }} | {{ turma }}</div></div>
+        <div>
+          <div class="user-name">{{ nome }}</div>
+          <div class="user-info">PROC: {{ processo }} | {{ turma }}</div>
+        </div>
         <div class="saldo-card"><i class="fas fa-star"></i> {{ saldo }} pts</div>
         <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Sair</button>
       </div>
@@ -146,18 +134,18 @@
 
   <script>
     function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
         }
-        return cookieValue;
+      }
+      return cookieValue;
     }
 
     const modal = document.getElementById('infoModal');
@@ -167,52 +155,50 @@
     const modalCloseBtn = document.getElementById('modalCloseBtn');
 
     function showModal(title, message, isSuccess = true) {
-        modalTitle.textContent = title;
-        modalMessage.textContent = message;
-        modalIcon.parentElement.style.background = isSuccess ? '#2B7A4B' : '#D4A373';
-        modalIcon.className = isSuccess ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle';
-        modal.style.display = 'flex';
+      modalTitle.textContent = title;
+      modalMessage.textContent = message;
+      modalIcon.parentElement.style.background = isSuccess ? '#2B7A4B' : '#D4A373';
+      modalIcon.className = isSuccess ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle';
+      modal.style.display = 'flex';
     }
 
     function hideModal() { modal.style.display = 'none'; }
 
     document.querySelectorAll('.btn-pdf').forEach(btn => {
-        btn.addEventListener('click', async function() {
-            const id = this.dataset.id;
-            showModal('Processando', 'Gerando comprovativo PDF...');
-            
-            try {
-                const response = await fetch(`/aluno/comprovativo/${id}/`, {
-                    method: 'GET',
-                    headers: {
-                        'X-CSRFToken': getCookie('csrftoken')
-                    }
-                });
-                
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `comprovativo_${id}.pdf`;
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    window.URL.revokeObjectURL(url);
-                    hideModal();
-                } else {
-                    showModal('Erro', 'Erro ao gerar comprovativo', false);
-                    setTimeout(hideModal, 2000);
-                }
-            } catch (error) {
-                showModal('Erro', 'Erro de conexão', false);
-                setTimeout(hideModal, 2000);
-            }
-        });
+      btn.addEventListener('click', async function() {
+        const id = this.dataset.id;
+        showModal('Processando', 'Gerando comprovativo PDF...');
+        
+        try {
+          const response = await fetch(`{% url 'gerar_comprovativo' 0 %}`.replace('0', id), {
+            method: 'GET',
+            headers: { 'X-CSRFToken': getCookie('csrftoken') }
+          });
+          
+          if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `comprovativo_${id}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            hideModal();
+          } else {
+            showModal('Erro', 'Erro ao gerar comprovativo', false);
+            setTimeout(hideModal, 2000);
+          }
+        } catch (error) {
+          showModal('Erro', 'Erro de conexão', false);
+          setTimeout(hideModal, 2000);
+        }
+      });
     });
 
     document.getElementById('logoutBtn').addEventListener('click', () => {
-        window.location.href = '/';
+      window.location.href = "{% url 'index' %}";
     });
 
     modalCloseBtn.addEventListener('click', hideModal);

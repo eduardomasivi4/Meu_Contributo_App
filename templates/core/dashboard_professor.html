@@ -37,55 +37,127 @@
         .logout-btn { background: none; border: 1px solid #F5EDDA; padding: 6px 14px; border-radius: 30px; cursor: pointer; font-size: 13px; color: #5C3A21; }
         .logout-btn:hover { background: #FBF7E9; }
 
-        .search-bar {
-            background: white;
-            border-radius: 16px;
-            padding: 12px 20px;
-            margin-bottom: 25px;
+        .section-title {
+            font-size: 24px;
+            color: #5C3A21;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #F5EDDA;
+        }
+        
+        .cursos-container {
             display: flex;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 30px;
+        }
+        
+        .curso-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
             border: 1px solid #F5EDDA;
         }
-        .search-bar input { flex: 1; border: none; outline: none; padding: 8px 0; font-size: 14px; }
-        .search-bar button { background: #2B7A4B; color: white; border: none; padding: 8px 20px; border-radius: 30px; cursor: pointer; }
-        .search-bar button:last-child { background: #D4A373; }
-
-        .dashboard-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; }
-        .card { background: white; border-radius: 20px; padding: 20px; border: 1px solid #F5EDDA; }
-        .card-header { margin-bottom: 15px; padding-bottom: 12px; border-bottom: 2px solid #FBF7E9; }
-        .card-header h3 { font-size: 18px; color: #5C3A21; }
-
-        .turma-item {
+        
+        .curso-titulo {
+            font-size: 20px;
+            color: #2B7A4B;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #FBF7E9;
+        }
+        
+        .disciplinas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+        }
+        
+        .disciplina-card {
             background: #FBF7E9;
             border-radius: 16px;
             padding: 15px;
-            margin-bottom: 12px;
             cursor: pointer;
+            transition: all 0.3s;
             border: 1px solid #F5EDDA;
+        }
+        
+        .disciplina-card:hover {
+            background: #F5EDDA;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        
+        .disciplina-nome {
+            font-weight: 700;
+            color: #5C3A21;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        
+        .disciplina-anos {
+            font-size: 12px;
+            color: #8B694C;
+        }
+        
+        .disciplina-anos i {
+            margin-right: 5px;
+            color: #D4A373;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #8B694C;
+        }
+        
+        .turmas-lista {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #F5EDDA;
+            display: none;
+        }
+        
+        .turmas-lista.visible {
+            display: block;
+        }
+        
+        .turma-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #F5EDDA;
+        }
+        
+        .turma-item:last-child {
+            border-bottom: none;
+        }
+        
+        .turma-nome {
+            font-weight: 500;
+            color: #5C3A21;
+        }
+        
+        .btn-turma {
+            background: #2B7A4B;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            text-decoration: none;
             transition: all 0.3s;
         }
-        .turma-item:hover { background: #F5EDDA; transform: translateX(5px); }
-        .turma-nome { font-weight: 700; color: #5C3A21; display: flex; justify-content: space-between; margin-bottom: 8px; }
-        .badge-alunos { background: #E9F5EF; padding: 4px 10px; border-radius: 20px; color: #2B7A4B; font-size: 11px; }
-        .alunos-list { margin-top: 15px; padding-top: 12px; border-top: 1px solid #F5EDDA; }
-        .aluno-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #F5EDDA; flex-wrap: wrap; gap: 10px; }
-        .aluno-nome { font-weight: 600; color: #5C3A21; font-size: 14px; }
-        .aluno-pontos { background: #E9F5EF; padding: 4px 10px; border-radius: 20px; font-size: 12px; color: #2B7A4B; }
-        .btn-acao { background: #D4A373; border: none; padding: 5px 12px; border-radius: 20px; color: white; cursor: pointer; margin-left: 8px; font-size: 11px; }
-        .btn-acao:hover { background: #B5835A; }
-        .form-pontos { background: #FBF7E9; border-radius: 16px; padding: 15px; margin-top: 15px; }
-        .form-pontos input, .form-pontos textarea { width: 100%; padding: 10px; border: 1px solid #F5EDDA; border-radius: 12px; margin-bottom: 10px; font-family: inherit; }
-        .form-pontos button { background: #2B7A4B; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; margin-right: 8px; }
-        .form-pontos button:last-child { background: #D4A373; }
-        .historico-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #F5EDDA; }
-        .historico-text { font-size: 13px; color: #5C3A21; }
-        .historico-text small { display: block; font-size: 10px; color: #8B694C; }
-        .historico-pontos { background: #E9F5EF; padding: 4px 10px; border-radius: 20px; font-size: 12px; color: #2B7A4B; }
-
-        @media (max-width: 900px) { .dashboard-grid { grid-template-columns: 1fr; } }
-        @media (max-width: 600px) { .header { flex-direction: column; text-align: center; } }
+        
+        .btn-turma:hover {
+            background: #1E5A38;
+        }
+        
+        @media (max-width: 768px) {
+            .disciplinas-grid { grid-template-columns: 1fr; }
+            .header { flex-direction: column; text-align: center; }
+        }
     </style>
 </head>
 <body>
@@ -105,164 +177,138 @@
             </div>
         </div>
 
-        <div class="search-bar">
-            <i class="fas fa-search"></i>
-            <input type="text" id="searchInput" placeholder="Pesquisar aluno por nome ou processo...">
-            <button id="searchBtn">Buscar</button>
-            <button id="clearSearchBtn">Limpar</button>
-        </div>
-
-        <div class="dashboard-grid">
-            <div class="card">
-                <div class="card-header"><h3><i class="fas fa-users"></i> Minhas Turmas</h3></div>
-                <div id="turmasList"></div>
-            </div>
-            <div class="card">
-                <div class="card-header"><h3><i class="fas fa-history"></i> Últimas Atividades</h3></div>
-                <div id="historicoList"></div>
-            </div>
+        <h2 class="section-title"><i class="fas fa-book"></i> Minhas Disciplinas</h2>
+        
+        <div class="cursos-container">
+            {% for curso_key, curso in disciplinas_por_curso.items %}
+                {% if curso.disciplinas %}
+                <div class="curso-card">
+                    <h3 class="curso-titulo">
+                        {% if curso_key == 'eletronica' %}
+                            <i class="fas fa-microchip"></i> {{ curso.nome }}
+                        {% elif curso_key == 'informatica' %}
+                            <i class="fas fa-laptop-code"></i> {{ curso.nome }}
+                        {% else %}
+                            <i class="fas fa-star-of-life"></i> {{ curso.nome }}
+                        {% endif %}
+                    </h3>
+                    <div class="disciplinas-grid">
+                        {% for disciplina in curso.disciplinas %}
+                            <div class="disciplina-card" data-disciplina-id="{{ disciplina.id }}" data-disciplina-nome="{{ disciplina.nome }}">
+                                <div class="disciplina-nome">{{ disciplina.nome }}</div>
+                                <div class="disciplina-anos">
+                                    <i class="fas fa-calendar-alt"></i> 
+                                    {% with anos=disciplina.turmas_relacionadas.all|dictsort:"turma.ano" %}
+                                        {% for dt in anos|slice:":3" %}
+                                            {{ dt.turma.ano }}{% if not forloop.last %}, {% endif %}
+                                        {% endfor %}
+                                        {% if anos|length > 3 %}...{% endif %}
+                                    {% endwith %}
+                                </div>
+                                <div class="turmas-lista" id="turmas-{{ disciplina.id }}"></div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
         </div>
     </div>
 
-    <div id="infoModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(92,58,33,0.6); align-items:center; justify-content:center; z-index:1000;">
+    <div id="infoModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(92,58,33,0.6); backdrop-filter:blur(4px); align-items:center; justify-content:center; z-index:1000;">
         <div style="background:white; border-radius:24px; padding:30px; max-width:350px; text-align:center;">
-            <div style="width:60px; height:60px; background:#2B7A4B; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 15px;"><i id="modalIcon" class="fas fa-check-circle" style="font-size:30px; color:white;"></i></div>
-            <h3 id="modalTitle" style="color:#5C3A21;">Sucesso</h3>
-            <p id="modalMessage" style="color:#8B694C;"></p>
+            <div style="width:60px; height:60px; background:#2B7A4B; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 15px;">
+                <i id="modalIcon" class="fas fa-check-circle" style="font-size:30px; color:white;"></i>
+            </div>
+            <h3 id="modalTitle" style="color:#5C3A21; margin-bottom:10px;">Atividade Criada!</h3>
+            <p id="modalMessage" style="color:#8B694C; margin-bottom:20px;"></p>
             <button id="modalCloseBtn" style="background:#2B7A4B; color:white; border:none; padding:10px 20px; border-radius:30px; cursor:pointer;">Continuar</button>
         </div>
     </div>
 
     <script>
-        // Dados das turmas e alunos
-        const turmas = [
-            { id: 1, nome: "10ª EA", curso: "Eletrónica", horario: "Segunda e Quarta - 08h às 10h", alunos: [
-                { id: 1, nome: "Ricardo Oliveira", processo: "20230814", pontos: 2450 },
-                { id: 2, nome: "João Silva", processo: "20241122", pontos: 3200 },
-                { id: 3, nome: "Maria Santos", processo: "20241001", pontos: 1890 }
-            ]},
-            { id: 2, nome: "10ª EE", curso: "Eletrónica", horario: "Terça e Quinta - 10h às 12h", alunos: [
-                { id: 4, nome: "Carla Souza", processo: "20240915", pontos: 2100 },
-                { id: 5, nome: "Pedro Costa", processo: "20240720", pontos: 1750 }
-            ]},
-            { id: 3, nome: "10ª ID", curso: "Informática", horario: "Segunda e Quarta - 14h às 16h", alunos: [
-                { id: 6, nome: "Lucas Almeida", processo: "20240901", pontos: 1540 },
-                { id: 7, nome: "Mariana Santos", processo: "20240920", pontos: 2310 }
-            ]}
-        ];
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
 
-        let historico = [
-            { aluno: "Ricardo Oliveira", turma: "10ª EA", motivo: "Participação ativa na resolução de exercícios", pontos: 15, tipo: "Adição" },
-            { aluno: "Mariana Santos", turma: "10ª ID", motivo: "Respondeu corretamente questões desafiadoras", pontos: 10, tipo: "Adição" }
-        ];
-
-        let expandida = null;
-        let pesquisa = '';
+        const modal = document.getElementById('infoModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalMessage = document.getElementById('modalMessage');
+        const modalIcon = document.getElementById('modalIcon');
+        const modalCloseBtn = document.getElementById('modalCloseBtn');
 
         function showModal(title, message, isSuccess = true) {
-            document.getElementById('modalTitle').innerText = title;
-            document.getElementById('modalMessage').innerText = message;
-            const icon = document.querySelector('#infoModal .modal-icon');
-            icon.style.background = isSuccess ? '#2B7A4B' : '#D4A373';
-            document.getElementById('infoModal').style.display = 'flex';
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            modalIcon.parentElement.style.background = isSuccess ? '#2B7A4B' : '#D4A373';
+            modalIcon.className = isSuccess ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle';
+            modal.style.display = 'flex';
         }
 
-        function hideModal() { document.getElementById('infoModal').style.display = 'none'; }
+        function hideModal() { modal.style.display = 'none'; }
 
-        function addPontos(aluno, turmaNome, pontos, motivo) {
-            aluno.pontos += pontos;
-            historico.unshift({ aluno: aluno.nome, turma: turmaNome, motivo: motivo, pontos: pontos, tipo: "Adição" });
-            render();
-            showModal('Sucesso', `${pontos} pontos adicionados a ${aluno.nome}`);
-        }
+        // Verificar mensagem de atividade criada
+        {% if messages %}
+            {% for message in messages %}
+                showModal('{{ message.tags|title }}', '{{ message }}');
+            {% endfor %}
+        {% endif %}
 
-        function removerPontos(aluno, turmaNome, pontos, motivo) {
-            if (aluno.pontos < pontos) {
-                showModal('Erro', 'Saldo insuficiente!', false);
-                return false;
-            }
-            aluno.pontos -= pontos;
-            historico.unshift({ aluno: aluno.nome, turma: turmaNome, motivo: motivo, pontos: pontos, tipo: "Remoção" });
-            render();
-            showModal('Atenção', `${pontos} pontos removidos de ${aluno.nome}`);
-            return true;
-        }
+        document.querySelectorAll('.disciplina-card').forEach(card => {
+            card.addEventListener('click', async function(e) {
+                if (e.target.classList.contains('btn-turma')) return;
+                
+                const disciplinaId = this.dataset.disciplinaId;
+                const disciplinaNome = this.dataset.disciplinaNome;
+                const turmasDiv = document.getElementById(`turmas-${disciplinaId}`);
+                
+                if (turmasDiv.classList.contains('visible')) {
+                    turmasDiv.classList.remove('visible');
+                    return;
+                }
+                
+                turmasDiv.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-pulse"></i> Carregando turmas...</div>';
+                turmasDiv.classList.add('visible');
+                
+                try {
+                    const response = await fetch(`{% url 'get_turmas_por_disciplina' 0 %}`.replace('0', disciplinaId), {
+                        headers: { 'X-CSRFToken': getCookie('csrftoken') }
+                    });
+                    const data = await response.json();
+                    
+                    if (data.turmas && data.turmas.length > 0) {
+                        turmasDiv.innerHTML = data.turmas.map(t => `
+                            <div class="turma-item">
+                                <span class="turma-nome"><i class="fas fa-users"></i> ${t.nome} - ${t.curso}</span>
+                                <a href="{% url 'turma_detail' 0 %}?disciplina_id=${disciplinaId}".replace('0', t.id) class="btn-turma">Ver Turma <i class="fas fa-arrow-right"></i></a>
+                            </div>
+                        `).join('');
+                    } else {
+                        turmasDiv.innerHTML = '<div class="loading">Nenhuma turma encontrada para esta disciplina.</div>';
+                    }
+                } catch (error) {
+                    turmasDiv.innerHTML = '<div class="loading">Erro ao carregar turmas.</div>';
+                }
+            });
+        });
 
-        window.confirmarAdd = (id, nome, turma) => {
-            let p = parseInt(document.getElementById(`pts-${id}`).value);
-            let m = document.getElementById(`mot-${id}`).value || "Participação destacada";
-            let a = null, t = null;
-            for (let tur of turmas) {
-                let al = tur.alunos.find(x => x.id === id);
-                if (al) { a = al; t = tur.nome; break; }
-            }
-            if (a) addPontos(a, t, p, m);
-            document.getElementById(`form-${id}`)?.remove();
-            document.querySelector(`.btn-add[data-id="${id}"]`).style.display = 'inline-block';
-        };
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            window.location.href = "{% url 'index' %}";
+        });
 
-        window.confirmarRem = (id, nome, turma) => {
-            let p = parseInt(document.getElementById(`pts-${id}`).value);
-            let m = document.getElementById(`mot-${id}`).value || "Penalização aplicada";
-            let a = null, t = null;
-            for (let tur of turmas) {
-                let al = tur.alunos.find(x => x.id === id);
-                if (al) { a = al; t = tur.nome; break; }
-            }
-            if (a) removerPontos(a, t, p, m);
-            document.getElementById(`form-${id}`)?.remove();
-            document.querySelector(`.btn-remove[data-id="${id}"]`).style.display = 'inline-block';
-        };
-
-        window.mostrarForm = (id, nome, turma, tipo) => {
-            document.querySelectorAll('.form-pontos').forEach(f => f.remove());
-            document.querySelectorAll('.btn-add, .btn-remove').forEach(b => b.style.display = 'inline-block');
-            document.querySelector(`.btn-${tipo}[data-id="${id}"]`).style.display = 'none';
-            let row = document.querySelector(`.aluno-item[data-id="${id}"]`);
-            if (row) {
-                row.insertAdjacentHTML('afterend', `
-                    <div class="form-pontos" id="form-${id}">
-                        <input type="number" id="pts-${id}" value="10" min="1" max="100">
-                        <textarea id="mot-${id}" rows="2" placeholder="Motivo..."></textarea>
-                        <div>
-                            <button onclick="${tipo === 'add' ? 'confirmarAdd' : 'confirmarRem'}(${id}, '${nome}', '${turma}')">Confirmar</button>
-                            <button onclick="document.getElementById('form-${id}').remove(); document.querySelector('.btn-${tipo}[data-id=\"${id}\"]').style.display='inline-block'">Cancelar</button>
-                        </div>
-                    </div>
-                `);
-            }
-        };
-
-        function render() {
-            let filtradas = turmas.map(t => ({ ...t, alunos: t.alunos.filter(a => !pesquisa || a.nome.toLowerCase().includes(pesquisa) || a.processo.includes(pesquisa)) })).filter(t => t.alunos.length);
-            document.getElementById('turmasList').innerHTML = filtradas.length ? filtradas.map(t => `
-                <div class="turma-item" onclick="if(event.target.tagName!='BUTTON')toggle(${t.id})">
-                    <div class="turma-nome"><span><i class="fas fa-microchip"></i> ${t.nome} - ${t.curso}</span><span class="badge-alunos">${t.alunos.length} alunos</span></div>
-                    <div class="turma-info"><span><i class="fas fa-clock"></i> ${t.horario}</span></div>
-                    ${expandida === t.id ? `<div class="alunos-list">${t.alunos.map(a => `
-                        <div class="aluno-item" data-id="${a.id}">
-                            <div><div class="aluno-nome">${a.nome}</div><div class="aluno-processo">${a.processo}</div></div>
-                            <div><span class="aluno-pontos">${a.pontos} pts</span>
-                            <button class="btn-acao btn-add" data-id="${a.id}" onclick="event.stopPropagation();mostrarForm(${a.id},'${a.nome}','${t.nome}','add')">+ Add</button>
-                            <button class="btn-acao btn-remove" data-id="${a.id}" onclick="event.stopPropagation();mostrarForm(${a.id},'${a.nome}','${t.nome}','remove')">- Rem</button></div>
-                        </div>
-                    `).join('')}</div>` : ''}
-                </div>
-            `).join('') : '<div style="text-align:center;padding:40px;color:#8B694C;">Nenhum aluno encontrado</div>';
-            document.getElementById('historicoList').innerHTML = historico.slice(0,10).map(h => `
-                <div class="historico-item">
-                    <div class="historico-text">${h.aluno}<small>${h.turma}</small><small>${h.motivo}</small></div>
-                    <div class="historico-pontos">${h.tipo === 'Adição' ? '+' : '-'}${h.pontos} pts</div>
-                </div>
-            `).join('');
-        }
-
-        window.toggle = (id) => { expandida = expandida === id ? null : id; render(); };
-        document.getElementById('searchBtn').onclick = () => { pesquisa = document.getElementById('searchInput').value.toLowerCase(); expandida = null; render(); };
-        document.getElementById('clearSearchBtn').onclick = () => { document.getElementById('searchInput').value = ''; pesquisa = ''; expandida = null; render(); };
-        document.getElementById('logoutBtn').onclick = () => window.location.href = '/';
-        document.getElementById('modalCloseBtn').onclick = hideModal;
-        render();
+        modalCloseBtn.addEventListener('click', hideModal);
+        modal.addEventListener('click', (e) => { if (e.target === modal) hideModal(); });
     </script>
 </body>
 </html>
