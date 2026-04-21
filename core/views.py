@@ -373,6 +373,7 @@ def dashboard_professor(request):
         messages.error(request, 'Acesso não autorizado.')
         return redirect('index')
     
+    # Buscar disciplinas que o professor leciona via PerfilProfessor
     try:
         perfil_prof = request.user.perfil_professor
         if perfil_prof.disciplina:
@@ -380,36 +381,29 @@ def dashboard_professor(request):
         else:
             disciplinas_usuario = []
     except:
+        # Se não tiver perfil, mostrar todas (fallback)
         disciplinas_usuario = Disciplina.objects.all()
     
+    # Agrupar disciplinas por curso
     disciplinas_por_curso = {
         'eletronica': {'nome': 'Eletrónica e Telecomunicações', 'disciplinas': []},
         'informatica': {'nome': 'Informática', 'disciplinas': []},
         'comum': {'nome': 'Comum', 'disciplinas': []},
     }
     
-    if disciplinas_usuario:
-        for disc in disciplinas_usuario:
-            turmas_disc = Turma.objects.filter(disciplinas_relacionadas__disciplina=disc)
-            cursos = set(turmas_disc.values_list('curso', flat=True))
-            if 'eletronica' in cursos:
+    for disc in disciplinas_usuario:
+        # Descobrir curso através das turmas associadas
+        turmas_disc = Turma.objects.filter(disciplinas_relacionadas__disciplina=disc)
+        cursos = set(turmas_disc.values_list('curso', flat=True))
+        if 'eletronica' in cursos:
+            if disc not in disciplinas_por_curso['eletronica']['disciplinas']:
                 disciplinas_por_curso['eletronica']['disciplinas'].append(disc)
-            elif 'informatica' in cursos:
+        elif 'informatica' in cursos:
+            if disc not in disciplinas_por_curso['informatica']['disciplinas']:
                 disciplinas_por_curso['informatica']['disciplinas'].append(disc)
-            else:
+        else:
+            if disc not in disciplinas_por_curso['comum']['disciplinas']:
                 disciplinas_por_curso['comum']['disciplinas'].append(disc)
-    else:
-        for dt in DisciplinaTurma.objects.select_related('disciplina', 'turma').all():
-            disc = dt.disciplina
-            turma = dt.turma
-            curso = turma.curso
-            if curso == 'eletronica' and disc not in disciplinas_por_curso['eletronica']['disciplinas']:
-                disciplinas_por_curso['eletronica']['disciplinas'].append(disc)
-            elif curso == 'informatica' and disc not in disciplinas_por_curso['informatica']['disciplinas']:
-                disciplinas_por_curso['informatica']['disciplinas'].append(disc)
-            else:
-                if disc not in disciplinas_por_curso['comum']['disciplinas']:
-                    disciplinas_por_curso['comum']['disciplinas'].append(disc)
     
     context = {
         'disciplinas_por_curso': disciplinas_por_curso,
@@ -417,6 +411,7 @@ def dashboard_professor(request):
     return render(request, 'core/dashboard_professor.html', context)
 
 @login_required
+@csrf_exempt
 def get_turmas_por_disciplina(request, disciplina_id):
     if not (request.user.is_professor or request.user.is_coordenador or request.user.is_diretor_turma):
         return JsonResponse({'error': 'Acesso negado'}, status=403)
