@@ -35,9 +35,15 @@ urlpatterns = [
     path('atividade/criar/<int:turma_id>/', views.criar_atividade, name='criar_atividade'),
     path('atividade/distribuir/<int:atividade_id>/', views.distribuir_pontos, name='distribuir_pontos'),
     
-    # ==================== DIRETOR ====================
-    path('diretor/dashboard/', views.diretor_turma, name='diretor_turma'),
+
+    # ==================== DIRETOR DE TURMA ====================
     
+    path('diretor/dashboard/', views.diretor_dashboard, name='diretor_dashboard'),  # ← Nome correto
+    path('diretor/aluno/adicionar-pontos/<int:aluno_id>/', views.diretor_adicionar_pontos, name='diretor_adicionar_pontos'),
+    path('diretor/aluno/reduzir-pontos/<int:aluno_id>/', views.diretor_reduzir_pontos, name='diretor_reduzir_pontos'),
+    path('diretor/atividade/distribuir/<int:atividade_id>/', views.diretor_distribuir_pontos, name='diretor_distribuir_pontos'),
+
+
     # ==================== COORDENADOR ====================
     
     path('coordenador/dashboard/', views.coordenador_dashboard, name='coordenador_dashboard'),

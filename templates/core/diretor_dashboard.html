@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diretor de Turma - Colégio Árvore da Felicidade</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/fundo.css' %}">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #FBF7E9; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        
+        .header {
+            background: white;
+            border-radius: 24px;
+            padding: 15px 25px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            border: 1px solid #F5EDDA;
+        }
+        .logo-area { display: flex; align-items: center; gap: 12px; }
+        .logo-icon { width: 45px; height: 45px; background: #2B7A4B; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+        .logo-icon img { width: 28px; height: 28px; }
+        .logo-area h1 { font-size: 18px; color: #5C3A21; font-weight: 700; }
+        .user-area { display: flex; align-items: center; gap: 15px; background: #FBF7E9; padding: 6px 18px; border-radius: 40px; }
+        .user-avatar { width: 38px; height: 38px; background: #2B7A4B; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; }
+        .user-name { font-weight: 600; color: #5C3A21; font-size: 14px; }
+        .logout-btn { background: none; border: 1px solid #F5EDDA; padding: 6px 14px; border-radius: 30px; cursor: pointer; }
+        
+        .turma-header {
+            background: linear-gradient(135deg, #2B7A4B, #1E5A38);
+            border-radius: 20px;
+            padding: 20px 25px;
+            margin-bottom: 25px;
+            color: white;
+        }
+        .turma-header h2 { font-size: 24px; margin-bottom: 5px; }
+        
+        .dashboard-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; }
+        .card { background: white; border-radius: 20px; padding: 20px; border: 1px solid #F5EDDA; }
+        .card-header { margin-bottom: 15px; padding-bottom: 12px; border-bottom: 2px solid #FBF7E9; }
+        .card-header h3 { font-size: 18px; color: #5C3A21; }
+        
+        .aluno-item, .atividade-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #F5EDDA;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .aluno-nome { font-weight: 600; color: #5C3A21; }
+        .aluno-pontos { background: #E9F5EF; padding: 4px 10px; border-radius: 20px; font-size: 12px; color: #2B7A4B; }
+        .btn-add, .btn-remove { background: #D4A373; border: none; padding: 5px 12px; border-radius: 20px; color: white; cursor: pointer; font-size: 11px; }
+        .btn-remove { background: #D9534F; }
+        .btn-distribuir { background: #2B7A4B; color: white; border: none; padding: 5px 12px; border-radius: 20px; cursor: pointer; font-size: 11px; text-decoration: none; display: inline-block; }
+        
+        .atividade-nome { font-weight: 600; color: #5C3A21; }
+        .atividade-data { font-size: 11px; color: #8B694C; margin-top: 3px; }
+        
+        .form-pontos { background: #FBF7E9; border-radius: 16px; padding: 15px; margin-top: 15px; }
+        .form-pontos input, .form-pontos textarea { width: 100%; padding: 10px; border: 1px solid #F5EDDA; border-radius: 12px; margin-bottom: 10px; }
+        .form-pontos button { background: #2B7A4B; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; }
+        
+        @media (max-width: 900px) { .dashboard-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 600px) { .header { flex-direction: column; text-align: center; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo-area">
+                <div class="logo-icon"><img src="{% static 'images/logo-caf.png' %}" alt="Logo"></div>
+                <h1>Colégio Árvore da Felicidade</h1>
+            </div>
+            <div class="user-area">
+                <div class="user-avatar"><i class="fas fa-users"></i></div>
+                <div>
+                    <div class="user-name">{{ nome }}</div>
+                    <div class="user-info">Diretor de Turma</div>
+                </div>
+                <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Sair</button>
+            </div>
+        </div>
+
+        <div class="turma-header">
+            <h2><i class="fas fa-users"></i> {{ turma.nome }} - {{ turma.get_curso_display }}</h2>
+            <p><i class="fas fa-calendar"></i> Ano: {{ turma.ano }}</p>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Lista de Alunos -->
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-user-graduate"></i> Alunos da Turma</h3>
+                </div>
+                <div id="alunosList">
+                    {% for aluno in alunos %}
+                    <div class="aluno-item" data-id="{{ aluno.id }}">
+                        <div>
+                            <div class="aluno-nome">{{ aluno.usuario.get_full_name|default:aluno.usuario.username }}</div>
+                            <div style="font-size: 11px; color: #8B694C;">{{ aluno.numero_processo }}</div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span class="aluno-pontos" id="saldo-{{ aluno.id }}">{{ aluno.saldo_pontos }} pts</span>
+                            <button class="btn-add" onclick="mostrarFormulario({{ aluno.id }}, '{{ aluno.usuario.get_full_name|default:aluno.usuario.username }}', 'add')">+ Add</button>
+                            <button class="btn-remove" onclick="mostrarFormulario({{ aluno.id }}, '{{ aluno.usuario.get_full_name|default:aluno.usuario.username }}', 'remove')">- Rem</button>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div style="text-align: center; padding: 20px;">Nenhum aluno nesta turma.</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Lista de Atividades -->
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-tasks"></i> Atividades</h3>
+                </div>
+                <div id="atividadesList">
+                    {% for atividade in atividades %}
+                    <div class="atividade-item">
+                        <div>
+                            <div class="atividade-nome">
+                                <i class="fas {% if atividade.tipo_atividade == 'cultural' %}fa-palette{% else %}fa-flask{% endif %}"></i>
+                                {{ atividade.nome }}
+                            </div>
+                            <div class="atividade-data">
+                                <i class="fas fa-calendar"></i> {{ atividade.data_inicio|date:"d/m/Y" }} - {{ atividade.data_fim|date:"d/m/Y" }}
+                                <i class="fas fa-clock"></i> {{ atividade.hora_inicio|time:"H:i" }} - {{ atividade.hora_fim|time:"H:i" }}
+                            </div>
+                            <div><span class="aluno-pontos">Max: {{ atividade.max_pontos_por_aluno }} pts/aluno</span></div>
+                        </div>
+                        {% if atividade.pode_distribuir %}
+                        <a href="{% url 'diretor_distribuir_pontos' atividade.id %}" class="btn-distribuir">
+                            <i class="fas fa-share-alt"></i> Distribuir Pontos
+                        </a>
+                        {% else %}
+                        <span style="font-size: 11px; color: #A58E6F;">
+                            <i class="fas fa-hourglass-half"></i> Aguardando término
+                        </span>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <div style="text-align: center; padding: 20px;">Nenhuma atividade disponível.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para adicionar/reduzir pontos -->
+    <div id="pontosModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(92,58,33,0.6); backdrop-filter:blur(4px); align-items:center; justify-content:center; z-index:1000;">
+        <div style="background:white; border-radius:24px; padding:30px; max-width:400px; width:90%;">
+            <h3 id="modalTitle" style="color:#5C3A21; margin-bottom:15px;">Adicionar Pontos</h3>
+            <input type="number" id="pontosInput" placeholder="Quantidade de pontos" min="1" class="form-control" style="width:100%; padding:10px; border:1px solid #F5EDDA; border-radius:12px; margin-bottom:10px;">
+            <textarea id="motivoInput" rows="3" placeholder="Motivo (opcional)" style="width:100%; padding:10px; border:1px solid #F5EDDA; border-radius:12px; margin-bottom:15px;"></textarea>
+            <div style="display: flex; gap: 10px;">
+                <button id="confirmarBtn" class="btn-confirmar" style="background:#2B7A4B; color:white; border:none; padding:10px 20px; border-radius:30px; cursor:pointer;">Confirmar</button>
+                <button id="cancelarBtn" style="background:#F5EDDA; color:#5C3A21; border:none; padding:10px 20px; border-radius:30px; cursor:pointer;">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="infoModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(92,58,33,0.6); backdrop-filter:blur(4px); align-items:center; justify-content:center; z-index:1000;">
+        <div style="background:white; border-radius:24px; padding:30px; max-width:350px; text-align:center;">
+            <div style="width:60px; height:60px; background:#2B7A4B; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 15px;">
+                <i id="modalIcon" class="fas fa-check-circle" style="font-size:30px; color:white;"></i>
+            </div>
+            <h3 id="modalTitleMsg" style="color:#5C3A21;">Sucesso</h3>
+            <p id="modalMessage" style="color:#8B694C;"></p>
+            <button id="modalCloseBtn" style="background:#2B7A4B; color:white; border:none; padding:10px 20px; border-radius:30px; cursor:pointer;">Fechar</button>
+        </div>
+    </div>
+
+    <script>
+        let currentAlunoId = null;
+        let currentAlunoNome = null;
+        let currentTipo = null;
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function showModalMessage(title, message, isSuccess = true) {
+            document.getElementById('modalTitleMsg').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
+            const iconDiv = document.querySelector('#infoModal div div');
+            iconDiv.style.background = isSuccess ? '#2B7A4B' : '#D9534F';
+            document.getElementById('infoModal').style.display = 'flex';
+        }
+
+        function hideModalMessage() {
+            document.getElementById('infoModal').style.display = 'none';
+        }
+
+        function mostrarFormulario(alunoId, alunoNome, tipo) {
+            currentAlunoId = alunoId;
+            currentAlunoNome = alunoNome;
+            currentTipo = tipo;
+            
+            const modal = document.getElementById('pontosModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const pontosInput = document.getElementById('pontosInput');
+            const motivoInput = document.getElementById('motivoInput');
+            
+            pontosInput.value = '';
+            motivoInput.value = '';
+            
+            if (tipo === 'add') {
+                modalTitle.textContent = `Adicionar Pontos - ${alunoNome}`;
+                pontosInput.placeholder = 'Quantidade de pontos (mínimo 1)';
+            } else {
+                modalTitle.textContent = `Remover Pontos - ${alunoNome}`;
+                pontosInput.placeholder = 'Quantidade de pontos a remover';
+            }
+            
+            modal.style.display = 'flex';
+        }
+
+        async function confirmarAcao() {
+            const pontos = parseInt(document.getElementById('pontosInput').value);
+            const motivo = document.getElementById('motivoInput').value || 
+                (currentTipo === 'add' ? 'Adição de pontos pelo diretor' : 'Remoção de pontos pelo diretor');
+            
+            if (!pontos || pontos <= 0) {
+                showModalMessage('Erro', 'Por favor, insira uma quantidade válida de pontos.', false);
+                return;
+            }
+            
+            const url = currentTipo === 'add' 
+                ? `/diretor/aluno/adicionar-pontos/${currentAlunoId}/`
+                : `/diretor/aluno/reduzir-pontos/${currentAlunoId}/`;
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        pontos: pontos,
+                        motivo: motivo
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById(`saldo-${currentAlunoId}`).textContent = `${data.novo_saldo} pts`;
+                    document.getElementById('pontosModal').style.display = 'none';
+                    showModalMessage('Sucesso', data.mensagem);
+                    setTimeout(hideModalMessage, 2000);
+                } else {
+                    showModalMessage('Erro', data.erro, false);
+                }
+            } catch (error) {
+                showModalMessage('Erro', 'Erro de conexão com o servidor.', false);
+            }
+        }
+
+        document.getElementById('confirmarBtn').addEventListener('click', confirmarAcao);
+        document.getElementById('cancelarBtn').addEventListener('click', () => {
+            document.getElementById('pontosModal').style.display = 'none';
+        });
+        document.getElementById('modalCloseBtn').addEventListener('click', hideModalMessage);
+        
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            window.location.href = "{% url 'index' %}";
+        });
+        
+        document.getElementById('pontosInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') confirmarAcao();
+        });
+    </script>
+</body>
+</html>

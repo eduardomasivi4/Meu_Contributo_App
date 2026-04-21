@@ -18,12 +18,12 @@ from io import BytesIO
 from django.conf import settings
 import os
 from .config import REDE_IP, PORTA
+from django.utils import timezone
 from .models import (
     Usuario, PerfilAluno, Turma, Disciplina, DisciplinaTurma,
     Atividade, Beneficio, Transacao, ResgateBeneficio,
     PerfilProfessor, PerfilDiretorTurma, PerfilCoordenador
 )
-
 
 def index(request):
     return render(request, 'core/index.html')
@@ -265,6 +265,7 @@ def gerar_comprovativo(request, transacao_id):
     
     pdf.save()
     return response
+
 
 
 # ==================== PROFESSOR ====================
@@ -535,10 +536,227 @@ def distribuir_pontos(request, atividade_id):
     return render(request, 'core/distribuir_pontos.html', context)
 
 
+
 # ==================== DIRETOR DE TURMA ====================
 
-def diretor_turma(request):
-    return render(request, 'core/diretor_turma.html')
+def is_diretor_turma(user):
+    """Verifica se o usuário é diretor de turma e tem uma turma vinculada"""
+    return user.is_authenticated and user.is_diretor_turma and user.turma_vinculada is not None
+
+@login_required
+@user_passes_test(is_diretor_turma)
+def diretor_dashboard(request):
+    """Dashboard do diretor de turma"""
+    turma = request.user.turma_vinculada
+    
+    if not turma:
+        messages.error(request, 'Você não está vinculado a nenhuma turma.')
+        return redirect('index')
+    
+    # Alunos da turma em ordem alfabética
+    alunos = turma.alunos.all().order_by('usuario__first_name', 'usuario__username')
+    
+    # Atividades associadas à turma (criadas pelo coordenador)
+    hoje = timezone.now().date()
+    hora_atual = timezone.now().time()
+    
+    # Buscar atividades que estão associadas a esta turma
+    atividades = Atividade.objects.filter(
+        turmas=turma
+    ).order_by('-created_at')
+    
+    # Para cada atividade, verificar se pode distribuir pontos
+    for atividade in atividades:
+        # Verificar se a atividade já terminou
+        if atividade.data_fim and atividade.hora_fim:
+            if atividade.data_fim < hoje:
+                atividade.pode_distribuir = True
+            elif atividade.data_fim == hoje and atividade.hora_fim <= hora_atual:
+                atividade.pode_distribuir = True
+            else:
+                atividade.pode_distribuir = False
+        else:
+            atividade.pode_distribuir = False
+    
+    context = {
+        'turma': turma,
+        'alunos': alunos,
+        'atividades': atividades,
+        'nome': request.user.get_full_name() or request.user.username,
+    }
+    return render(request, 'core/diretor_dashboard.html', context)
+
+@login_required
+@user_passes_test(is_diretor_turma)
+def diretor_adicionar_pontos(request, aluno_id):
+    """Adicionar pontos a um aluno específico (AJAX)"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'erro': 'Método não permitido'})
+    
+    try:
+        data = json.loads(request.body)
+        pontos = int(data.get('pontos', 0))
+        motivo = data.get('motivo', 'Adição de pontos pelo diretor de turma')
+        
+        # Verificar se o aluno pertence à turma do diretor
+        aluno = get_object_or_404(
+            PerfilAluno, 
+            id=aluno_id, 
+            turma=request.user.turma_vinculada
+        )
+        
+        if pontos <= 0:
+            return JsonResponse({'success': False, 'erro': 'Os pontos devem ser maiores que zero.'})
+        
+        # Adicionar pontos
+        aluno.saldo_pontos += pontos
+        aluno.save()
+        
+        # Registrar transação
+        Transacao.objects.create(
+            aluno=aluno,
+            quantidade=pontos,
+            tipo='adicao',
+            descricao=motivo,
+            professor=request.user
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'novo_saldo': aluno.saldo_pontos,
+            'mensagem': f'{pontos} pontos adicionados com sucesso!'
+        })
+        
+    except PerfilAluno.DoesNotExist:
+        return JsonResponse({'success': False, 'erro': 'Aluno não encontrado'})
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'erro': 'Dados inválidos'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'erro': str(e)})
+
+@login_required
+@user_passes_test(is_diretor_turma)
+def diretor_reduzir_pontos(request, aluno_id):
+    """Reduzir pontos de um aluno específico (AJAX)"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'erro': 'Método não permitido'})
+    
+    try:
+        data = json.loads(request.body)
+        pontos = int(data.get('pontos', 0))
+        motivo = data.get('motivo', 'Redução de pontos pelo diretor de turma')
+        
+        # Verificar se o aluno pertence à turma do diretor
+        aluno = get_object_or_404(
+            PerfilAluno, 
+            id=aluno_id, 
+            turma=request.user.turma_vinculada
+        )
+        
+        if pontos <= 0:
+            return JsonResponse({'success': False, 'erro': 'Os pontos devem ser maiores que zero.'})
+        
+        if aluno.saldo_pontos < pontos:
+            return JsonResponse({
+                'success': False, 
+                'erro': f'Saldo insuficiente. Saldo atual: {aluno.saldo_pontos} pontos.'
+            })
+        
+        # Reduzir pontos
+        aluno.saldo_pontos -= pontos
+        aluno.save()
+        
+        # Registrar transação
+        Transacao.objects.create(
+            aluno=aluno,
+            quantidade=-pontos,
+            tipo='remocao',
+            descricao=motivo,
+            professor=request.user
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'novo_saldo': aluno.saldo_pontos,
+            'mensagem': f'{pontos} pontos removidos com sucesso!'
+        })
+        
+    except PerfilAluno.DoesNotExist:
+        return JsonResponse({'success': False, 'erro': 'Aluno não encontrado'})
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'erro': 'Dados inválidos'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'erro': str(e)})
+
+@login_required
+@user_passes_test(is_diretor_turma)
+def diretor_distribuir_pontos(request, atividade_id):
+    """Distribuir pontos de uma atividade para os alunos da turma"""
+    turma = request.user.turma_vinculada
+    
+    if not turma:
+        messages.error(request, 'Você não está vinculado a nenhuma turma.')
+        return redirect('diretor_dashboard')
+    
+    # Verificar se a atividade pertence à turma
+    atividade = get_object_or_404(Atividade, id=atividade_id, turmas=turma)
+    
+    # Verificar se a atividade já terminou
+    hoje = timezone.now().date()
+    hora_atual = timezone.now().time()
+    
+    pode_distribuir = False
+    if atividade.data_fim and atividade.hora_fim:
+        if atividade.data_fim < hoje:
+            pode_distribuir = True
+        elif atividade.data_fim == hoje and atividade.hora_fim <= hora_atual:
+            pode_distribuir = True
+    
+    if not pode_distribuir:
+        messages.error(request, 'Esta atividade ainda não terminou. Não é possível distribuir pontos.')
+        return redirect('diretor_dashboard')
+    
+    alunos = turma.alunos.all().order_by('usuario__first_name', 'usuario__username')
+    
+    if request.method == 'POST':
+        pontos_distribuidos = 0
+        
+        for aluno in alunos:
+            pontos_str = request.POST.get(f'pontos_{aluno.id}')
+            if pontos_str:
+                pontos = int(pontos_str)
+                if pontos > 0 and pontos <= atividade.max_pontos_por_aluno:
+                    aluno.saldo_pontos += pontos
+                    aluno.save()
+                    
+                    Transacao.objects.create(
+                        aluno=aluno,
+                        quantidade=pontos,
+                        tipo='distribuicao',
+                        descricao=f'Distribuição de pontos da atividade: {atividade.nome}',
+                        professor=request.user,
+                        atividade=atividade
+                    )
+                    pontos_distribuidos += 1
+        
+        if pontos_distribuidos > 0:
+            messages.success(
+                request, 
+                f'Pontos distribuídos com sucesso para {pontos_distribuidos} aluno(s)!'
+            )
+        else:
+            messages.warning(request, 'Nenhum ponto foi distribuído.')
+        
+        return redirect('diretor_dashboard')
+    
+    context = {
+        'atividade': atividade,
+        'turma': turma,
+        'alunos': alunos,
+        'max_pontos': atividade.max_pontos_por_aluno,
+    }
+    return render(request, 'core/diretor_distribuir_pontos.html', context)
+
 
 
 # ==================== COORDENADOR DE ATIVIDADES ====================

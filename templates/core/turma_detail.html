@@ -116,11 +116,18 @@
             <p>Disciplina: <strong>{{ disciplina.nome }}</strong></p>
         </div>
 
+        <!-- BARRA DE PESQUISA ATUALIZADA -->
         <div class="search-bar">
             <i class="fas fa-search"></i>
-            <input type="text" id="searchInput" placeholder="Pesquisar aluno por nome ou processo...">
-            <button id="searchBtn">Buscar</button>
-            <button id="clearSearchBtn">Limpar</button>
+            <input type="text" id="searchInput" placeholder="Pesquisar alunos por nome/processo ou atividades por nome...">
+            <div style="display: flex; gap: 10px;">
+                <button id="searchBtn">Buscar</button>
+                <button id="clearSearchBtn">Limpar</button>
+            </div>
+            <div style="display: flex; gap: 10px; margin-left: auto;">
+                <button id="filterAlunosBtn" class="filter-btn active">Alunos</button>
+                <button id="filterAtividadesBtn" class="filter-btn">Atividades</button>
+            </div>
         </div>
 
         <div class="dashboard-grid">
