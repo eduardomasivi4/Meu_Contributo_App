@@ -35,7 +35,14 @@ urlpatterns = [
     path('atividade/criar/<int:turma_id>/', views.criar_atividade, name='criar_atividade'),
     path('atividade/distribuir/<int:atividade_id>/', views.distribuir_pontos, name='distribuir_pontos'),
     
-    # ==================== DIRETOR E COORDENADOR ====================
+    # ==================== DIRETOR ====================
     path('diretor/dashboard/', views.diretor_turma, name='diretor_turma'),
-    path('coordenador/dashboard/', views.coordenador_atividades, name='coordenador_atividades'),
+    
+    # ==================== COORDENADOR ====================
+    
+    path('coordenador/dashboard/', views.coordenador_dashboard, name='coordenador_dashboard'),
+    path('coordenador/atividade/criar/', views.coordenador_criar_atividade, name='coordenador_criar_atividade'),
+    path('coordenador/atividade/editar/<int:pk>/', views.coordenador_editar_atividade, name='coordenador_editar_atividade'),
+    path('coordenador/atividade/eliminar/<int:pk>/', views.coordenador_eliminar_atividade, name='coordenador_eliminar_atividade'),
+    path('api/coordenador/buscar-atividades/', views.api_buscar_atividades, name='api_buscar_atividades'),
 ]

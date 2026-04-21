@@ -1,10 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.urls import reverse
+from django.db.models import Q
+from django.core.paginator import Paginator
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
@@ -21,7 +23,6 @@ from .models import (
     Atividade, Beneficio, Transacao, ResgateBeneficio,
     PerfilProfessor, PerfilDiretorTurma, PerfilCoordenador
 )
-
 
 
 def index(request):
@@ -322,7 +323,7 @@ def verificar_credenciais_professor(request):
                 if cargos[0] == 'professor':
                     return JsonResponse({'success': True, 'redirect': reverse('dashboard_professor')})
                 elif cargos[0] == 'coordenador':
-                    return JsonResponse({'success': True, 'redirect': reverse('coordenador_atividades')})
+                    return JsonResponse({'success': True, 'redirect': reverse('coordenador_dashboard')})
                 elif cargos[0] == 'diretor_turma':
                     return JsonResponse({'success': True, 'redirect': reverse('diretor_turma')})
             
@@ -359,7 +360,7 @@ def redirecionar_perfil(request):
         if perfil == 'professor':
             return JsonResponse({'redirect': reverse('dashboard_professor')})
         elif perfil == 'coordenador':
-            return JsonResponse({'redirect': reverse('coordenador_atividades')})
+            return JsonResponse({'redirect': reverse('coordenador_dashboard')})
         elif perfil == 'diretor_turma':
             return JsonResponse({'redirect': reverse('diretor_turma')})
         else:
@@ -542,5 +543,220 @@ def diretor_turma(request):
 
 # ==================== COORDENADOR DE ATIVIDADES ====================
 
-def coordenador_atividades(request):
-    return render(request, 'core/coordenador_atividades.html')
+def is_coordenador(user):
+    return user.is_authenticated and user.is_coordenador
+
+@login_required
+@user_passes_test(is_coordenador)
+def coordenador_dashboard(request):
+    """Dashboard do coordenador com lista de atividades"""
+    atividades = Atividade.objects.all().order_by('-created_at')
+    
+    # Barra de pesquisa
+    search_query = request.GET.get('search', '')
+    if search_query:
+        atividades = atividades.filter(
+            Q(nome__icontains=search_query) |
+            Q(tipo_atividade__icontains=search_query) |
+            Q(descricao__icontains=search_query)
+        )
+    
+    # Paginação
+    paginator = Paginator(atividades, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'atividades': page_obj,
+        'search_query': search_query,
+        'total_count': atividades.count(),
+    }
+    return render(request, 'core/coordenador_dashboard.html', context)
+
+@login_required
+@user_passes_test(is_coordenador)
+def coordenador_criar_atividade(request):
+    """Criar nova atividade como coordenador"""
+    if request.method == 'POST':
+        try:
+            tipo_atividade = request.POST.get('tipo_atividade')
+            nome = request.POST.get('nome')
+            descricao = request.POST.get('descricao', '')
+            criterios = request.POST.get('criterios')
+            data_inicio = request.POST.get('data_inicio')
+            data_fim = request.POST.get('data_fim')
+            hora_inicio = request.POST.get('hora_inicio')
+            hora_fim = request.POST.get('hora_fim')
+            max_pontos = request.POST.get('max_pontos')
+            selecao_cursos = request.POST.get('selecao_cursos')
+            curso_selecionado = request.POST.get('curso_selecionado')
+            
+            # Criar atividade
+            atividade = Atividade.objects.create(
+                tipo_atividade=tipo_atividade,
+                nome=nome,
+                descricao=descricao,
+                criterios_avaliacao=criterios,
+                data_inicio=data_inicio,
+                data_fim=data_fim,
+                hora_inicio=hora_inicio,
+                hora_fim=hora_fim,
+                max_pontos_por_aluno=max_pontos,
+            )
+            
+            # Associar turmas baseado na seleção de cursos
+            if selecao_cursos == 'ambos':
+                atividade.todos_cursos = True
+                turmas = Turma.objects.all()
+                atividade.turmas.set(turmas)
+            else:
+                atividade.cursos_associados = curso_selecionado
+                turmas = Turma.objects.filter(curso=curso_selecionado)
+                atividade.turmas.set(turmas)
+            
+            atividade.save()
+            messages.success(request, f'Atividade "{nome}" criada com sucesso!')
+            return redirect('coordenador_dashboard')
+            
+        except Exception as e:
+            messages.error(request, f'Erro ao criar atividade: {str(e)}')
+            return redirect('coordenador_dashboard')
+    
+    cursos = Turma.CURSO_CHOICES
+    context = {
+        'cursos': cursos,
+        'is_edit': False,
+    }
+    return render(request, 'core/coordenador_criar_atividade.html', context)
+
+@login_required
+@user_passes_test(is_coordenador)
+def coordenador_editar_atividade(request, pk):
+    """Editar atividade existente"""
+    atividade = get_object_or_404(Atividade, id=pk)
+    
+    if request.method == 'POST':
+        try:
+            tipo_atividade = request.POST.get('tipo_atividade')
+            nome = request.POST.get('nome')
+            descricao = request.POST.get('descricao', '')
+            criterios = request.POST.get('criterios')
+            data_inicio = request.POST.get('data_inicio')
+            data_fim = request.POST.get('data_fim')
+            hora_inicio = request.POST.get('hora_inicio')
+            hora_fim = request.POST.get('hora_fim')
+            max_pontos = request.POST.get('max_pontos')
+            selecao_cursos = request.POST.get('selecao_cursos')
+            curso_selecionado = request.POST.get('curso_selecionado')
+            
+            # Atualizar dados básicos
+            atividade.tipo_atividade = tipo_atividade
+            atividade.nome = nome
+            atividade.descricao = descricao
+            atividade.criterios_avaliacao = criterios
+            atividade.data_inicio = data_inicio
+            atividade.data_fim = data_fim
+            atividade.hora_inicio = hora_inicio
+            atividade.hora_fim = hora_fim
+            atividade.max_pontos_por_aluno = max_pontos
+            
+            # Atualizar associações de turmas
+            atividade.turmas.clear()
+            if selecao_cursos == 'ambos':
+                atividade.todos_cursos = True
+                atividade.cursos_associados = None
+                turmas = Turma.objects.all()
+                atividade.turmas.set(turmas)
+            else:
+                atividade.todos_cursos = False
+                atividade.cursos_associados = curso_selecionado
+                turmas = Turma.objects.filter(curso=curso_selecionado)
+                atividade.turmas.set(turmas)
+            
+            atividade.save()
+            messages.success(request, f'Atividade "{nome}" atualizada com sucesso!')
+            return redirect('coordenador_dashboard')
+            
+        except Exception as e:
+            messages.error(request, f'Erro ao atualizar atividade: {str(e)}')
+            return redirect('coordenador_dashboard')
+    
+    cursos = Turma.CURSO_CHOICES
+    selecao_atual = 'ambos' if atividade.todos_cursos else 'um_curso'
+    context = {
+        'atividade': atividade,
+        'cursos': cursos,
+        'selecao_atual': selecao_atual,
+        'is_edit': True,
+    }
+    return render(request, 'core/coordenador_criar_atividade.html', context)
+
+@csrf_exempt
+@login_required
+@user_passes_test(is_coordenador)
+def coordenador_eliminar_atividade(request, pk):
+    """Eliminar atividade (AJAX ou POST)"""
+    atividade = get_object_or_404(Atividade, id=pk)
+    
+    if request.method == 'POST':
+        nome = atividade.nome
+        atividade.delete()
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': True, 'message': f'Atividade "{nome}" eliminada!'})
+        
+        messages.success(request, f'Atividade "{nome}" eliminada com sucesso!')
+        return redirect('coordenador_dashboard')
+    
+    return render(request, 'core/coordenador_confirmar_delete.html', {'atividade': atividade})
+
+@login_required
+@user_passes_test(is_coordenador)
+def api_buscar_atividades(request):
+    """API para busca de atividades (AJAX)"""
+    search_query = request.GET.get('q', '')
+    atividades = Atividade.objects.all().order_by('-created_at')
+    
+    if search_query:
+        atividades = atividades.filter(
+            Q(nome__icontains=search_query) |
+            Q(tipo_atividade__icontains=search_query)
+        )
+    
+    data = []
+    for atv in atividades[:20]:
+        data.append({
+            'id': atv.id,
+            'nome': atv.nome,
+            'tipo': atv.get_tipo_atividade_display(),
+            'data_inicio': atv.data_inicio.strftime('%d/%m/%Y') if atv.data_inicio else '-',
+            'data_fim': atv.data_fim.strftime('%d/%m/%Y') if atv.data_fim else '-',
+            'max_pontos': atv.max_pontos_por_aluno,
+            'cursos': atv.get_cursos_display,
+        })
+    
+    return JsonResponse({'success': True, 'atividades': data})
+
+    """API para busca de atividades (AJAX)"""
+    search_query = request.GET.get('q', '')
+    atividades = Atividade.objects.all().order_by('-created_at')
+    
+    if search_query:
+        atividades = atividades.filter(
+            Q(nome__icontains=search_query) |
+            Q(tipo_atividade__icontains=search_query)
+        )
+    
+    data = []
+    for atv in atividades[:20]:  # Limitar a 20 resultados
+        data.append({
+            'id': atv.id,
+            'nome': atv.nome,
+            'tipo': atv.get_tipo_atividade_display(),
+            'data_inicio': atv.data_inicio.strftime('%d/%m/%Y') if atv.data_inicio else '-',
+            'data_fim': atv.data_fim.strftime('%d/%m/%Y') if atv.data_fim else '-',
+            'max_pontos': atv.max_pontos_por_aluno,
+            'cursos': atv.get_cursos_display,
+        })
+    
+    return JsonResponse({'success': True, 'atividades': data})

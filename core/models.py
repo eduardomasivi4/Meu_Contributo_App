@@ -73,6 +73,17 @@ class DisciplinaTurma(models.Model):
         return f"{self.disciplina.nome} - {self.turma.nome}"
 
 class Atividade(models.Model):
+    TIPO_CHOICES = (
+        ('cultural', 'Cultural'),
+        ('ciencia_tecnologia', 'Ciência e Tecnologia'),
+    )
+    
+    CURSO_CHOICES = (
+        ('eletronica', 'Eletrónica e Telecomunicações'),
+        ('informatica', 'Informática'),
+    )
+    
+    # Campos existentes...
     nome = models.CharField(max_length=200)
     descricao = models.TextField(blank=True)
     criterios_avaliacao = models.TextField()
@@ -85,20 +96,21 @@ class Atividade(models.Model):
     turmas = models.ManyToManyField(Turma, related_name='atividades', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
+    # NOVOS CAMPOS PARA COORDENADOR
+    tipo_atividade = models.CharField(max_length=20, choices=TIPO_CHOICES, default='cultural')
+    cursos_associados = models.CharField(max_length=20, choices=CURSO_CHOICES, null=True, blank=True)
+    todos_cursos = models.BooleanField(default=False)
+    
     def __str__(self):
         return self.nome
     
     @property
-    def status(self):
-        from django.utils import timezone
-        hoje = timezone.now().date()
-        if self.data_fim and self.data_fim < hoje:
-            return 'encerrada'
-        elif self.data_inicio and self.data_inicio <= hoje <= (self.data_fim or hoje):
-            return 'em_andamento'
-        else:
-            return 'disponivel'
-
+    def get_cursos_display(self):
+        if self.todos_cursos:
+            return "Ambos os cursos"
+        elif self.cursos_associados:
+            return dict(self.CURSO_CHOICES).get(self.cursos_associados, self.cursos_associados)
+        return "Não especificado"
 
 
 # ==================== ALUNO ====================
