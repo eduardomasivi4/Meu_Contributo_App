@@ -16,42 +16,17 @@ class Usuario(AbstractUser):
     tipo = models.CharField(max_length=20, choices=TIPO_USUARIO, default='aluno')
     telefone = models.CharField(max_length=15, blank=True)
     
-    # Cargos adicionais (para usuários que acumulam funções)
+    # Cargos adicionais
     is_professor = models.BooleanField(default=False)
     is_coordenador = models.BooleanField(default=False)
     is_diretor_turma = models.BooleanField(default=False)
-    
-    # Turma vinculada (para diretores de turma)
     turma_vinculada = models.CharField(max_length=20, blank=True, null=True)
     
-    groups = models.ManyToManyField(
-        'auth.Group',
-        related_name='core_usuario_set',
-        blank=True,
-    )
-    user_permissions = models.ManyToManyField(
-        'auth.Permission',
-        related_name='core_usuario_set',
-        blank=True,
-    )
+    groups = models.ManyToManyField('auth.Group', related_name='core_usuario_set', blank=True)
+    user_permissions = models.ManyToManyField('auth.Permission', related_name='core_usuario_set', blank=True)
     
     def __str__(self):
         return f"{self.username} - {self.get_tipo_display()}"
-    
-    def get_cargos(self):
-        """Retorna lista de cargos que o usuário possui"""
-        cargos = []
-        if self.is_professor:
-            cargos.append('professor')
-        if self.is_coordenador:
-            cargos.append('coordenador')
-        if self.is_diretor_turma:
-            cargos.append('diretor_turma')
-        return cargos
-    
-    def tem_multiplos_cargos(self):
-        """Verifica se usuário tem mais de um cargo"""
-        return len(self.get_cargos()) > 1
 
 class Turma(models.Model):
     CURSO_CHOICES = (
@@ -59,13 +34,50 @@ class Turma(models.Model):
         ('informatica', 'Informática'),
     )
     
-    nome = models.CharField(max_length=20)
+    nome = models.CharField(max_length=20)  # 10ª EA, 10ª ID, etc.
     curso = models.CharField(max_length=20, choices=CURSO_CHOICES)
+    ano = models.CharField(max_length=10)  # 10ª, 11ª, 12ª
     horario = models.CharField(max_length=100, blank=True)
-    ano_letivo = models.CharField(max_length=9, default='2025')
+    
+    class Meta:
+        unique_together = ['nome', 'curso']
     
     def __str__(self):
         return f"{self.nome} - {self.get_curso_display()}"
+
+class Disciplina(models.Model):
+    nome = models.CharField(max_length=100)
+    descricao = models.TextField(blank=True)
+    
+    def __str__(self):
+        return self.nome
+
+class DisciplinaTurma(models.Model):
+    disciplina = models.ForeignKey(Disciplina, on_delete=models.CASCADE, related_name='turmas_relacionadas')
+    turma = models.ForeignKey(Turma, on_delete=models.CASCADE, related_name='disciplinas_relacionadas')
+    
+    class Meta:
+        unique_together = ['disciplina', 'turma']
+    
+    def __str__(self):
+        return f"{self.disciplina.nome} - {self.turma.nome}"
+
+class Atividade(models.Model):
+    nome = models.CharField(max_length=200)
+    descricao = models.TextField(blank=True)
+    criterios_avaliacao = models.TextField()
+    data_inicio = models.DateField(null=True, blank=True)
+    data_fim = models.DateField(null=True, blank=True)
+    hora_inicio = models.TimeField(null=True, blank=True)
+    hora_fim = models.TimeField(null=True, blank=True)
+    max_pontos_por_aluno = models.IntegerField(default=100)
+    disciplina = models.ForeignKey(Disciplina, on_delete=models.CASCADE, related_name='atividades', null=True, blank=True)
+    turmas = models.ManyToManyField(Turma, related_name='atividades', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return self.nome
+
 
 
 # ==================== ALUNO ====================
@@ -75,101 +87,31 @@ class PerfilAluno(models.Model):
     numero_processo = models.CharField(max_length=20, unique=True)
     turma = models.ForeignKey(Turma, on_delete=models.SET_NULL, null=True, blank=True, related_name='alunos')
     saldo_pontos = models.IntegerField(default=0)
-    nivel = models.CharField(max_length=50, default='Iniciante')
-    documento = models.CharField(max_length=20, blank=True)
     
     def __str__(self):
         return f"{self.usuario.get_full_name()} - {self.numero_processo}"
-    
-    def atualizar_nivel(self):
-        if self.saldo_pontos >= 3000:
-            self.nivel = 'Mestre'
-        elif self.saldo_pontos >= 2000:
-            self.nivel = 'Explorador'
-        elif self.saldo_pontos >= 1000:
-            self.nivel = 'Aprendiz'
-        else:
-            self.nivel = 'Iniciante'
-        self.save()
 
-class Atividade(models.Model):
-    CATEGORIA_CHOICES = (
-        ('ciencia', 'Ciência e Tecnologia'),
-        ('cultura', 'Culturais'),
+class Transacao(models.Model):
+    TIPO_CHOICES = (
+        ('adicao', 'Adição'),
+        ('remocao', 'Remoção'),
+        ('distribuicao', 'Distribuição'),
+        ('resgate', 'Resgate'),
     )
     
-    STATUS_CHOICES = (
-        ('disponivel', 'Disponível'),
-        ('hoje', 'Hoje'),
-        ('em_andamento', 'Em Andamento'),
-        ('encerrada', 'Encerrada'),
-    )
+    aluno = models.ForeignKey(PerfilAluno, on_delete=models.CASCADE, related_name='transacoes')
+    quantidade = models.IntegerField()
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
+    descricao = models.TextField()
+    data = models.DateTimeField(auto_now_add=True)
+    professor = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, blank=True, limit_choices_to={'is_professor': True})
+    atividade = models.ForeignKey(Atividade, on_delete=models.SET_NULL, null=True, blank=True)
     
-    nome = models.CharField(max_length=200)
-    categoria = models.CharField(max_length=20, choices=CATEGORIA_CHOICES)
-    requisitos = models.TextField()
-    pontuacao_total = models.IntegerField(default=0)
-    
-    # Campos de data e hora
-    data = models.DateField()
-    hora_inicio = models.TimeField(default= '08:00')
-    hora_fim = models.TimeField(default= '17:00')
-    
-    interrompe_aula = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        ordering = ['-data']
     
     def __str__(self):
-        return self.nome
-    
-    def calcular_status(self):
-        """
-        Calcula o status da atividade com base na data e hora atual
-        """
-        agora = timezone.localtime(timezone.now())
-        data_atual = agora.date()
-        hora_atual = agora.time()
-        
-        # Data da atividade
-        data_atividade = self.data
-        
-        # 1. Se a data atual for ANTES da data da atividade
-        if data_atual < data_atividade:
-            return 'disponivel'
-        
-        # 2. Se a data atual for IGUAL à data da atividade
-        if data_atual == data_atividade:
-            # Se a hora atual for ANTES da hora de início
-            if hora_atual < self.hora_inicio:
-                return 'hoje'
-            # Se a hora atual estiver ENTRE início e fim
-            elif self.hora_inicio <= hora_atual <= self.hora_fim:
-                return 'em_andamento'
-            # Se a hora atual for DEPOIS da hora de fim
-            else:
-                return 'encerrada'
-        
-        # 3. Se a data atual for DEPOIS da data da atividade
-        return 'encerrada'
-    
-    def get_status_display_text(self):
-        """Retorna o texto amigável do status"""
-        status_map = {
-            'disponivel': 'Disponível',
-            'hoje': 'Começa Hoje',
-            'em_andamento': 'Em Andamento',
-            'encerrada': 'Encerrada',
-        }
-        return status_map.get(self.calcular_status(), 'Disponível')
-    
-    def get_status_class(self):
-        """Retorna a classe CSS para o status"""
-        status_class_map = {
-            'disponivel': 'status-disponivel',
-            'hoje': 'status-hoje',
-            'em_andamento': 'status-em_andamento',
-            'encerrada': 'status-encerrada',
-        }
-        return status_class_map.get(self.calcular_status(), 'status-disponivel')
+        return f"{self.aluno.usuario.username} - {self.tipo}: {self.quantidade} pts"
 
 class Inscricao(models.Model):
     STATUS_CHOICES = (
@@ -223,25 +165,6 @@ class ResgateBeneficio(models.Model):
     def __str__(self):
         return f"{self.aluno.usuario.username} - {self.beneficio.nome}"
 
-class Transacao(models.Model):
-    TIPO_CHOICES = (
-        ('adicao', 'Adição'),
-        ('remocao', 'Remoção'),
-        ('resgate', 'Resgate'),
-        ('inscricao', 'Inscrição'),
-    )
-    
-    aluno = models.ForeignKey(PerfilAluno, on_delete=models.CASCADE, related_name='transacoes')
-    quantidade = models.IntegerField()
-    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
-    descricao = models.TextField()
-    data = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        ordering = ['-data']
-    
-    def __str__(self):
-        return f"{self.aluno.usuario.username} - {self.tipo}: {self.quantidade} pts"
 
 
 # ==================== PROFESSOR (placeholder) ====================

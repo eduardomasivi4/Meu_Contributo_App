@@ -1,79 +1,268 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Colégio Árvore da Felicidade - Painel do Professor</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  {% load static %}
-  <link rel="stylesheet" href="{% static 'css/fundo.css' %}">
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:'Inter',sans-serif; background:#FBF7E9; }
-    .dashboard-container { max-width:1400px; margin:0 auto; padding:20px; }
-    .header { background:white; border-radius:24px; padding:15px 25px; margin-bottom:25px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; border:1px solid #F5EDDA; }
-    .logo-area { display:flex; align-items:center; gap:12px; }
-    .logo-icon { width:45px; height:45px; background:#2B7A4B; border-radius:12px; display:flex; align-items:center; justify-content:center; }
-    .user-area { display:flex; align-items:center; gap:15px; background:#FBF7E9; padding:6px 18px; border-radius:40px; }
-    .user-avatar { width:38px; height:38px; background:#2B7A4B; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; }
-    .logout-btn { background:none; border:1px solid #F5EDDA; padding:6px 14px; border-radius:30px; cursor:pointer; }
-    .search-bar { background:white; border-radius:16px; padding:12px 20px; margin-bottom:25px; display:flex; gap:15px; flex-wrap:wrap; border:1px solid #F5EDDA; }
-    .search-bar input { flex:1; border:none; outline:none; padding:8px 0; }
-    .search-bar button { background:#2B7A4B; color:white; border:none; padding:8px 20px; border-radius:30px; cursor:pointer; }
-    .search-bar button:last-child { background:#D4A373; }
-    .dashboard-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:25px; }
-    .card { background:white; border-radius:20px; padding:20px; border:1px solid #F5EDDA; }
-    .card-header { margin-bottom:15px; padding-bottom:12px; border-bottom:2px solid #FBF7E9; }
-    .card-header h3 { font-size:18px; color:#5C3A21; }
-    .turma-item { background:#FBF7E9; border-radius:16px; padding:15px; margin-bottom:12px; cursor:pointer; border:1px solid #F5EDDA; }
-    .turma-item:hover { background:#F5EDDA; transform:translateX(5px); }
-    .turma-nome { font-weight:700; color:#5C3A21; display:flex; justify-content:space-between; margin-bottom:8px; }
-    .badge-alunos { background:#E9F5EF; padding:4px 10px; border-radius:20px; color:#2B7A4B; font-size:11px; }
-    .alunos-list { margin-top:15px; padding-top:12px; border-top:1px solid #F5EDDA; }
-    .aluno-item { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #F5EDDA; flex-wrap:wrap; gap:10px; }
-    .aluno-nome { font-weight:600; color:#5C3A21; font-size:14px; }
-    .aluno-pontos { background:#E9F5EF; padding:4px 10px; border-radius:20px; font-size:12px; color:#2B7A4B; }
-    .btn-acao { background:#D4A373; border:none; padding:5px 12px; border-radius:20px; color:white; cursor:pointer; margin-left:8px; }
-    .form-pontos { background:#FBF7E9; border-radius:16px; padding:15px; margin-top:15px; }
-    .form-pontos input, .form-pontos textarea { width:100%; padding:10px; border:1px solid #F5EDDA; border-radius:12px; margin-bottom:10px; }
-    .form-pontos button { background:#2B7A4B; color:white; border:none; padding:8px 16px; border-radius:20px; cursor:pointer; margin-right:8px; }
-    .historico-item { display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid #F5EDDA; }
-    .historico-text { font-size:13px; color:#5C3A21; }
-    .historico-text small { display:block; font-size:10px; color:#8B694C; }
-    .historico-pontos { background:#E9F5EF; padding:4px 10px; border-radius:20px; font-size:12px; color:#2B7A4B; }
-    @media (max-width:900px){ .dashboard-grid { grid-template-columns:1fr; } }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Professor - Colégio Árvore da Felicidade</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/fundo.css' %}">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #FBF7E9; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        
+        .header {
+            background: white;
+            border-radius: 24px;
+            padding: 15px 25px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            border: 1px solid #F5EDDA;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .logo-area { display: flex; align-items: center; gap: 12px; }
+        .logo-icon { width: 45px; height: 45px; background: #2B7A4B; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+        .logo-icon img { width: 28px; height: 28px; }
+        .logo-area h1 { font-size: 18px; color: #5C3A21; font-weight: 700; }
+        .user-area { display: flex; align-items: center; gap: 15px; background: #FBF7E9; padding: 6px 18px; border-radius: 40px; }
+        .user-avatar { width: 38px; height: 38px; background: #2B7A4B; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; }
+        .user-name { font-weight: 600; color: #5C3A21; font-size: 14px; }
+        .user-info { font-size: 11px; color: #8B694C; }
+        .logout-btn { background: none; border: 1px solid #F5EDDA; padding: 6px 14px; border-radius: 30px; cursor: pointer; font-size: 13px; color: #5C3A21; }
+        .logout-btn:hover { background: #FBF7E9; }
+
+        .search-bar {
+            background: white;
+            border-radius: 16px;
+            padding: 12px 20px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            border: 1px solid #F5EDDA;
+        }
+        .search-bar input { flex: 1; border: none; outline: none; padding: 8px 0; font-size: 14px; }
+        .search-bar button { background: #2B7A4B; color: white; border: none; padding: 8px 20px; border-radius: 30px; cursor: pointer; }
+        .search-bar button:last-child { background: #D4A373; }
+
+        .dashboard-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; }
+        .card { background: white; border-radius: 20px; padding: 20px; border: 1px solid #F5EDDA; }
+        .card-header { margin-bottom: 15px; padding-bottom: 12px; border-bottom: 2px solid #FBF7E9; }
+        .card-header h3 { font-size: 18px; color: #5C3A21; }
+
+        .turma-item {
+            background: #FBF7E9;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            border: 1px solid #F5EDDA;
+            transition: all 0.3s;
+        }
+        .turma-item:hover { background: #F5EDDA; transform: translateX(5px); }
+        .turma-nome { font-weight: 700; color: #5C3A21; display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .badge-alunos { background: #E9F5EF; padding: 4px 10px; border-radius: 20px; color: #2B7A4B; font-size: 11px; }
+        .alunos-list { margin-top: 15px; padding-top: 12px; border-top: 1px solid #F5EDDA; }
+        .aluno-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #F5EDDA; flex-wrap: wrap; gap: 10px; }
+        .aluno-nome { font-weight: 600; color: #5C3A21; font-size: 14px; }
+        .aluno-pontos { background: #E9F5EF; padding: 4px 10px; border-radius: 20px; font-size: 12px; color: #2B7A4B; }
+        .btn-acao { background: #D4A373; border: none; padding: 5px 12px; border-radius: 20px; color: white; cursor: pointer; margin-left: 8px; font-size: 11px; }
+        .btn-acao:hover { background: #B5835A; }
+        .form-pontos { background: #FBF7E9; border-radius: 16px; padding: 15px; margin-top: 15px; }
+        .form-pontos input, .form-pontos textarea { width: 100%; padding: 10px; border: 1px solid #F5EDDA; border-radius: 12px; margin-bottom: 10px; font-family: inherit; }
+        .form-pontos button { background: #2B7A4B; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; margin-right: 8px; }
+        .form-pontos button:last-child { background: #D4A373; }
+        .historico-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #F5EDDA; }
+        .historico-text { font-size: 13px; color: #5C3A21; }
+        .historico-text small { display: block; font-size: 10px; color: #8B694C; }
+        .historico-pontos { background: #E9F5EF; padding: 4px 10px; border-radius: 20px; font-size: 12px; color: #2B7A4B; }
+
+        @media (max-width: 900px) { .dashboard-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 600px) { .header { flex-direction: column; text-align: center; } }
+    </style>
 </head>
 <body>
-  <div class="dashboard-container">
-    <div class="header"><div class="logo-area"><div class="logo-icon"><img src="{% static 'images/logo-caf.png' %}" style="width:28px"></div><h1>Colégio Árvore da Felicidade</h1></div><div class="user-area"><div class="user-avatar"><i class="fas fa-chalkboard-user"></i></div><div><div class="user-name">Prof. Carlos Mendes</div><div class="user-info">Matemática</div></div><button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Sair</button></div></div>
-    <div class="search-bar"><i class="fas fa-search"></i><input type="text" id="searchInput" placeholder="Pesquisar aluno..."><button id="searchBtn">Buscar</button><button id="clearSearchBtn">Limpar</button></div>
-    <div class="dashboard-grid"><div class="card"><div class="card-header"><h3><i class="fas fa-users"></i> Minhas Turmas</h3></div><div id="turmasList"></div></div><div class="card"><div class="card-header"><h3><i class="fas fa-history"></i> Últimas Atividades</h3></div><div id="historicoList"></div></div></div>
-  </div>
-  <div id="infoModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;"><div style="background:white; border-radius:24px; padding:30px; max-width:350px; text-align:center;"><div style="width:60px; height:60px; background:#2B7A4B; border-radius:50%; margin:0 auto 15px; display:flex; align-items:center; justify-content:center;"><i id="modalIcon" class="fas fa-check-circle" style="font-size:30px; color:white;"></i></div><h3 id="modalTitle">Sucesso!</h3><p id="modalMessage"></p><button id="modalCloseBtn" style="background:#2B7A4B; color:white; border:none; padding:10px 20px; border-radius:30px; cursor:pointer;">Continuar</button></div></div>
-  <script>
-    const turmas = [{ id:1, nome:"10ª EA", curso:"Eletrónica", alunos:[{ id:1, nome:"Ricardo Oliveira", processo:"20230814", pontos:2450 },{ id:2, nome:"João Silva", processo:"20241122", pontos:3200 }] },{ id:2, nome:"10ª EE", curso:"Eletrónica", alunos:[{ id:3, nome:"Carla Souza", processo:"20240915", pontos:2100 }] }];
-    let historico = [{ aluno:"Ricardo Oliveira", turma:"10ª EA", motivo:"Participação", pontos:15, tipo:"Adição" }];
-    let expandida = null, pesquisa = '';
-    function showModal(title, msg, isSuccess=true) { document.getElementById('modalTitle').innerText = title; document.getElementById('modalMessage').innerText = msg; const icon = document.querySelector('#infoModal .modal-icon'); icon.style.background = isSuccess ? '#2B7A4B' : '#D4A373'; document.getElementById('infoModal').style.display = 'flex'; }
-    function hideModal() { document.getElementById('infoModal').style.display = 'none'; }
-    function addPontos(aluno, turmaNome, pontos, motivo) { aluno.pontos += pontos; historico.unshift({ aluno:aluno.nome, turma:turmaNome, motivo, pontos, tipo:"Adição" }); render(); showModal('✅ Sucesso!', `${pontos} pontos adicionados a ${aluno.nome}`); }
-    function removerPontos(aluno, turmaNome, pontos, motivo) { if(aluno.pontos < pontos) { showModal('❌ Erro', 'Saldo insuficiente!', false); return false; } aluno.pontos -= pontos; historico.unshift({ aluno:aluno.nome, turma:turmaNome, motivo, pontos, tipo:"Remoção" }); render(); showModal('⚠️ Atenção', `${pontos} pontos removidos`); return true; }
-    window.confirmarAdd = (id, nome, turma) => { let p = parseInt(document.getElementById(`pts-${id}`).value), m = document.getElementById(`mot-${id}`).value || "Participação"; let a = null, t = null; for(let tur of turmas) { let al = tur.alunos.find(x => x.id === id); if(al) { a = al; t = tur.nome; break; } } if(a) addPontos(a, t, p, m); document.getElementById(`form-${id}`)?.remove(); document.querySelector(`.btn-add[data-id="${id}"]`).style.display = 'inline-block'; };
-    window.confirmarRem = (id, nome, turma) => { let p = parseInt(document.getElementById(`pts-${id}`).value), m = document.getElementById(`mot-${id}`).value || "Penalização"; let a = null, t = null; for(let tur of turmas) { let al = tur.alunos.find(x => x.id === id); if(al) { a = al; t = tur.nome; break; } } if(a) removerPontos(a, t, p, m); document.getElementById(`form-${id}`)?.remove(); document.querySelector(`.btn-remove[data-id="${id}"]`).style.display = 'inline-block'; };
-    window.mostrarForm = (id, nome, turma, tipo) => { document.querySelectorAll('.form-pontos').forEach(f => f.remove()); document.querySelectorAll('.btn-add,.btn-remove').forEach(b => b.style.display = 'inline-block'); document.querySelector(`.btn-${tipo}[data-id="${id}"]`).style.display = 'none'; let row = document.querySelector(`.aluno-item[data-id="${id}"]`); if(row) row.insertAdjacentHTML('afterend', `<div class="form-pontos" id="form-${id}"><input type="number" id="pts-${id}" value="10"><textarea id="mot-${id}" rows="2" placeholder="Motivo..."></textarea><div><button onclick="${tipo === 'add' ? 'confirmarAdd' : 'confirmarRem'}(${id}, '${nome}', '${turma}')">Confirmar</button><button onclick="document.getElementById('form-${id}').remove(); document.querySelector('.btn-${tipo}[data-id=\"${id}\"]').style.display='inline-block'">Cancelar</button></div></div>`); };
-    function render() {
-      let filtradas = turmas.map(t => ({ ...t, alunos: t.alunos.filter(a => !pesquisa || a.nome.toLowerCase().includes(pesquisa) || a.processo.includes(pesquisa)) })).filter(t => t.alunos.length);
-      document.getElementById('turmasList').innerHTML = filtradas.length ? filtradas.map(t => `<div class="turma-item" onclick="if(event.target.tagName!='BUTTON')toggle(${t.id})"><div class="turma-nome"><span>${t.nome} - ${t.curso}</span><span class="badge-alunos">${t.alunos.length} alunos</span></div>${expandida === t.id ? `<div class="alunos-list">${t.alunos.map(a => `<div class="aluno-item" data-id="${a.id}"><div><div class="aluno-nome">${a.nome}</div><div class="aluno-processo">${a.processo}</div></div><div><span class="aluno-pontos">${a.pontos} pts</span><button class="btn-acao btn-add" data-id="${a.id}" onclick="event.stopPropagation();mostrarForm(${a.id},'${a.nome}','${t.nome}','add')">+ Add</button><button class="btn-acao btn-remove" data-id="${a.id}" onclick="event.stopPropagation();mostrarForm(${a.id},'${a.nome}','${t.nome}','remove')">- Rem</button></div></div>`).join('')}</div>` : ''}</div>`).join('') : '<div style="text-align:center;padding:40px;color:#8B694C;">Nenhum aluno encontrado</div>';
-      document.getElementById('historicoList').innerHTML = historico.slice(0,10).map(h => `<div class="historico-item"><div class="historico-text">${h.aluno}<small>${h.turma}</small><small>${h.motivo}</small></div><div class="historico-pontos">${h.tipo === 'Adição' ? '+' : '-'}${h.pontos} pts</div></div>`).join('');
-    }
-    window.toggle = (id) => { expandida = expandida === id ? null : id; render(); };
-    document.getElementById('searchBtn').onclick = () => { pesquisa = document.getElementById('searchInput').value.toLowerCase(); expandida = null; render(); };
-    document.getElementById('clearSearchBtn').onclick = () => { document.getElementById('searchInput').value = ''; pesquisa = ''; expandida = null; render(); };
-    document.getElementById('logoutBtn').onclick = () => window.location.href = '/';
-    document.getElementById('modalCloseBtn').onclick = hideModal;
-    render();
-  </script>
+    <div class="container">
+        <div class="header">
+            <div class="logo-area">
+                <div class="logo-icon"><img src="{% static 'images/logo-caf.png' %}" alt="Logo"></div>
+                <h1>Colégio Árvore da Felicidade</h1>
+            </div>
+            <div class="user-area">
+                <div class="user-avatar"><i class="fas fa-chalkboard-user"></i></div>
+                <div>
+                    <div class="user-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+                    <div class="user-info">{{ request.user.email }} | Professor</div>
+                </div>
+                <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Sair</button>
+            </div>
+        </div>
+
+        <div class="search-bar">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Pesquisar aluno por nome ou processo...">
+            <button id="searchBtn">Buscar</button>
+            <button id="clearSearchBtn">Limpar</button>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-users"></i> Minhas Turmas</h3></div>
+                <div id="turmasList"></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-history"></i> Últimas Atividades</h3></div>
+                <div id="historicoList"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="infoModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(92,58,33,0.6); align-items:center; justify-content:center; z-index:1000;">
+        <div style="background:white; border-radius:24px; padding:30px; max-width:350px; text-align:center;">
+            <div style="width:60px; height:60px; background:#2B7A4B; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 15px;"><i id="modalIcon" class="fas fa-check-circle" style="font-size:30px; color:white;"></i></div>
+            <h3 id="modalTitle" style="color:#5C3A21;">Sucesso</h3>
+            <p id="modalMessage" style="color:#8B694C;"></p>
+            <button id="modalCloseBtn" style="background:#2B7A4B; color:white; border:none; padding:10px 20px; border-radius:30px; cursor:pointer;">Continuar</button>
+        </div>
+    </div>
+
+    <script>
+        // Dados das turmas e alunos
+        const turmas = [
+            { id: 1, nome: "10ª EA", curso: "Eletrónica", horario: "Segunda e Quarta - 08h às 10h", alunos: [
+                { id: 1, nome: "Ricardo Oliveira", processo: "20230814", pontos: 2450 },
+                { id: 2, nome: "João Silva", processo: "20241122", pontos: 3200 },
+                { id: 3, nome: "Maria Santos", processo: "20241001", pontos: 1890 }
+            ]},
+            { id: 2, nome: "10ª EE", curso: "Eletrónica", horario: "Terça e Quinta - 10h às 12h", alunos: [
+                { id: 4, nome: "Carla Souza", processo: "20240915", pontos: 2100 },
+                { id: 5, nome: "Pedro Costa", processo: "20240720", pontos: 1750 }
+            ]},
+            { id: 3, nome: "10ª ID", curso: "Informática", horario: "Segunda e Quarta - 14h às 16h", alunos: [
+                { id: 6, nome: "Lucas Almeida", processo: "20240901", pontos: 1540 },
+                { id: 7, nome: "Mariana Santos", processo: "20240920", pontos: 2310 }
+            ]}
+        ];
+
+        let historico = [
+            { aluno: "Ricardo Oliveira", turma: "10ª EA", motivo: "Participação ativa na resolução de exercícios", pontos: 15, tipo: "Adição" },
+            { aluno: "Mariana Santos", turma: "10ª ID", motivo: "Respondeu corretamente questões desafiadoras", pontos: 10, tipo: "Adição" }
+        ];
+
+        let expandida = null;
+        let pesquisa = '';
+
+        function showModal(title, message, isSuccess = true) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalMessage').innerText = message;
+            const icon = document.querySelector('#infoModal .modal-icon');
+            icon.style.background = isSuccess ? '#2B7A4B' : '#D4A373';
+            document.getElementById('infoModal').style.display = 'flex';
+        }
+
+        function hideModal() { document.getElementById('infoModal').style.display = 'none'; }
+
+        function addPontos(aluno, turmaNome, pontos, motivo) {
+            aluno.pontos += pontos;
+            historico.unshift({ aluno: aluno.nome, turma: turmaNome, motivo: motivo, pontos: pontos, tipo: "Adição" });
+            render();
+            showModal('Sucesso', `${pontos} pontos adicionados a ${aluno.nome}`);
+        }
+
+        function removerPontos(aluno, turmaNome, pontos, motivo) {
+            if (aluno.pontos < pontos) {
+                showModal('Erro', 'Saldo insuficiente!', false);
+                return false;
+            }
+            aluno.pontos -= pontos;
+            historico.unshift({ aluno: aluno.nome, turma: turmaNome, motivo: motivo, pontos: pontos, tipo: "Remoção" });
+            render();
+            showModal('Atenção', `${pontos} pontos removidos de ${aluno.nome}`);
+            return true;
+        }
+
+        window.confirmarAdd = (id, nome, turma) => {
+            let p = parseInt(document.getElementById(`pts-${id}`).value);
+            let m = document.getElementById(`mot-${id}`).value || "Participação destacada";
+            let a = null, t = null;
+            for (let tur of turmas) {
+                let al = tur.alunos.find(x => x.id === id);
+                if (al) { a = al; t = tur.nome; break; }
+            }
+            if (a) addPontos(a, t, p, m);
+            document.getElementById(`form-${id}`)?.remove();
+            document.querySelector(`.btn-add[data-id="${id}"]`).style.display = 'inline-block';
+        };
+
+        window.confirmarRem = (id, nome, turma) => {
+            let p = parseInt(document.getElementById(`pts-${id}`).value);
+            let m = document.getElementById(`mot-${id}`).value || "Penalização aplicada";
+            let a = null, t = null;
+            for (let tur of turmas) {
+                let al = tur.alunos.find(x => x.id === id);
+                if (al) { a = al; t = tur.nome; break; }
+            }
+            if (a) removerPontos(a, t, p, m);
+            document.getElementById(`form-${id}`)?.remove();
+            document.querySelector(`.btn-remove[data-id="${id}"]`).style.display = 'inline-block';
+        };
+
+        window.mostrarForm = (id, nome, turma, tipo) => {
+            document.querySelectorAll('.form-pontos').forEach(f => f.remove());
+            document.querySelectorAll('.btn-add, .btn-remove').forEach(b => b.style.display = 'inline-block');
+            document.querySelector(`.btn-${tipo}[data-id="${id}"]`).style.display = 'none';
+            let row = document.querySelector(`.aluno-item[data-id="${id}"]`);
+            if (row) {
+                row.insertAdjacentHTML('afterend', `
+                    <div class="form-pontos" id="form-${id}">
+                        <input type="number" id="pts-${id}" value="10" min="1" max="100">
+                        <textarea id="mot-${id}" rows="2" placeholder="Motivo..."></textarea>
+                        <div>
+                            <button onclick="${tipo === 'add' ? 'confirmarAdd' : 'confirmarRem'}(${id}, '${nome}', '${turma}')">Confirmar</button>
+                            <button onclick="document.getElementById('form-${id}').remove(); document.querySelector('.btn-${tipo}[data-id=\"${id}\"]').style.display='inline-block'">Cancelar</button>
+                        </div>
+                    </div>
+                `);
+            }
+        };
+
+        function render() {
+            let filtradas = turmas.map(t => ({ ...t, alunos: t.alunos.filter(a => !pesquisa || a.nome.toLowerCase().includes(pesquisa) || a.processo.includes(pesquisa)) })).filter(t => t.alunos.length);
+            document.getElementById('turmasList').innerHTML = filtradas.length ? filtradas.map(t => `
+                <div class="turma-item" onclick="if(event.target.tagName!='BUTTON')toggle(${t.id})">
+                    <div class="turma-nome"><span><i class="fas fa-microchip"></i> ${t.nome} - ${t.curso}</span><span class="badge-alunos">${t.alunos.length} alunos</span></div>
+                    <div class="turma-info"><span><i class="fas fa-clock"></i> ${t.horario}</span></div>
+                    ${expandida === t.id ? `<div class="alunos-list">${t.alunos.map(a => `
+                        <div class="aluno-item" data-id="${a.id}">
+                            <div><div class="aluno-nome">${a.nome}</div><div class="aluno-processo">${a.processo}</div></div>
+                            <div><span class="aluno-pontos">${a.pontos} pts</span>
+                            <button class="btn-acao btn-add" data-id="${a.id}" onclick="event.stopPropagation();mostrarForm(${a.id},'${a.nome}','${t.nome}','add')">+ Add</button>
+                            <button class="btn-acao btn-remove" data-id="${a.id}" onclick="event.stopPropagation();mostrarForm(${a.id},'${a.nome}','${t.nome}','remove')">- Rem</button></div>
+                        </div>
+                    `).join('')}</div>` : ''}
+                </div>
+            `).join('') : '<div style="text-align:center;padding:40px;color:#8B694C;">Nenhum aluno encontrado</div>';
+            document.getElementById('historicoList').innerHTML = historico.slice(0,10).map(h => `
+                <div class="historico-item">
+                    <div class="historico-text">${h.aluno}<small>${h.turma}</small><small>${h.motivo}</small></div>
+                    <div class="historico-pontos">${h.tipo === 'Adição' ? '+' : '-'}${h.pontos} pts</div>
+                </div>
+            `).join('');
+        }
+
+        window.toggle = (id) => { expandida = expandida === id ? null : id; render(); };
+        document.getElementById('searchBtn').onclick = () => { pesquisa = document.getElementById('searchInput').value.toLowerCase(); expandida = null; render(); };
+        document.getElementById('clearSearchBtn').onclick = () => { document.getElementById('searchInput').value = ''; pesquisa = ''; expandida = null; render(); };
+        document.getElementById('logoutBtn').onclick = () => window.location.href = '/';
+        document.getElementById('modalCloseBtn').onclick = hideModal;
+        render();
+    </script>
 </body>
 </html>

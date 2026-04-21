@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login as auth_login
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -15,9 +15,6 @@ from io import BytesIO
 from django.conf import settings
 import os
 from .config import REDE_IP, PORTA
-
-
-# Importações dos modelos
 from .models import (
     Usuario,
     PerfilAluno, 
@@ -26,7 +23,6 @@ from .models import (
     Beneficio, 
     Transacao, 
     ResgateBeneficio,
-    Inscricao
 )
 
 def index(request):
@@ -330,81 +326,42 @@ def login_professor(request):
 
 @csrf_exempt
 def verificar_credenciais_professor(request):
-    """API para verificar credenciais do professor e redirecionar"""
     if request.method == 'POST':
-        try:
-            import json
-            data = json.loads(request.body)
-            email = data.get('email', '')
-            senha = data.get('senha', '')
-            
-            print(f"[DEBUG] Tentativa de login - Email: {email}")
-            
-            if not email or not senha:
-                return JsonResponse({'success': False, 'erro': 'Preencha e-mail e senha'})
-            
-            from django.contrib.auth import authenticate
-            from django.contrib.auth import login as auth_login
-            
-            # Tentar autenticar com email
-            user = authenticate(request, username=email, password=senha)
-            
-            # Se não funcionou, tentar com username
-            if not user:
-                username = email.split('@')[0]
-                print(f"[DEBUG] Tentando com username: {username}")
-                user = authenticate(request, username=username, password=senha)
-            
-            if not user:
-                print(f"[DEBUG] Falha na autenticação para: {email}")
-                return JsonResponse({'success': False, 'erro': 'E-mail ou senha inválidos'})
-            
-            print(f"[DEBUG] Usuário autenticado: {user.username}")
-            print(f"[DEBUG] is_professor: {user.is_professor}")
-            print(f"[DEBUG] is_coordenador: {user.is_coordenador}")
-            print(f"[DEBUG] is_diretor_turma: {user.is_diretor_turma}")
-            
-            # Verificar se tem algum cargo válido
-            if not user.is_professor and not user.is_coordenador and not user.is_diretor_turma:
-                return JsonResponse({'success': False, 'erro': 'Usuário não tem permissão de acesso'})
-            
-            # Fazer login
-            auth_login(request, user)
-            
-            # Determinar redirecionamento baseado nos cargos
-            cargos = []
-            if user.is_professor:
-                cargos.append('professor')
-            if user.is_coordenador:
-                cargos.append('coordenador')
-            if user.is_diretor_turma:
-                cargos.append('diretor_turma')
-            
-            print(f"[DEBUG] Cargos: {cargos}")
-            
-            # Se for apenas diretor de turma
-            if user.is_diretor_turma and not user.is_professor and not user.is_coordenador:
-                print("[DEBUG] Redirecionando para diretor/dashboard/")
-                return JsonResponse({'success': True, 'redirect': '/diretor/dashboard/'})
-            
-            # Se for apenas professor
-            if user.is_professor and not user.is_coordenador and not user.is_diretor_turma:
-                print("[DEBUG] Redirecionando para professor/dashboard/")
+        data = json.loads(request.body)
+        email = data.get('email', '')
+        senha = data.get('senha', '')
+        
+        user = authenticate(request, username=email, password=senha)
+        if not user:
+            username = email.split('@')[0]
+            user = authenticate(request, username=username, password=senha)
+        
+        if not user:
+            return JsonResponse({'success': False, 'erro': 'Credenciais inválidas'})
+        
+        if not user.is_professor and not user.is_coordenador and not user.is_diretor_turma:
+            return JsonResponse({'success': False, 'erro': 'Usuário não tem permissão'})
+        
+        auth_login(request, user)
+        
+        cargos = []
+        if user.is_professor:
+            cargos.append('professor')
+        if user.is_coordenador:
+            cargos.append('coordenador')
+        if user.is_diretor_turma:
+            cargos.append('diretor_turma')
+        
+        if len(cargos) == 1:
+            if cargos[0] == 'professor':
                 return JsonResponse({'success': True, 'redirect': '/professor/dashboard/'})
-            
-            # Se for apenas coordenador
-            if user.is_coordenador and not user.is_professor and not user.is_diretor_turma:
-                print("[DEBUG] Redirecionando para coordenador/dashboard/")
+            elif cargos[0] == 'coordenador':
                 return JsonResponse({'success': True, 'redirect': '/coordenador/dashboard/'})
-            
-            # Se tem múltiplos cargos, vai para tela de seleção
-            request.session['cargos_disponiveis'] = cargos
-            print("[DEBUG] Redirecionando para selecionar-perfil/")
-            return JsonResponse({'success': True, 'redirect': '/professor/selecionar-perfil/'})
-            
-        except Exception as e:
-            print(f"[DEBUG] Erro: {str(e)}")
-            return JsonResponse({'success': False, 'erro': f'Erro no servidor: {str(e)}'}, status=500)
+            elif cargos[0] == 'diretor_turma':
+                return JsonResponse({'success': True, 'redirect': '/diretor/dashboard/'})
+        
+        request.session['cargos_disponiveis'] = cargos
+        return JsonResponse({'success': True, 'redirect': '/professor/selecionar-perfil/'})
     
     return JsonResponse({'erro': 'Método não permitido'}, status=405)
 
@@ -470,23 +427,177 @@ def redirecionar_perfil(request):
     
     return JsonResponse({'erro': 'Perfil inválido'}, status=400)
 
-@csrf_exempt
 def selecionar_perfil(request):
-    """Tela de seleção de perfil para usuários com múltiplos cargos"""
     cargos = request.session.get('cargos_disponiveis', [])
-    turma = request.session.get('turma_selecionada', '')
-    
     context = {
-        'cargos': cargos,
         'tem_professor': 'professor' in cargos,
         'tem_coordenador': 'coordenador' in cargos,
         'tem_diretor': 'diretor_turma' in cargos,
-        'turma': turma,
     }
     return render(request, 'core/selecionar_perfil.html', context)
 
+@csrf_exempt
+def redirecionar_perfil(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        perfil = data.get('perfil')
+        if perfil == 'professor':
+            return JsonResponse({'redirect': '/professor/dashboard/'})
+        elif perfil == 'coordenador':
+            return JsonResponse({'redirect': '/coordenador/dashboard/'})
+        elif perfil == 'diretor_turma':
+            return JsonResponse({'redirect': '/diretor/dashboard/'})
+    return JsonResponse({'erro': 'Perfil inválido'}, status=400)
+
+@login_required
 def dashboard_professor(request):
-    return render(request, 'core/dashboard_professor.html')
+    if not request.user.is_professor:
+        return redirect('index')
+    
+    disciplinas_por_curso = {
+        'eletronica': {'nome': 'Eletrónica e Telecomunicações', 'disciplinas': []},
+        'informatica': {'nome': 'Informática', 'disciplinas': []},
+        'comum': {'nome': 'Comum', 'disciplinas': []},
+    }
+    
+    for dt in DisciplinaTurma.objects.select_related('disciplina', 'turma').all():
+        disc = dt.disciplina
+        turma = dt.turma
+        curso = turma.curso
+        
+        if curso == 'eletronica':
+            if disc not in disciplinas_por_curso['eletronica']['disciplinas']:
+                disciplinas_por_curso['eletronica']['disciplinas'].append(disc)
+        elif curso == 'informatica':
+            if disc not in disciplinas_por_curso['informatica']['disciplinas']:
+                disciplinas_por_curso['informatica']['disciplinas'].append(disc)
+        else:
+            if disc not in disciplinas_por_curso['comum']['disciplinas']:
+                disciplinas_por_curso['comum']['disciplinas'].append(disc)
+    
+    context = {
+        'disciplinas_por_curso': disciplinas_por_curso,
+    }
+    return render(request, 'core/dashboard_professor.html', context)
+
+# Obter turmas de uma disciplina via AJAX
+@login_required
+def get_turmas_por_disciplina(request, disciplina_id):
+    if not request.user.is_professor:
+        return JsonResponse({'error': 'Acesso negado'}, status=403)
+    
+    disciplina = get_object_or_404(Disciplina, id=disciplina_id)
+    turmas = Turma.objects.filter(disciplinas_relacionadas__disciplina=disciplina).distinct()
+    
+    data = [{'id': t.id, 'nome': t.nome, 'curso': t.get_curso_display()} for t in turmas]
+    return JsonResponse({'turmas': data})
+
+@login_required
+def turma_detail(request, turma_id):
+    if not request.user.is_professor:
+        return redirect('index')
+    
+    turma = get_object_or_404(Turma, id=turma_id)
+    disciplina_id = request.GET.get('disciplina_id')
+    disciplina = get_object_or_404(Disciplina, id=disciplina_id) if disciplina_id else None
+    
+    alunos = turma.alunos.all().order_by('usuario__first_name')
+    atividades = Atividade.objects.filter(
+        disciplina=disciplina, turmas=turma
+    ).order_by('-created_at') if disciplina else []
+    
+    context = {
+        'turma': turma,
+        'disciplina': disciplina,
+        'alunos': alunos,
+        'atividades': atividades,
+    }
+    return render(request, 'core/turma_detail.html', context)
+
+@login_required
+def criar_atividade(request, turma_id):
+    if not request.user.is_professor:
+        return redirect('index')
+    
+    turma = get_object_or_404(Turma, id=turma_id)
+    disciplina_id = request.GET.get('disciplina_id')
+    disciplina = get_object_or_404(Disciplina, id=disciplina_id) if disciplina_id else None
+    
+    if request.method == 'POST':
+        nome = request.POST.get('nome')
+        descricao = request.POST.get('descricao', '')
+        criterios = request.POST.get('criterios')
+        data_inicio = request.POST.get('data_inicio')
+        data_fim = request.POST.get('data_fim')
+        hora_inicio = request.POST.get('hora_inicio')
+        hora_fim = request.POST.get('hora_fim')
+        max_pontos = request.POST.get('max_pontos')
+        tipo_turma = request.POST.get('tipo_turma')
+        
+        atividade = Atividade.objects.create(
+            nome=nome,
+            descricao=descricao,
+            criterios_avaliacao=criterios,
+            data_inicio=data_inicio,
+            data_fim=data_fim,
+            hora_inicio=hora_inicio,
+            hora_fim=hora_fim,
+            max_pontos_por_aluno=max_pontos,
+            disciplina=disciplina,
+        )
+        
+        if tipo_turma == 'unica':
+            atividade.turmas.add(turma)
+        else:
+            turmas_ids = request.POST.getlist('turmas_multiplas')
+            for tid in turmas_ids:
+                atividade.turmas.add(Turma.objects.get(id=tid))
+        
+        request.session['atividade_criada'] = nome
+        return redirect('dashboard_professor')
+    
+    todas_turmas = Turma.objects.all().order_by('curso', 'nome')
+    context = {
+        'turma': turma,
+        'disciplina': disciplina,
+        'todas_turmas': todas_turmas,
+    }
+    return render(request, 'core/criar_atividade.html', context)
+
+# Distribuir pontos
+@login_required
+def distribuir_pontos(request, atividade_id):
+    if not request.user.is_professor:
+        return redirect('index')
+    
+    atividade = get_object_or_404(Atividade, id=atividade_id)
+    turma_id = request.GET.get('turma_id')
+    turma = get_object_or_404(Turma, id=turma_id)
+    alunos = turma.alunos.all().order_by('usuario__first_name')
+    
+    if request.method == 'POST':
+        for aluno in alunos:
+            pontos = request.POST.get(f'pontos_{aluno.id}')
+            if pontos and int(pontos) > 0:
+                if int(pontos) <= atividade.max_pontos_por_aluno:
+                    aluno.saldo_pontos += int(pontos)
+                    aluno.save()
+                    Transacao.objects.create(
+                        aluno=aluno,
+                        quantidade=int(pontos),
+                        tipo='distribuicao',
+                        descricao=f'Distribuição de pontos da atividade: {atividade.nome}',
+                        professor=request.user,
+                        atividade=atividade
+                    )
+        return redirect('turma_detail', turma_id=turma.id)
+    
+    context = {
+        'atividade': atividade,
+        'turma': turma,
+        'alunos': alunos,
+    }
+    return render(request, 'core/distribuir_pontos.html', context)
 
 
 # ==================== DIRETOR DE TURMA ====================
