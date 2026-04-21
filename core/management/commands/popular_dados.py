@@ -74,20 +74,98 @@ class Command(BaseCommand):
         self.stdout.write(f'   ✅ {Disciplina.objects.count()} disciplinas criadas.')
 
         # =========================================================
-        # 3. ALUNOS (saldo inicial 9999)
+        # 3. ALUNOS (NOMES REAIS ORGANIZADOS POR TURMA)
         # =========================================================
         self.stdout.write('👨‍🎓 Criando alunos...')
-        first_names = ['João', 'Maria', 'José', 'Ana', 'Pedro', 'Paula', 'Lucas', 'Mariana', 'Carlos', 'Fernanda']
-        last_names = ['Silva', 'Santos', 'Oliveira', 'Souza', 'Costa', 'Ferreira', 'Almeida', 'Ribeiro']
-        aluno_counter = 1
-        for turma in turmas.values():
-            for _ in range(4):
-                primeiro = random.choice(first_names)
-                ultimo = random.choice(last_names)
-                username = f"{primeiro.lower()}.{ultimo.lower()}{aluno_counter}"
-                processo = f"2024{str(aluno_counter).zfill(5)}"
+        
+        # Nomes reais para alunos do Colégio Árvore da Felicidade
+        # Organizados por turma (4 alunos por turma)
+        alunos_por_turma = {
+            '10ª ID': [
+                ('202400001', 'Alice Fernandes', 'alice.fernandes'),
+                ('202400002', 'Bruno Cardoso', 'bruno.cardoso'),
+                ('202400003', 'Carla Mendes', 'carla.mendes'),
+                ('202400004', 'Diogo Lopes', 'diogo.lopes'),
+            ],
+            '10ª IB': [
+                ('202400005', 'Elena Santos', 'elena.santos'),
+                ('202400006', 'Fábio Gomes', 'fabio.gomes'),
+                ('202400007', 'Gabriela Costa', 'gabriela.costa'),
+                ('202400008', 'Hugo Pereira', 'hugo.pereira'),
+            ],
+            '11ª ID': [
+                ('202400009', 'Inês Rodrigues', 'ines.rodrigues'),
+                ('202400010', 'João Almeida', 'joao.almeida'),
+                ('202400011', 'Lara Ferreira', 'lara.ferreira'),
+                ('202400012', 'Miguel Carvalho', 'miguel.carvalho'),
+            ],
+            '11ª IB': [
+                ('202400013', 'Natália Ribeiro', 'natalia.ribeiro'),
+                ('202400014', 'Oscar Martins', 'oscar.martins'),
+                ('202400015', 'Patrícia Monteiro', 'patricia.monteiro'),
+                ('202400016', 'Ricardo Nunes', 'ricardo.nunes'),
+            ],
+            '12ª ID': [
+                ('202400017', 'Sofia Ramos', 'sofia.ramos'),
+                ('202400018', 'Tomás Batista', 'tomas.batista'),
+                ('202400019', 'Úrsula Matos', 'ursula.matos'),
+                ('202400020', 'Vítor Pires', 'vitor.pires'),
+            ],
+            '12ª IB': [
+                ('202400021', 'Wanda Castro', 'wanda.castro'),
+                ('202400022', 'Xavier Neves', 'xavier.neves'),
+                ('202400023', 'Yara Machado', 'yara.machado'),
+                ('202400024', 'Zacarias Barbosa', 'zacarias.barbosa'),
+            ],
+            '10ª EA': [
+                ('202400025', 'Adriana Vieira', 'adriana.vieira'),
+                ('202400026', 'Bernardo Leal', 'bernardo.leal'),
+                ('202400027', 'Cristiano Soares', 'cristiano.soares'),
+                ('202400028', 'Daniela Cunha', 'daniela.cunha'),
+            ],
+            '10ª EE': [
+                ('202400029', 'Eduardo Brito', 'eduardo.brito'),
+                ('202400030', 'Filipa Cruz', 'filipa.cruz'),
+                ('202400031', 'Gonçalo Tavares', 'goncalo.tavares'),
+                ('202400032', 'Helena Marques', 'helena.marques'),
+            ],
+            '11ª EA': [
+                ('202400033', 'Igor Lima', 'igor.lima'),
+                ('202400034', 'Jéssica Rocha', 'jessica.rocha'),
+                ('202400035', 'Kevin Silva', 'kevin.silva'),
+                ('202400036', 'Lúcia Gonçalves', 'lucia.goncalves'),
+            ],
+            '11ª EE': [
+                ('202400037', 'Manuel Abreu', 'manuel.abreu'),
+                ('202400038', 'Nádia Simões', 'nadia.simoes'),
+                ('202400039', 'Olga Andrade', 'olga.andrade'),
+                ('202400040', 'Paulo Mota', 'paulo.mota'),
+            ],
+            '12ª EA': [
+                ('202400041', 'Raquel Leite', 'raquel.leite'),
+                ('202400042', 'Sérgio Pinheiro', 'sergio.pinheiro'),
+                ('202400043', 'Tânia Dias', 'tania.dias'),
+                ('202400044', 'Ulisses Neves', 'ulisses.neves'),
+            ],
+            '12ª EE': [
+                ('202400045', 'Vera Cardoso', 'vera.cardoso'),
+                ('202400046', 'Wilson Santos', 'wilson.santos'),
+                ('202400047', 'Xénia Luz', 'xenia.luz'),
+                ('202400048', 'Yuri Mendes', 'yuri.mendes'),
+            ],
+        }
+        
+        for turma_nome, alunos_lista in alunos_por_turma.items():
+            turma = turmas.get(turma_nome)
+            if not turma:
+                continue
+                
+            for processo, nome_completo, username in alunos_lista:
+                primeiro = nome_completo.split()[0]
+                ultimo = nome_completo.split()[1]
                 email = f"{username}@aluno.colegioarvore.ao"
-                usuario, _ = Usuario.objects.get_or_create(
+                
+                usuario, created = Usuario.objects.get_or_create(
                     username=username,
                     defaults={
                         'first_name': primeiro,
@@ -97,6 +175,13 @@ class Command(BaseCommand):
                         'tipo': 'aluno'
                     }
                 )
+                
+                if not created:
+                    usuario.first_name = primeiro
+                    usuario.last_name = ultimo
+                    usuario.email = email
+                    usuario.save()
+                
                 PerfilAluno.objects.get_or_create(
                     usuario=usuario,
                     defaults={
@@ -105,7 +190,9 @@ class Command(BaseCommand):
                         'saldo_pontos': 9999
                     }
                 )
-                aluno_counter += 1
+                
+                self.stdout.write(f'      - {processo}: {nome_completo} - {turma_nome}')
+        
         self.stdout.write(f'   ✅ {PerfilAluno.objects.count()} alunos criados.')
 
         # =========================================================
@@ -117,7 +204,7 @@ class Command(BaseCommand):
         
         # Professor apenas
         prof_only, _ = Usuario.objects.get_or_create(
-            username='professor.apenas',
+            username='professor.carlos',
             defaults={
                 'first_name': 'Carlos', 'last_name': 'Mendes',
                 'email': 'professor@colegioarvore.ao',
@@ -130,10 +217,11 @@ class Command(BaseCommand):
                 usuario=prof_only,
                 defaults={'disciplina': primeira_disciplina}
             )
+        self.stdout.write('      - professor@colegioarvore.ao (Professor Carlos Mendes)')
         
         # Coordenador apenas
         coord_only, _ = Usuario.objects.get_or_create(
-            username='coordenador.apenas',
+            username='coordenador.ana',
             defaults={
                 'first_name': 'Ana', 'last_name': 'Paula',
                 'email': 'coordenador@colegioarvore.ao',
@@ -141,11 +229,12 @@ class Command(BaseCommand):
                 'tipo': 'coordenador', 'is_coordenador': True
             }
         )
+        self.stdout.write('      - coordenador@colegioarvore.ao (Coordenadora Ana Paula)')
         
-        # Diretor apenas - CORRIGIDO: usar objeto Turma em vez de string
+        # Diretor apenas
         turma_12ea = turmas.get('12ª EA')
         diretor_only, _ = Usuario.objects.get_or_create(
-            username='diretor.apenas',
+            username='diretor.joao',
             defaults={
                 'first_name': 'João', 'last_name': 'Zinga',
                 'email': 'diretor@colegioarvore.ao',
@@ -154,10 +243,11 @@ class Command(BaseCommand):
                 'turma_vinculada': turma_12ea
             }
         )
+        self.stdout.write('      - diretor@colegioarvore.ao (Diretor João Zinga)')
         
         # Professor + Coordenador
         prof_coord, _ = Usuario.objects.get_or_create(
-            username='prof.coord',
+            username='prof.coord.ricardo',
             defaults={
                 'first_name': 'Ricardo', 'last_name': 'Lima',
                 'email': 'prof.coord@colegioarvore.ao',
@@ -170,11 +260,12 @@ class Command(BaseCommand):
                 usuario=prof_coord,
                 defaults={'disciplina': primeira_disciplina}
             )
+        self.stdout.write('      - prof.coord@colegioarvore.ao (Professor Ricardo Lima + Coordenador)')
         
-        # Professor + Diretor - CORRIGIDO: usar objeto Turma em vez de string
+        # Professor + Diretor
         turma_11id = turmas.get('11ª ID')
         prof_diretor, _ = Usuario.objects.get_or_create(
-            username='prof.diretor',
+            username='prof.diretor.marcos',
             defaults={
                 'first_name': 'Marcos', 'last_name': 'Silva',
                 'email': 'prof.diretor@colegioarvore.ao',
@@ -188,8 +279,9 @@ class Command(BaseCommand):
                 usuario=prof_diretor,
                 defaults={'disciplina': primeira_disciplina}
             )
+        self.stdout.write('      - prof.diretor@colegioarvore.ao (Professor Marcos Silva + Diretor)')
         
-        # Super usuário (todos os cargos) - CORRIGIDO: usar objeto Turma em vez de string
+        # Super usuário (todos os cargos)
         turma_10ee = turmas.get('10ª EE')
         todos_cargos, _ = Usuario.objects.get_or_create(
             username='super.user',
@@ -207,6 +299,7 @@ class Command(BaseCommand):
                 usuario=todos_cargos,
                 defaults={'disciplina': primeira_disciplina}
             )
+        self.stdout.write('      - super.user@colegioarvore.ao (Super User - todos os perfis)')
         
         self.stdout.write('   ✅ Professores criados.')
 
@@ -240,6 +333,7 @@ class Command(BaseCommand):
         # =========================================================
         self.stdout.write('📝 Criando atividades...')
         hoje = date.today()
+        atividade_count = 0
         for disciplina in Disciplina.objects.all():
             for j in range(2):
                 nome_atv = f"{disciplina.nome} - Atividade {j+1}"
@@ -258,7 +352,8 @@ class Command(BaseCommand):
                 )
                 turmas_da_disciplina = Turma.objects.filter(disciplinas_relacionadas__disciplina=disciplina)
                 atividade.turmas.set(turmas_da_disciplina)
-        self.stdout.write(f'   ✅ {Atividade.objects.count()} atividades criadas.')
+                atividade_count += 1
+        self.stdout.write(f'   ✅ {atividade_count} atividades criadas.')
 
         # =========================================================
         # 7. RESGATES DE BENEFÍCIOS
@@ -339,8 +434,11 @@ class Command(BaseCommand):
         self.stdout.write(f'   - Atividades: {Atividade.objects.count()}')
         self.stdout.write(f'   - Resgates: {ResgateBeneficio.objects.count()}')
         self.stdout.write(f'   - Transações: {Transacao.objects.count()}')
+        
         self.stdout.write('\n🔑 CREDENCIAIS:')
-        self.stdout.write('   ALUNO: qualquer número de processo - senha "aluno9999"')
+        self.stdout.write('   ALUNOS:')
+        for aluno in PerfilAluno.objects.all().order_by('numero_processo'):
+            self.stdout.write(f'      - {aluno.numero_processo}: {aluno.usuario.get_full_name()} (senha: aluno9999) - Turma: {aluno.turma.nome if aluno.turma else "Sem turma"}')
         self.stdout.write('   PROFESSOR: professor@colegioarvore.ao / prof123')
         self.stdout.write('   COORDENADOR: coordenador@colegioarvore.ao / coord123')
         self.stdout.write('   DIRETOR: diretor@colegioarvore.ao / diretor123')
