@@ -273,45 +273,68 @@ def login_professor(request):
 
 @csrf_exempt
 def verificar_credenciais_professor(request):
+    """API para verificar credenciais de professores, coordenadores e diretores"""
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
             email = data.get('email', '')
             senha = data.get('senha', '')
+            
+            print(f"🔍 DEBUG: Tentativa login - Email: {email}")
+            
+            # Buscar usuário pelo email primeiro
+            try:
+                usuario = Usuario.objects.get(email=email)
+                print(f"🔍 DEBUG: Usuário encontrado: {usuario.username}")
+            except Usuario.DoesNotExist:
+                print(f"🔍 DEBUG: Email não encontrado: {email}")
+                return JsonResponse({'success': False, 'erro': 'Email não encontrado'})
+            
+            # Autenticar com o username encontrado
+            user = authenticate(request, username=usuario.username, password=senha)
+            
+            if not user:
+                print(f"🔍 DEBUG: Senha incorreta para {usuario.username}")
+                return JsonResponse({'success': False, 'erro': 'Senha incorreta'})
+            
+            # Verificar permissões
+            if not (user.is_professor or user.is_coordenador or user.is_diretor_turma):
+                print(f"🔍 DEBUG: {user.username} não tem permissões")
+                return JsonResponse({'success': False, 'erro': 'Usuário não tem permissão para esta área'})
+            
+            # Fazer login
+            auth_login(request, user)
+            print(f"✅ DEBUG: Login bem-sucedido para {user.username}")
+            
+            # Determinar cargos
+            cargos = []
+            if user.is_professor:
+                cargos.append('professor')
+            if user.is_coordenador:
+                cargos.append('coordenador')
+            if user.is_diretor_turma:
+                cargos.append('diretor_turma')
+            
+            print(f"🔍 DEBUG: Cargos: {cargos}")
+            
+            # Redirecionar baseado nos cargos
+            if len(cargos) == 1:
+                if cargos[0] == 'professor':
+                    return JsonResponse({'success': True, 'redirect': reverse('dashboard_professor')})
+                elif cargos[0] == 'coordenador':
+                    return JsonResponse({'success': True, 'redirect': reverse('coordenador_atividades')})
+                elif cargos[0] == 'diretor_turma':
+                    return JsonResponse({'success': True, 'redirect': reverse('diretor_turma')})
+            
+            # Múltiplos cargos
+            request.session['cargos_disponiveis'] = cargos
+            return JsonResponse({'success': True, 'redirect': reverse('selecionar_perfil')})
+            
         except json.JSONDecodeError:
             return JsonResponse({'success': False, 'erro': 'Requisição inválida'}, status=400)
-        
-        user = authenticate(request, username=email, password=senha)
-        if not user:
-            username = email.split('@')[0]
-            user = authenticate(request, username=username, password=senha)
-        
-        if not user:
-            return JsonResponse({'success': False, 'erro': 'Credenciais inválidas'})
-        
-        if not (user.is_professor or user.is_coordenador or user.is_diretor_turma):
-            return JsonResponse({'success': False, 'erro': 'Usuário não tem permissão'})
-        
-        auth_login(request, user)
-        
-        cargos = []
-        if user.is_professor:
-            cargos.append('professor')
-        if user.is_coordenador:
-            cargos.append('coordenador')
-        if user.is_diretor_turma:
-            cargos.append('diretor_turma')
-        
-        if len(cargos) == 1:
-            if cargos[0] == 'professor':
-                return JsonResponse({'success': True, 'redirect': reverse('dashboard_professor')})
-            elif cargos[0] == 'coordenador':
-                return JsonResponse({'success': True, 'redirect': reverse('coordenador_atividades')})
-            elif cargos[0] == 'diretor_turma':
-                return JsonResponse({'success': True, 'redirect': reverse('diretor_turma')})
-        
-        request.session['cargos_disponiveis'] = cargos
-        return JsonResponse({'success': True, 'redirect': reverse('selecionar_perfil')})
+        except Exception as e:
+            print(f"❌ DEBUG: Erro: {e}")
+            return JsonResponse({'success': False, 'erro': f'Erro: {str(e)}'}, status=500)
     
     return JsonResponse({'erro': 'Método não permitido'}, status=405)
 

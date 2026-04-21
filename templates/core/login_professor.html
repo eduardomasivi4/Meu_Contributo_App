@@ -149,22 +149,27 @@
                         'X-CSRFToken': getCookie('csrftoken')
                     },
                     body: JSON.stringify({
-                        opcao: 'nao_diretor',
                         email: email,
                         senha: senha
                     })
                 });
 
                 const data = await response.json();
+                console.log('Resposta do servidor:', data);  // Debug
 
                 if (data.success) {
-                    window.location.href = data.redirect;
+                    showModal('Sucesso', 'Redirecionando...');
+                    setTimeout(() => {
+                        window.location.href = data.redirect;
+                    }, 1000);
                 } else {
-                    showModal('Erro', data.erro || 'Credenciais inválidas', false);
+                    showModal('Erro de Login', data.erro || 'Credenciais inválidas. Verifique seu e-mail e senha.', false);
+                    btnLogin.disabled = false;
+                    btnLogin.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i> ENTRAR';
                 }
             } catch (error) {
-                showModal('Erro', 'Erro de conexão com o servidor', false);
-            } finally {
+                console.error('Erro:', error);
+                showModal('Erro de Conexão', 'Não foi possível conectar ao servidor. Verifique sua rede.', false);
                 btnLogin.disabled = false;
                 btnLogin.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i> ENTRAR';
             }
@@ -172,6 +177,10 @@
 
         modalCloseBtn.addEventListener('click', hideModal);
         modal.addEventListener('click', (e) => { if (e.target === modal) hideModal(); });
+
+        // Permitir Enter para submeter
+        emailInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') btnLogin.click(); });
+        senhaInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') btnLogin.click(); });
     </script>
 </body>
 </html>
