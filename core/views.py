@@ -1,6 +1,7 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.urls import reverse
@@ -16,14 +17,12 @@ from django.conf import settings
 import os
 from .config import REDE_IP, PORTA
 from .models import (
-    Usuario,
-    PerfilAluno, 
-    Turma, 
-    Atividade, 
-    Beneficio, 
-    Transacao, 
-    ResgateBeneficio,
+    Usuario, PerfilAluno, Turma, Disciplina, DisciplinaTurma,
+    Atividade, Beneficio, Transacao, ResgateBeneficio,
+    PerfilProfessor, PerfilDiretorTurma, PerfilCoordenador
 )
+
+
 
 def index(request):
     return render(request, 'core/index.html')
@@ -37,11 +36,10 @@ def login_aluno(request):
 def verificar_processo(request):
     """API para verificar se o número de processo existe"""
     if request.method == 'POST':
-        import json
-        data = json.loads(request.body)
-        processo = data.get('processo')
-        
         try:
+            data = json.loads(request.body)
+            processo = data.get('processo')
+            
             aluno = PerfilAluno.objects.get(numero_processo=processo)
             return JsonResponse({
                 'existe': True,
@@ -50,36 +48,38 @@ def verificar_processo(request):
             })
         except PerfilAluno.DoesNotExist:
             return JsonResponse({'existe': False, 'erro': 'Número de processo não encontrado'})
+        except json.JSONDecodeError:
+            return JsonResponse({'existe': False, 'erro': 'Requisição inválida'}, status=400)
     
     return JsonResponse({'erro': 'Método não permitido'}, status=405)
 
 def validar_senha(request):
     """API para validar a senha do aluno"""
     if request.method == 'POST':
-        import json
-        data = json.loads(request.body)
-        processo = data.get('processo')
-        senha = data.get('senha')
-        
         try:
+            data = json.loads(request.body)
+            processo = data.get('processo')
+            senha = data.get('senha')
+            
             aluno = PerfilAluno.objects.get(numero_processo=processo)
             user = aluno.usuario
             if user.check_password(senha):
-                login(request, user)
+                auth_login(request, user)
                 return JsonResponse({
                     'success': True,
-                    'redirect': '/aluno/dashboard/'
+                    'redirect': reverse('dashboard_aluno')
                 })
             else:
                 return JsonResponse({'success': False, 'erro': 'Senha incorreta'})
         except PerfilAluno.DoesNotExist:
             return JsonResponse({'success': False, 'erro': 'Aluno não encontrado'})
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'erro': 'Requisição inválida'}, status=400)
     
     return JsonResponse({'erro': 'Método não permitido'}, status=405)
 
 @login_required
 def dashboard_aluno(request):
-    # Verificar se o usuário é do tipo aluno
     if request.user.tipo != 'aluno':
         return redirect('index')
     
@@ -89,49 +89,20 @@ def dashboard_aluno(request):
         'nome': request.user.get_full_name() or request.user.username,
         'processo': perfil.numero_processo,
         'saldo': perfil.saldo_pontos,
-        'turma': perfil.turma.nome if perfil.turma else 'Sem turma',
+        'turma': perfil.get_turma_nome(),
     }
     return render(request, 'core/dashboard_aluno.html', context)
 
 @login_required
 def atividades(request):
-    # Verificar se o usuário é do tipo aluno
     if request.user.tipo != 'aluno':
         return redirect('index')
     
-    # Buscar todas as atividades
-    atividades_list = Atividade.objects.all().order_by('data', 'hora_inicio')
-    
+    atividades_list = Atividade.objects.all().order_by('data_inicio', 'hora_inicio')
     context = {
         'atividades': atividades_list,
     }
     return render(request, 'core/atividades.html', context)
-
-@login_required
-def api_inscrever_atividade(request, atividade_id):
-    """API para inscrever aluno em atividade"""
-    if request.user.tipo != 'aluno':
-        return JsonResponse({'success': False, 'erro': 'Acesso não autorizado'}, status=403)
-    
-    if request.method != 'POST':
-        return JsonResponse({'erro': 'Método não permitido'}, status=405)
-    
-    try:
-        atividade = Atividade.objects.get(id=atividade_id)
-        aluno = request.user.perfil_aluno
-        
-        if Inscricao.objects.filter(aluno=aluno, atividade=atividade).exists():
-            return JsonResponse({'success': False, 'erro': 'Já inscrito nesta atividade'})
-        
-        Inscricao.objects.create(
-            aluno=aluno,
-            atividade=atividade,
-            status='confirmada'
-        )
-        
-        return JsonResponse({'success': True, 'mensagem': 'Inscrição realizada com sucesso!'})
-    except Atividade.DoesNotExist:
-        return JsonResponse({'success': False, 'erro': 'Atividade não encontrada'})
 
 @login_required
 def loja(request):
@@ -139,22 +110,18 @@ def loja(request):
         return redirect('index')
     
     beneficios_list = Beneficio.objects.filter(disponivel=True)
-    
-    print(f"DEBUG: {beneficios_list.count()} benefícios encontrados")  # Para debug
-    
     context = {
         'beneficios': beneficios_list,
         'saldo': request.user.perfil_aluno.saldo_pontos,
         'nome': request.user.get_full_name() or request.user.username,
         'processo': request.user.perfil_aluno.numero_processo,
-        'turma': request.user.perfil_aluno.turma.nome if request.user.perfil_aluno.turma else 'Sem turma',
+        'turma': request.user.perfil_aluno.get_turma_nome(),
     }
     return render(request, 'core/loja.html', context)
 
 @csrf_exempt
 @login_required
 def api_resgatar_beneficio(request, beneficio_id):
-    """API para resgatar benefício"""
     if request.user.tipo != 'aluno':
         return JsonResponse({'success': False, 'erro': 'Acesso não autorizado'}, status=403)
     
@@ -195,20 +162,20 @@ def historico(request):
         return redirect('index')
     
     transacoes = Transacao.objects.filter(aluno=request.user.perfil_aluno).order_by('-data')
+    perfil = request.user.perfil_aluno
     
     context = {
         'transacoes': transacoes,
         'nome': request.user.get_full_name() or request.user.username,
-        'processo': request.user.perfil_aluno.numero_processo,
-        'turma': request.user.perfil_aluno.turma.nome if request.user.perfil_aluno.turma else 'Sem turma',
-        'curso': request.user.perfil_aluno.turma.get_curso_display() if request.user.perfil_aluno.turma else 'Sem curso',
-        'saldo': request.user.perfil_aluno.saldo_pontos,
+        'processo': perfil.numero_processo,
+        'turma': perfil.get_turma_nome(),
+        'curso': perfil.get_curso_display(),
+        'saldo': perfil.saldo_pontos,
     }
     return render(request, 'core/historico.html', context)
 
 @login_required
 def gerar_comprovativo(request, transacao_id):
-    """Gera PDF comprovativo para uma transação"""
     try:
         transacao = Transacao.objects.get(id=transacao_id, aluno=request.user.perfil_aluno)
     except Transacao.DoesNotExist:
@@ -219,7 +186,6 @@ def gerar_comprovativo(request, transacao_id):
     curso_nome = turma.get_curso_display() if turma else 'Não definido'
     turma_nome = turma.nome if turma else 'Não definido'
     
-    # Dados para o comprovativo
     dados_comprovativo = (
         f"O responsável pelo Meu Contributo App do CAF, João Zinga, "
         f"confirma que o(a) estudante {request.user.get_full_name() or request.user.username}, "
@@ -227,45 +193,33 @@ def gerar_comprovativo(request, transacao_id):
         f"converteu {abs(transacao.quantidade)} pontos para obter o benefício {transacao.descricao}."
     )
     
-    # URL para o QR Code - usando IP do arquivo de configuração
-    pdf_url = f"http://{REDE_IP}:{PORTA}/aluno/comprovativo/{transacao.id}/"
+    pdf_url = f"http://{REDE_IP}:{PORTA}{reverse('gerar_comprovativo', args=[transacao.id])}"
     
-    # Criar resposta HTTP com PDF
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="comprovativo_{transacao.id}.pdf"'
     
-    # Criar PDF
     pdf = canvas.Canvas(response, pagesize=A4)
     width, height = A4
     
-    # Cores institucionais
     castanho = HexColor('#5C3A21')
     verde = HexColor('#2B7A4B')
     
-    # Logo
     logo_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'logo-caf.png')
     if os.path.exists(logo_path):
         logo = ImageReader(logo_path)
         pdf.drawImage(logo, (width - 60) / 2, height - 80, width=50, height=50, preserveAspectRatio=True)
     
-    # Título
     pdf.setFont('Helvetica-Bold', 18)
     pdf.setFillColor(castanho)
     pdf.drawCentredString(width / 2, height - 120, "COLÉGIO ÁRVORE DA FELICIDADE")
-    
     pdf.setFont('Helvetica-Bold', 14)
     pdf.drawCentredString(width / 2, height - 150, "COMPROVATIVO DE CONVERSÃO DE PONTOS")
-    
-    # Linha separadora
     pdf.setStrokeColor(verde)
     pdf.setLineWidth(2)
     pdf.line(50, height - 170, width - 50, height - 170)
     
-    # Texto do comprovativo
     pdf.setFont('Helvetica', 12)
     pdf.setFillColor(castanho)
-    
-    # Quebrar texto em múltiplas linhas
     text_lines = []
     current_line = ""
     for word in dados_comprovativo.split():
@@ -281,20 +235,17 @@ def gerar_comprovativo(request, transacao_id):
         pdf.drawString(50, y, line)
         y -= 25
     
-    # Informações adicionais
     pdf.setFont('Helvetica-Bold', 12)
     pdf.drawString(50, y - 20, f"Data da transação: {transacao.data.strftime('%d/%m/%Y %H:%M')}")
     pdf.drawString(50, y - 45, f"Pontos convertidos: {abs(transacao.quantidade)}")
     pdf.drawString(50, y - 70, f"Benefício: {transacao.descricao}")
     
-    # Assinatura
     y_assinatura = y - 130
     pdf.setFont('Helvetica', 10)
     pdf.drawString(50, y_assinatura, "_________________________________")
     pdf.drawString(80, y_assinatura - 10, "João Zinga")
     pdf.drawString(60, y_assinatura - 25, "Responsável pelo Meu Contributo App")
     
-    # Gerar QR Code com a URL do PDF
     qr = qrcode.QRCode(version=1, box_size=10, border=4)
     qr.add_data(pdf_url)
     qr.make(fit=True)
@@ -305,13 +256,9 @@ def gerar_comprovativo(request, transacao_id):
     qr_buffer.seek(0)
     qr_reader = ImageReader(qr_buffer)
     
-    # Posicionar QR Code
     qr_size = 80
     pdf.drawImage(qr_reader, width - qr_size - 50, y_assinatura - 100, width=qr_size, height=qr_size)
-    
-    # Texto explicativo
     pdf.setFont('Helvetica', 8)
-    pdf.setFillColor(castanho)
     pdf.drawString(width - qr_size - 45, y_assinatura - 110, "QR Code para download")
     pdf.drawString(width - qr_size - 55, y_assinatura - 120, "do comprovativo")
     
@@ -327,9 +274,12 @@ def login_professor(request):
 @csrf_exempt
 def verificar_credenciais_professor(request):
     if request.method == 'POST':
-        data = json.loads(request.body)
-        email = data.get('email', '')
-        senha = data.get('senha', '')
+        try:
+            data = json.loads(request.body)
+            email = data.get('email', '')
+            senha = data.get('senha', '')
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'erro': 'Requisição inválida'}, status=400)
         
         user = authenticate(request, username=email, password=senha)
         if not user:
@@ -339,7 +289,7 @@ def verificar_credenciais_professor(request):
         if not user:
             return JsonResponse({'success': False, 'erro': 'Credenciais inválidas'})
         
-        if not user.is_professor and not user.is_coordenador and not user.is_diretor_turma:
+        if not (user.is_professor or user.is_coordenador or user.is_diretor_turma):
             return JsonResponse({'success': False, 'erro': 'Usuário não tem permissão'})
         
         auth_login(request, user)
@@ -354,78 +304,16 @@ def verificar_credenciais_professor(request):
         
         if len(cargos) == 1:
             if cargos[0] == 'professor':
-                return JsonResponse({'success': True, 'redirect': '/professor/dashboard/'})
+                return JsonResponse({'success': True, 'redirect': reverse('dashboard_professor')})
             elif cargos[0] == 'coordenador':
-                return JsonResponse({'success': True, 'redirect': '/coordenador/dashboard/'})
+                return JsonResponse({'success': True, 'redirect': reverse('coordenador_atividades')})
             elif cargos[0] == 'diretor_turma':
-                return JsonResponse({'success': True, 'redirect': '/diretor/dashboard/'})
+                return JsonResponse({'success': True, 'redirect': reverse('diretor_turma')})
         
         request.session['cargos_disponiveis'] = cargos
-        return JsonResponse({'success': True, 'redirect': '/professor/selecionar-perfil/'})
+        return JsonResponse({'success': True, 'redirect': reverse('selecionar_perfil')})
     
     return JsonResponse({'erro': 'Método não permitido'}, status=405)
-
-def processar_login_nao_diretor(request, user):
-    """Processa login quando usuário escolhe 'Não sou diretor de turma'"""
-    cargos = user.get_cargos()
-    
-    # Login do usuário
-    login(request, user)
-    
-    # Se tem apenas 1 cargo, redireciona direto
-    if len(cargos) == 1:
-        cargo = cargos[0]
-        if cargo == 'professor':
-            return JsonResponse({'success': True, 'redirect': '/professor/dashboard/', 'direto': True})
-        elif cargo == 'coordenador':
-            return JsonResponse({'success': True, 'redirect': '/coordenador/dashboard/', 'direto': True})
-        else:
-            return JsonResponse({'success': False, 'erro': 'Cargo não reconhecido'})
-    
-    # Se tem múltiplos cargos, vai para tela de seleção
-    else:
-        # Salvar cargos na sessão
-        request.session['cargos_disponiveis'] = cargos
-        return JsonResponse({'success': True, 'redirect': '/professor/selecionar-perfil/', 'direto': False})
-
-def processar_login_diretor(request, user, turma):
-    """Processa login quando usuário escolhe uma turma (diretor de turma)"""
-    cargos = user.get_cargos()
-    
-    # Verificar se o usuário é diretor de turma
-    if not user.is_diretor_turma:
-        return JsonResponse({'success': False, 'erro': 'Você não tem permissão de diretor de turma'})
-    
-    # Login do usuário
-    login(request, user)
-    
-    # Salvar turma na sessão
-    request.session['turma_selecionada'] = turma
-    
-    # Se tem apenas o cargo de diretor de turma, redireciona direto
-    if len(cargos) == 1 and cargos[0] == 'diretor_turma':
-        return JsonResponse({'success': True, 'redirect': '/diretor/dashboard/', 'direto': True})
-    
-    # Se tem múltiplos cargos (incluindo diretor), vai para tela de seleção
-    else:
-        request.session['cargos_disponiveis'] = cargos
-        return JsonResponse({'success': True, 'redirect': '/professor/selecionar-perfil/', 'direto': False})
-
-@csrf_exempt
-def redirecionar_perfil(request):
-    """Redireciona para o dashboard do perfil escolhido"""
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        perfil = data.get('perfil')
-        
-        if perfil == 'professor':
-            return JsonResponse({'redirect': '/professor/dashboard/'})
-        elif perfil == 'coordenador':
-            return JsonResponse({'redirect': '/coordenador/dashboard/'})
-        elif perfil == 'diretor_turma':
-            return JsonResponse({'redirect': '/diretor/dashboard/'})
-    
-    return JsonResponse({'erro': 'Perfil inválido'}, status=400)
 
 def selecionar_perfil(request):
     cargos = request.session.get('cargos_disponiveis', [])
@@ -439,20 +327,37 @@ def selecionar_perfil(request):
 @csrf_exempt
 def redirecionar_perfil(request):
     if request.method == 'POST':
-        data = json.loads(request.body)
-        perfil = data.get('perfil')
+        try:
+            data = json.loads(request.body)
+            perfil = data.get('perfil')
+        except json.JSONDecodeError:
+            return JsonResponse({'erro': 'Requisição inválida'}, status=400)
+        
         if perfil == 'professor':
-            return JsonResponse({'redirect': '/professor/dashboard/'})
+            return JsonResponse({'redirect': reverse('dashboard_professor')})
         elif perfil == 'coordenador':
-            return JsonResponse({'redirect': '/coordenador/dashboard/'})
+            return JsonResponse({'redirect': reverse('coordenador_atividades')})
         elif perfil == 'diretor_turma':
-            return JsonResponse({'redirect': '/diretor/dashboard/'})
-    return JsonResponse({'erro': 'Perfil inválido'}, status=400)
+            return JsonResponse({'redirect': reverse('diretor_turma')})
+        else:
+            return JsonResponse({'erro': 'Perfil inválido'}, status=400)
+    
+    return JsonResponse({'erro': 'Método não permitido'}, status=405)
 
 @login_required
 def dashboard_professor(request):
     if not request.user.is_professor:
+        messages.error(request, 'Acesso não autorizado.')
         return redirect('index')
+    
+    try:
+        perfil_prof = request.user.perfil_professor
+        if perfil_prof.disciplina:
+            disciplinas_usuario = [perfil_prof.disciplina]
+        else:
+            disciplinas_usuario = []
+    except:
+        disciplinas_usuario = Disciplina.objects.all()
     
     disciplinas_por_curso = {
         'eletronica': {'nome': 'Eletrónica e Telecomunicações', 'disciplinas': []},
@@ -460,41 +365,47 @@ def dashboard_professor(request):
         'comum': {'nome': 'Comum', 'disciplinas': []},
     }
     
-    for dt in DisciplinaTurma.objects.select_related('disciplina', 'turma').all():
-        disc = dt.disciplina
-        turma = dt.turma
-        curso = turma.curso
-        
-        if curso == 'eletronica':
-            if disc not in disciplinas_por_curso['eletronica']['disciplinas']:
+    if disciplinas_usuario:
+        for disc in disciplinas_usuario:
+            turmas_disc = Turma.objects.filter(disciplinas_relacionadas__disciplina=disc)
+            cursos = set(turmas_disc.values_list('curso', flat=True))
+            if 'eletronica' in cursos:
                 disciplinas_por_curso['eletronica']['disciplinas'].append(disc)
-        elif curso == 'informatica':
-            if disc not in disciplinas_por_curso['informatica']['disciplinas']:
+            elif 'informatica' in cursos:
                 disciplinas_por_curso['informatica']['disciplinas'].append(disc)
-        else:
-            if disc not in disciplinas_por_curso['comum']['disciplinas']:
+            else:
                 disciplinas_por_curso['comum']['disciplinas'].append(disc)
+    else:
+        for dt in DisciplinaTurma.objects.select_related('disciplina', 'turma').all():
+            disc = dt.disciplina
+            turma = dt.turma
+            curso = turma.curso
+            if curso == 'eletronica' and disc not in disciplinas_por_curso['eletronica']['disciplinas']:
+                disciplinas_por_curso['eletronica']['disciplinas'].append(disc)
+            elif curso == 'informatica' and disc not in disciplinas_por_curso['informatica']['disciplinas']:
+                disciplinas_por_curso['informatica']['disciplinas'].append(disc)
+            else:
+                if disc not in disciplinas_por_curso['comum']['disciplinas']:
+                    disciplinas_por_curso['comum']['disciplinas'].append(disc)
     
     context = {
         'disciplinas_por_curso': disciplinas_por_curso,
     }
     return render(request, 'core/dashboard_professor.html', context)
 
-# Obter turmas de uma disciplina via AJAX
 @login_required
 def get_turmas_por_disciplina(request, disciplina_id):
-    if not request.user.is_professor:
+    if not (request.user.is_professor or request.user.is_coordenador or request.user.is_diretor_turma):
         return JsonResponse({'error': 'Acesso negado'}, status=403)
     
     disciplina = get_object_or_404(Disciplina, id=disciplina_id)
     turmas = Turma.objects.filter(disciplinas_relacionadas__disciplina=disciplina).distinct()
-    
     data = [{'id': t.id, 'nome': t.nome, 'curso': t.get_curso_display()} for t in turmas]
     return JsonResponse({'turmas': data})
 
 @login_required
 def turma_detail(request, turma_id):
-    if not request.user.is_professor:
+    if not (request.user.is_professor or request.user.is_diretor_turma):
         return redirect('index')
     
     turma = get_object_or_404(Turma, id=turma_id)
@@ -553,7 +464,7 @@ def criar_atividade(request, turma_id):
             for tid in turmas_ids:
                 atividade.turmas.add(Turma.objects.get(id=tid))
         
-        request.session['atividade_criada'] = nome
+        messages.success(request, f'Atividade "{nome}" criada com sucesso!')
         return redirect('dashboard_professor')
     
     todas_turmas = Turma.objects.all().order_by('curso', 'nome')
@@ -564,7 +475,6 @@ def criar_atividade(request, turma_id):
     }
     return render(request, 'core/criar_atividade.html', context)
 
-# Distribuir pontos
 @login_required
 def distribuir_pontos(request, atividade_id):
     if not request.user.is_professor:
@@ -577,19 +487,25 @@ def distribuir_pontos(request, atividade_id):
     
     if request.method == 'POST':
         for aluno in alunos:
-            pontos = request.POST.get(f'pontos_{aluno.id}')
-            if pontos and int(pontos) > 0:
-                if int(pontos) <= atividade.max_pontos_por_aluno:
-                    aluno.saldo_pontos += int(pontos)
+            pontos_str = request.POST.get(f'pontos_{aluno.id}')
+            if pontos_str:
+                pontos = int(pontos_str)
+                if pontos > 0 and pontos <= atividade.max_pontos_por_aluno:
+                    aluno.saldo_pontos += pontos
                     aluno.save()
                     Transacao.objects.create(
                         aluno=aluno,
-                        quantidade=int(pontos),
+                        quantidade=pontos,
                         tipo='distribuicao',
                         descricao=f'Distribuição de pontos da atividade: {atividade.nome}',
                         professor=request.user,
                         atividade=atividade
                     )
+                elif pontos < 0:
+                    messages.error(request, f'Pontos negativos não são permitidos para {aluno.usuario.get_full_name()}.')
+                elif pontos > atividade.max_pontos_por_aluno:
+                    messages.error(request, f'Pontos excedem o máximo permitido ({atividade.max_pontos_por_aluno}) para {aluno.usuario.get_full_name()}.')
+        messages.success(request, 'Pontos distribuídos com sucesso!')
         return redirect('turma_detail', turma_id=turma.id)
     
     context = {

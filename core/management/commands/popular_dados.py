@@ -6,8 +6,9 @@ from django.utils import timezone
 from core.models import (
     Usuario, Turma, Disciplina, DisciplinaTurma,
     PerfilAluno, Atividade, Transacao, Beneficio,
-    ResgateBeneficio
+    ResgateBeneficio, PerfilProfessor
 )
+
 
 class Command(BaseCommand):
     help = 'Popula todas as tabelas do sistema com dados coerentes'
@@ -111,6 +112,10 @@ class Command(BaseCommand):
         # 4. PROFESSORES
         # =========================================================
         self.stdout.write('👨‍🏫 Criando professores...')
+        
+        primeira_disciplina = Disciplina.objects.first()
+        
+        # Professor apenas
         prof_only, _ = Usuario.objects.get_or_create(
             username='professor.apenas',
             defaults={
@@ -120,6 +125,13 @@ class Command(BaseCommand):
                 'tipo': 'professor', 'is_professor': True
             }
         )
+        if primeira_disciplina:
+            PerfilProfessor.objects.get_or_create(
+                usuario=prof_only,
+                defaults={'disciplina': primeira_disciplina}
+            )
+        
+        # Coordenador apenas
         coord_only, _ = Usuario.objects.get_or_create(
             username='coordenador.apenas',
             defaults={
@@ -129,6 +141,9 @@ class Command(BaseCommand):
                 'tipo': 'coordenador', 'is_coordenador': True
             }
         )
+        
+        # Diretor apenas - CORRIGIDO: usar objeto Turma em vez de string
+        turma_12ea = turmas.get('12ª EA')
         diretor_only, _ = Usuario.objects.get_or_create(
             username='diretor.apenas',
             defaults={
@@ -136,9 +151,11 @@ class Command(BaseCommand):
                 'email': 'diretor@colegioarvore.ao',
                 'password': make_password('diretor123'),
                 'tipo': 'diretor_turma', 'is_diretor_turma': True,
-                'turma_vinculada': '12ª EA'
+                'turma_vinculada': turma_12ea
             }
         )
+        
+        # Professor + Coordenador
         prof_coord, _ = Usuario.objects.get_or_create(
             username='prof.coord',
             defaults={
@@ -148,6 +165,14 @@ class Command(BaseCommand):
                 'tipo': 'professor', 'is_professor': True, 'is_coordenador': True
             }
         )
+        if primeira_disciplina:
+            PerfilProfessor.objects.get_or_create(
+                usuario=prof_coord,
+                defaults={'disciplina': primeira_disciplina}
+            )
+        
+        # Professor + Diretor - CORRIGIDO: usar objeto Turma em vez de string
+        turma_11id = turmas.get('11ª ID')
         prof_diretor, _ = Usuario.objects.get_or_create(
             username='prof.diretor',
             defaults={
@@ -155,9 +180,17 @@ class Command(BaseCommand):
                 'email': 'prof.diretor@colegioarvore.ao',
                 'password': make_password('multi123'),
                 'tipo': 'professor', 'is_professor': True, 'is_diretor_turma': True,
-                'turma_vinculada': '11ª ID'
+                'turma_vinculada': turma_11id
             }
         )
+        if primeira_disciplina:
+            PerfilProfessor.objects.get_or_create(
+                usuario=prof_diretor,
+                defaults={'disciplina': primeira_disciplina}
+            )
+        
+        # Super usuário (todos os cargos) - CORRIGIDO: usar objeto Turma em vez de string
+        turma_10ee = turmas.get('10ª EE')
         todos_cargos, _ = Usuario.objects.get_or_create(
             username='super.user',
             defaults={
@@ -166,9 +199,15 @@ class Command(BaseCommand):
                 'password': make_password('super123'),
                 'tipo': 'professor',
                 'is_professor': True, 'is_coordenador': True, 'is_diretor_turma': True,
-                'turma_vinculada': '10ª EE'
+                'turma_vinculada': turma_10ee
             }
         )
+        if primeira_disciplina:
+            PerfilProfessor.objects.get_or_create(
+                usuario=todos_cargos,
+                defaults={'disciplina': primeira_disciplina}
+            )
+        
         self.stdout.write('   ✅ Professores criados.')
 
         # =========================================================
@@ -226,17 +265,17 @@ class Command(BaseCommand):
         # =========================================================
         self.stdout.write('🛒 Criando resgates de benefícios...')
         resgates_count = 0
-        beneficios_disponiveis = Beneficio.objects.filter(disponivel=True)
+        beneficios_disponiveis = list(Beneficio.objects.filter(disponivel=True))
+        
         for aluno in PerfilAluno.objects.all():
-            if random.random() < 0.3:
+            if random.random() < 0.3 and beneficios_disponiveis:
                 beneficio = random.choice(beneficios_disponiveis)
                 if aluno.saldo_pontos >= beneficio.custo_pontos:
                     ResgateBeneficio.objects.create(
                         aluno=aluno,
                         beneficio=beneficio,
                         pontos_gastos=beneficio.custo_pontos,
-                        status='confirmado',
-                        data_resgate=timezone.now()
+                        status='confirmado'
                     )
                     aluno.saldo_pontos -= beneficio.custo_pontos
                     aluno.save()
@@ -248,6 +287,8 @@ class Command(BaseCommand):
         # =========================================================
         self.stdout.write('💰 Criando transações...')
         transacoes_count = 0
+        
+        # Distribuição de pontos por atividades
         for atividade in Atividade.objects.all():
             for turma in atividade.turmas.all():
                 for aluno in PerfilAluno.objects.filter(turma=turma):
@@ -263,6 +304,8 @@ class Command(BaseCommand):
                         atividade=atividade
                     )
                     transacoes_count += 1
+        
+        # Transações adicionais (adição e remoção)
         for aluno in PerfilAluno.objects.all():
             Transacao.objects.create(
                 aluno=aluno,
@@ -272,6 +315,7 @@ class Command(BaseCommand):
                 professor=prof_only
             )
             transacoes_count += 1
+            
             Transacao.objects.create(
                 aluno=aluno,
                 quantidade=-random.randint(5, 20),
@@ -280,6 +324,7 @@ class Command(BaseCommand):
                 professor=prof_only
             )
             transacoes_count += 1
+        
         self.stdout.write(f'   ✅ {transacoes_count} transações criadas.')
 
         # =========================================================

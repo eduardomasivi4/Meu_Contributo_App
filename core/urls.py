@@ -5,7 +5,8 @@ urlpatterns = [
     # Tela Inicial
     path('', views.index, name='index'),
     
-    # ALUNO
+    # ==================== ALUNO ====================
+    # Páginas
     path('aluno/login/', views.login_aluno, name='login_aluno'),
     path('aluno/dashboard/', views.dashboard_aluno, name='dashboard_aluno'),
     path('aluno/atividades/', views.atividades, name='atividades'),
@@ -13,25 +14,28 @@ urlpatterns = [
     path('aluno/historico/', views.historico, name='historico'),
     path('aluno/comprovativo/<int:transacao_id>/', views.gerar_comprovativo, name='gerar_comprovativo'),
     
-    # ALUNO - APIs
+    # APIs Aluno
     path('api/aluno/verificar-processo/', views.verificar_processo, name='verificar_processo'),
     path('api/aluno/validar-senha/', views.validar_senha, name='validar_senha'),
     path('api/aluno/resgatar/<int:beneficio_id>/', views.api_resgatar_beneficio, name='api_resgatar'),
-    
-    # PROFESSOR
+     
+    # ==================== PROFESSOR ====================
+    # Login e autenticação
     path('professor/login/', views.login_professor, name='login_professor'),
-    path('professor/dashboard/', views.dashboard_professor, name='dashboard_professor'),
-    
-    # PROFESSOR - APIs
     path('api/professor/verificar/', views.verificar_credenciais_professor, name='verificar_credenciais_professor'),
-    path('api/professor/redirecionar/', views.redirecionar_perfil, name='redirecionar_perfil'),
-
-    # SELECIONAR PERFIL
     path('professor/selecionar-perfil/', views.selecionar_perfil, name='selecionar_perfil'),
-
-    # DIRETOR DE TURMA
-    path('diretor/dashboard/', views.diretor_turma, name='diretor_turma'),
+    path('api/professor/redirecionar/', views.redirecionar_perfil, name='redirecionar_perfil'),
     
-    # COORDENADOR
+    # Dashboard e disciplinas
+    path('professor/dashboard/', views.dashboard_professor, name='dashboard_professor'),
+    path('api/turmas-por-disciplina/<int:disciplina_id>/', views.get_turmas_por_disciplina, name='get_turmas_por_disciplina'),
+    path('turma/<int:turma_id>/', views.turma_detail, name='turma_detail'),
+    
+    # Gestão de atividades
+    path('atividade/criar/<int:turma_id>/', views.criar_atividade, name='criar_atividade'),
+    path('atividade/distribuir/<int:atividade_id>/', views.distribuir_pontos, name='distribuir_pontos'),
+    
+    # ==================== DIRETOR E COORDENADOR ====================
+    path('diretor/dashboard/', views.diretor_turma, name='diretor_turma'),
     path('coordenador/dashboard/', views.coordenador_atividades, name='coordenador_atividades'),
 ]
