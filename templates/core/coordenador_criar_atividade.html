@@ -64,7 +64,7 @@
             border-color: #2B7A4B;
         }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .radio-group { display: flex; gap: 30px; margin-top: 5px; }
+        .radio-group { display: flex; gap: 30px; margin-top: 5px; flex-wrap: wrap; }
         .radio-group label { display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer; }
         .curso-select { margin-top: 15px; padding: 15px; background: #FBF7E9; border-radius: 16px; display: none; }
         .curso-select.visible { display: block; }
@@ -82,10 +82,25 @@
         }
         .btn-submit:hover { background: #1E5A38; }
         
+        /* Estilo para o campo de interrupção */
+        .interrupcao-group {
+            background: #FFF8F0;
+            padding: 15px;
+            border-radius: 16px;
+            border-left: 4px solid #D4A373;
+        }
+        .help-text {
+            color: #8B694C;
+            font-size: 12px;
+            margin-top: 8px;
+            display: block;
+        }
+        
         @media (max-width: 600px) {
             .form-row { grid-template-columns: 1fr; gap: 0; }
             .container { padding: 15px; }
             .form-card { padding: 20px; }
+            .radio-group { flex-direction: column; gap: 10px; }
         }
     </style>
 </head>
@@ -113,6 +128,8 @@
             </h2>
             <form method="POST">
                 {% csrf_token %}
+                
+                <!-- Tipo de Atividade -->
                 <div class="form-group">
                     <label><i class="fas fa-tag"></i> Tipo de Atividade</label>
                     <select name="tipo_atividade" required>
@@ -120,18 +137,26 @@
                         <option value="ciencia_tecnologia" {% if atividade.tipo_atividade == 'ciencia_tecnologia' %}selected{% endif %}>Ciência e Tecnologia</option>
                     </select>
                 </div>
+                
+                <!-- Nome -->
                 <div class="form-group">
                     <label><i class="fas fa-heading"></i> Nome da Atividade</label>
                     <input type="text" name="nome" value="{{ atividade.nome|default:'' }}" required placeholder="Ex: Feira de Ciências 2024">
                 </div>
+                
+                <!-- Descrição -->
                 <div class="form-group">
                     <label><i class="fas fa-align-left"></i> Descrição</label>
                     <textarea name="descricao" rows="3" placeholder="Descreva a atividade...">{{ atividade.descricao|default:'' }}</textarea>
                 </div>
+                
+                <!-- Critérios -->
                 <div class="form-group">
                     <label><i class="fas fa-clipboard-list"></i> Critérios de Avaliação</label>
                     <textarea name="criterios" rows="3" required placeholder="Ex: Participação, Assiduidade, Qualidade do trabalho...">{{ atividade.criterios_avaliacao|default:'' }}</textarea>
                 </div>
+                
+                <!-- Datas -->
                 <div class="form-row">
                     <div class="form-group">
                         <label><i class="fas fa-calendar"></i> Data de Início</label>
@@ -142,6 +167,8 @@
                         <input type="date" name="data_fim" value="{{ atividade.data_fim|date:'Y-m-d'|default:'' }}" required>
                     </div>
                 </div>
+                
+                <!-- Horas -->
                 <div class="form-row">
                     <div class="form-group">
                         <label><i class="fas fa-clock"></i> Hora de Início</label>
@@ -152,11 +179,35 @@
                         <input type="time" name="hora_fim" value="{{ atividade.hora_fim|time:'H:i'|default:'' }}" required>
                     </div>
                 </div>
+                
+                <!-- Máximo de Pontos -->
                 <div class="form-group">
                     <label><i class="fas fa-star"></i> Máximo de Pontos por Turma</label>
                     <input type="number" name="max_pontos" value="{{ atividade.max_pontos_por_aluno|default:'100' }}" min="1" max="1000" required>
                 </div>
                 
+                <!-- INTERRUPÇÃO DE AULA (NOVO CAMPO) -->
+                <div class="form-group interrupcao-group">
+                    <label><i class="fas fa-bell"></i> Interrupção de Aula</label>
+                    <div class="radio-group">
+                        <label>
+                            <input type="radio" name="interrompe_aula" value="sim" {% if atividade.interrompe_aula %}checked{% endif %}> 
+                            <i class="fas fa-exclamation-triangle" style="color: #D9534F;"></i> 
+                            <strong>Sim</strong>, interrompe as aulas normais
+                        </label>
+                        <label>
+                            <input type="radio" name="interrompe_aula" value="nao" {% if not atividade.interrompe_aula %}checked{% endif %}> 
+                            <i class="fas fa-check-circle" style="color: #2B7A4B;"></i> 
+                            <strong>Não</strong>, não interrompe
+                        </label>
+                    </div>
+                    <small class="help-text">
+                        <i class="fas fa-info-circle"></i> 
+                        Atividades que interrompem as aulas terão destaque especial (fundo vermelho) no dashboard do coordenador e diretor.
+                    </small>
+                </div>
+                
+                <!-- Seleção de Cursos -->
                 <div class="form-group">
                     <label><i class="fas fa-graduation-cap"></i> Selecionar Cursos</label>
                     <div class="radio-group">
@@ -171,6 +222,7 @@
                     </div>
                 </div>
                 
+                <!-- Seleção de Curso específico -->
                 <div id="cursoSelect" class="curso-select {% if not is_edit or selecao_atual == 'um_curso' %}visible{% endif %}">
                     <label><i class="fas fa-school"></i> Selecione o Curso:</label>
                     <select name="curso_selecionado" class="curso-select-input">
@@ -182,6 +234,7 @@
                     </select>
                 </div>
                 
+                <!-- Botão Submit -->
                 <button type="submit" class="btn-submit">
                     <i class="fas fa-save"></i> {% if is_edit %}Atualizar{% else %}Criar{% endif %} Atividade
                 </button>
@@ -190,6 +243,7 @@
     </div>
 
     <script>
+        // Lógica para mostrar/esconder seleção de curso
         document.querySelectorAll('input[name="selecao_cursos"]').forEach(radio => {
             radio.addEventListener('change', function() {
                 const cursoSelect = document.getElementById('cursoSelect');
@@ -201,8 +255,30 @@
             });
         });
 
+        // Logout
         document.getElementById('logoutBtn').addEventListener('click', () => {
             window.location.href = "{% url 'index' %}";
+        });
+        
+        // Validação de datas no frontend
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(e) {
+            const dataInicio = document.querySelector('input[name="data_inicio"]').value;
+            const dataFim = document.querySelector('input[name="data_fim"]').value;
+            const horaInicio = document.querySelector('input[name="hora_inicio"]').value;
+            const horaFim = document.querySelector('input[name="hora_fim"]').value;
+            
+            if (dataInicio > dataFim) {
+                e.preventDefault();
+                alert('A data de fim não pode ser anterior à data de início.');
+                return false;
+            }
+            
+            if (dataInicio === dataFim && horaInicio >= horaFim) {
+                e.preventDefault();
+                alert('No mesmo dia, a hora de fim deve ser posterior à hora de início.');
+                return false;
+            }
         });
     </script>
 </body>

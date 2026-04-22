@@ -29,6 +29,21 @@
         .logo-icon { width: 45px; height: 45px; background: #2B7A4B; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
         .logo-icon img { width: 28px; height: 28px; }
         .logo-area h1 { font-size: 18px; color: #5C3A21; font-weight: 700; }
+        .btn-criar { 
+            background: #2B7A4B; 
+            color: white; 
+            border: none; 
+            padding: 10px 24px; 
+            border-radius: 30px; 
+            cursor: pointer; 
+            text-decoration: none; 
+            display: inline-block;
+            transition: all 0.3s;
+        }
+        .btn-criar:hover { background: #1E5A38; transform: translateY(-2px); }
+        .btn-secundario { background: #D4A373; }
+        .btn-secundario:hover { background: #B5835A; }
+        
         .user-area { display: flex; align-items: center; gap: 15px; background: #FBF7E9; padding: 6px 18px; border-radius: 40px; }
         .user-avatar { width: 38px; height: 38px; background: #2B7A4B; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; }
         .user-name { font-weight: 600; color: #5C3A21; font-size: 14px; }
@@ -47,14 +62,18 @@
         }
         .search-bar input { flex: 1; border: none; outline: none; padding: 8px 0; font-size: 14px; }
         .search-bar button { background: #2B7A4B; color: white; border: none; padding: 8px 20px; border-radius: 30px; cursor: pointer; }
-        .btn-criar { background: #2B7A4B; color: white; border: none; padding: 10px 24px; border-radius: 30px; cursor: pointer; text-decoration: none; display: inline-block; }
-        .btn-criar:hover { background: #1E5A38; }
         
         .atividades-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 20px; margin-top: 20px; }
         .atividade-card { background: white; border-radius: 20px; overflow: hidden; border: 1px solid #F5EDDA; transition: all 0.3s; }
         .atividade-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        .atividade-header { padding: 15px 20px; background: linear-gradient(135deg, #2B7A4B, #1E5A38); color: white; }
+        
+        /* CORES DINÂMICAS PARA O CABEÇALHO */
+        .atividade-header { padding: 15px 20px; color: white; transition: all 0.3s; }
+        .atividade-header.verde { background: linear-gradient(135deg, #2B7A4B, #1E5A38); }
+        .atividade-header.vermelho { background: linear-gradient(135deg, #D9534F, #C9302C); }
+        
         .atividade-tipo { display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 11px; margin-bottom: 8px; }
+        .badge-interrompe { background: rgba(255,255,255,0.3); padding: 2px 8px; border-radius: 20px; margin-left: 8px; font-size: 10px; }
         .atividade-header h3 { font-size: 16px; font-weight: 700; }
         .atividade-body { padding: 15px 20px; }
         .atividade-info { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; font-size: 12px; color: #8B694C; }
@@ -65,6 +84,21 @@
         .pagination { display: flex; justify-content: center; gap: 10px; margin-top: 30px; }
         .pagination a, .pagination span { padding: 8px 16px; background: white; border-radius: 20px; text-decoration: none; color: #5C3A21; }
         .pagination .current { background: #2B7A4B; color: white; }
+        
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(92, 58, 33, 0.6);
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
         
         @media (max-width: 768px) { .header { flex-direction: column; text-align: center; } }
     </style>
@@ -78,16 +112,11 @@
             </div>
             <div style="display: flex; gap: 15px;">
                 <a href="{% url 'coordenador_criar_atividade' %}" class="btn-criar"><i class="fas fa-plus"></i> Criar Atividade</a>
-                 <a href="{% url 'coordenador_atividades_curriculares' %}" class="btn-criar btn-secundario" style="background: #D4A373;">
-                    <i class="fas fa-book"></i> Atividades Curriculares ({{ total_curriculares }})
-                </a>
+                <a href="{% url 'coordenador_atividades_curriculares' %}" class="btn-criar btn-secundario"><i class="fas fa-book"></i> Atividades Curriculares ({{ total_curriculares }})</a>
             </div>
             <div class="user-area">
                 <div class="user-avatar"><i class="fas fa-calendar-alt"></i></div>
-                <div>
-                    <div class="user-name">{{ request.user.get_full_name|default:request.user.username }}</div>
-                    <div class="user-info">Coordenador de Atividades</div>
-                </div>
+                <div><div class="user-name">{{ request.user.get_full_name|default:request.user.username }}</div></div>
                 <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Sair</button>
             </div>
         </div>
@@ -102,12 +131,13 @@
         <div class="atividades-grid" id="atividadesGrid">
             {% for atividade in atividades %}
             <div class="atividade-card" data-id="{{ atividade.id }}">
-                <div class="atividade-header" style="background: {% if atividade.interrompe_aula %}linear-gradient(135deg, #D9534F, #C9302C){% else %}linear-gradient(135deg, #2B7A4B, #1E5A38){% endif %}">
+                <!-- CABEÇALHO COM COR DINÂMICA BASEADA EM interrompe_aula -->
+                <div class="atividade-header {% if atividade.interrompe_aula %}vermelho{% else %}verde{% endif %}">
                     <div class="atividade-tipo">
                         <i class="fas {% if atividade.tipo_atividade == 'cultural' %}fa-palette{% else %}fa-flask{% endif %}"></i>
                         {{ atividade.get_tipo_atividade_display }}
                         {% if atividade.interrompe_aula %}
-                        <span style="background: rgba(255,255,255,0.3); padding: 2px 8px; border-radius: 20px; margin-left: 8px;">
+                        <span class="badge-interrompe">
                             <i class="fas fa-bell"></i> Interrompe aulas
                         </span>
                         {% endif %}
@@ -151,13 +181,13 @@
         {% endif %}
     </div>
 
-    <!-- Modal de Confirmação -->
-    <div id="deleteModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(92,58,33,0.6); backdrop-filter:blur(4px); align-items:center; justify-content:center; z-index:1000;">
+    <!-- Modal de Confirmação para Eliminar -->
+    <div id="deleteModal" class="modal-overlay">
         <div style="background:white; border-radius:24px; padding:30px; max-width:350px; width:90%; text-align:center;">
             <div style="width:60px; height:60px; background:#D9534F; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 15px;">
                 <i class="fas fa-exclamation-triangle" style="font-size:30px; color:white;"></i>
             </div>
-            <h3 id="modalTitle" style="color:#5C3A21;">Confirmar Eliminação</h3>
+            <h3 style="color:#5C3A21; margin-bottom:10px;">Confirmar Eliminação</h3>
             <p id="modalMessage" style="color:#8B694C; margin-bottom:20px;">Tem certeza que deseja eliminar esta atividade?</p>
             <form id="deleteForm" method="POST" style="display: flex; gap: 10px; justify-content: center;">
                 {% csrf_token %}
@@ -183,6 +213,7 @@
             return cookieValue;
         }
 
+        // Modal de eliminação
         const modal = document.getElementById('deleteModal');
         const deleteForm = document.getElementById('deleteForm');
         let currentDeleteUrl = '';
@@ -212,7 +243,7 @@
                     modal.style.display = 'none';
                     location.reload();
                 } else {
-                    alert('Erro ao eliminar atividade');
+                    alert(data.erro || 'Erro ao eliminar atividade');
                 }
             } catch (error) {
                 alert('Erro de conexão');
@@ -223,6 +254,7 @@
             modal.style.display = 'none';
         });
 
+        // Pesquisa
         document.getElementById('searchBtn').addEventListener('click', () => {
             const search = document.getElementById('searchInput').value;
             window.location.href = `?search=${encodeURIComponent(search)}`;
@@ -232,12 +264,18 @@
             window.location.href = window.location.pathname;
         });
 
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') document.getElementById('searchBtn').click();
+        });
+
+        // Logout
         document.getElementById('logoutBtn').addEventListener('click', () => {
             window.location.href = "{% url 'index' %}";
         });
 
-        document.getElementById('searchInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') document.getElementById('searchBtn').click();
+        // Fechar modal ao clicar fora
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.style.display = 'none';
         });
     </script>
 </body>

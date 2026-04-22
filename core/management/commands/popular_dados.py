@@ -1,8 +1,6 @@
-import random
 from datetime import date, time, timedelta
 from django.core.management.base import BaseCommand
 from django.contrib.auth.hashers import make_password
-from django.utils import timezone
 from core.models import (
     Usuario, Turma, Disciplina, DisciplinaTurma,
     PerfilAluno, Atividade, Transacao, Beneficio,
@@ -11,22 +9,30 @@ from core.models import (
 
 
 class Command(BaseCommand):
-    help = 'Popula todas as tabelas do sistema com dados coerentes'
+    help = 'Popula o banco com dados FIXOS e CONCRETOS para teste'
 
     def handle(self, *args, **kwargs):
-        self.stdout.write('🚀 Populando todas as tabelas do sistema...')
+        self.stdout.write('🚀 Populando banco com dados FIXOS e CONCRETOS...')
 
         # =========================================================
-        # 1. TURMAS
+        # 1. TURMAS (FIXAS)
         # =========================================================
         self.stdout.write('📚 Criando turmas...')
         turmas_info = [
-            ('10ª ID', 'informatica', '10ª'), ('10ª IB', 'informatica', '10ª'),
-            ('11ª ID', 'informatica', '11ª'), ('11ª IB', 'informatica', '11ª'),
-            ('12ª ID', 'informatica', '12ª'), ('12ª IB', 'informatica', '12ª'),
-            ('10ª EA', 'eletronica', '10ª'), ('10ª EE', 'eletronica', '10ª'),
-            ('11ª EA', 'eletronica', '11ª'), ('11ª EE', 'eletronica', '11ª'),
-            ('12ª EA', 'eletronica', '12ª'), ('12ª EE', 'eletronica', '12ª'),
+            # Informática
+            ('10ª ID', 'informatica', '10ª'),
+            ('10ª IB', 'informatica', '10ª'),
+            ('11ª ID', 'informatica', '11ª'),
+            ('11ª IB', 'informatica', '11ª'),
+            ('12ª ID', 'informatica', '12ª'),
+            ('12ª IB', 'informatica', '12ª'),
+            # Eletrónica
+            ('10ª EA', 'eletronica', '10ª'),
+            ('10ª EE', 'eletronica', '10ª'),
+            ('11ª EA', 'eletronica', '11ª'),
+            ('11ª EE', 'eletronica', '11ª'),
+            ('12ª EA', 'eletronica', '12ª'),
+            ('12ª EE', 'eletronica', '12ª'),
         ]
         turmas = {}
         for nome, curso, ano in turmas_info:
@@ -35,23 +41,38 @@ class Command(BaseCommand):
         self.stdout.write(f'   ✅ {len(turmas)} turmas criadas.')
 
         # =========================================================
-        # 2. DISCIPLINAS
+        # 2. DISCIPLINAS (FIXAS)
         # =========================================================
         self.stdout.write('📖 Criando disciplinas...')
-        disc_inf = {
-            'DT': ['11ª'], 'Eletrotécnica': ['10ª', '11ª'], 'SEAC': ['10ª', '11ª', '12ª'],
-            'TIC': ['10ª', '11ª'], 'TLP': ['10ª', '11ª', '12ª'], 'TREI': ['11ª', '12ª'],
+        
+        disc_informatica = {
+            'Eletrotécnica': ['10ª', '11ª'],
+            'SEAC': ['10ª', '11ª', '12ª'],
+            'TIC': ['10ª', '11ª'],
+            'TLP': ['10ª', '11ª', '12ª'],
+            'TREI': ['11ª', '12ª'],
         }
-        disc_elec = {
-            'D.T': ['11ª'], 'Eletrónica': ['10ª', '11ª', '12ª'], 'Informática': ['10ª'],
-            'POL': ['10ª', '11ª', '12ª'], 'S.D.T': ['11ª'], 'T.T': ['10ª', '11ª', '12ª'],
+        
+        disc_eletronica = {
+            'Eletrónica': ['10ª', '11ª', '12ª'],
+            'Informática': ['10ª'],
+            'POL': ['10ª', '11ª', '12ª'],
+            'S.D.T': ['11ª'],
+            'T.T': ['10ª', '11ª', '12ª'],
             'Telecomunicações': ['12ª'],
         }
+        
         disc_comuns = {
-            'Empreendedorismo': ['10ª', '11ª', '12ª'], 'FAI': ['10ª', '11ª'],
-            'Física': ['10ª', '11ª', '12ª'], 'Gestão de Projetos': ['12ª'],
-            'Inglês': ['10ª', '11ª'], 'Língua Portuguesa': ['10ª', '11ª'],
-            'Matemática': ['10ª', '11ª', '12ª'], 'OGI': ['12ª'], 'Química': ['10ª', '11ª'],
+            'D.T': ['11ª'],
+            'Empreendedorismo': ['10ª', '11ª', '12ª'],
+            'FAI': ['10ª', '11ª'],
+            'Física': ['10ª', '11ª', '12ª'],
+            'Gestão de Projetos': ['12ª'],
+            'Inglês': ['10ª', '11ª'],
+            'Língua Portuguesa': ['10ª', '11ª'],
+            'Matemática': ['10ª', '11ª', '12ª'],
+            'OGI': ['12ª'],
+            'Química': ['10ª', '11ª'],
         }
 
         def associar_disciplina(nome, curso_filtro, anos):
@@ -61,387 +82,329 @@ class Command(BaseCommand):
                     if turma.curso == curso_filtro and turma.ano == ano:
                         DisciplinaTurma.objects.get_or_create(disciplina=disc, turma=turma)
 
-        for nome, anos in disc_inf.items():
-            associar_disciplina(nome, 'informatica', anos)
-        for nome, anos in disc_elec.items():
-            associar_disciplina(nome, 'eletronica', anos)
-        for nome, anos in disc_comuns.items():
+        def associar_disciplina_comum(nome, anos):
             disc, _ = Disciplina.objects.get_or_create(nome=nome)
             for ano in anos:
                 for turma in turmas.values():
                     if turma.ano == ano:
                         DisciplinaTurma.objects.get_or_create(disciplina=disc, turma=turma)
+
+        for nome, anos in disc_informatica.items():
+            associar_disciplina(nome, 'informatica', anos)
+        for nome, anos in disc_eletronica.items():
+            associar_disciplina(nome, 'eletronica', anos)
+        for nome, anos in disc_comuns.items():
+            associar_disciplina_comum(nome, anos)
+        
         self.stdout.write(f'   ✅ {Disciplina.objects.count()} disciplinas criadas.')
 
         # =========================================================
-        # 3. ALUNOS (NOMES REAIS ORGANIZADOS POR TURMA)
+        # 3. ALUNOS (2 POR TURMA - NOMES FIXOS)
         # =========================================================
         self.stdout.write('👨‍🎓 Criando alunos...')
         
-        # Nomes reais para alunos do Colégio Árvore da Felicidade
-        # Organizados por turma (4 alunos por turma)
-        alunos_por_turma = {
-            '10ª ID': [
-                ('202400001', 'Alice Fernandes', 'alice.fernandes'),
-                ('202400002', 'Bruno Cardoso', 'bruno.cardoso'),
-                ('202400003', 'Carla Mendes', 'carla.mendes'),
-                ('202400004', 'Diogo Lopes', 'diogo.lopes'),
-            ],
-            '10ª IB': [
-                ('202400005', 'Elena Santos', 'elena.santos'),
-                ('202400006', 'Fábio Gomes', 'fabio.gomes'),
-                ('202400007', 'Gabriela Costa', 'gabriela.costa'),
-                ('202400008', 'Hugo Pereira', 'hugo.pereira'),
-            ],
-            '11ª ID': [
-                ('202400009', 'Inês Rodrigues', 'ines.rodrigues'),
-                ('202400010', 'João Almeida', 'joao.almeida'),
-                ('202400011', 'Lara Ferreira', 'lara.ferreira'),
-                ('202400012', 'Miguel Carvalho', 'miguel.carvalho'),
-            ],
-            '11ª IB': [
-                ('202400013', 'Natália Ribeiro', 'natalia.ribeiro'),
-                ('202400014', 'Oscar Martins', 'oscar.martins'),
-                ('202400015', 'Patrícia Monteiro', 'patricia.monteiro'),
-                ('202400016', 'Ricardo Nunes', 'ricardo.nunes'),
-            ],
-            '12ª ID': [
-                ('202400017', 'Sofia Ramos', 'sofia.ramos'),
-                ('202400018', 'Tomás Batista', 'tomas.batista'),
-                ('202400019', 'Úrsula Matos', 'ursula.matos'),
-                ('202400020', 'Vítor Pires', 'vitor.pires'),
-            ],
-            '12ª IB': [
-                ('202400021', 'Wanda Castro', 'wanda.castro'),
-                ('202400022', 'Xavier Neves', 'xavier.neves'),
-                ('202400023', 'Yara Machado', 'yara.machado'),
-                ('202400024', 'Zacarias Barbosa', 'zacarias.barbosa'),
-            ],
-            '10ª EA': [
-                ('202400025', 'Adriana Vieira', 'adriana.vieira'),
-                ('202400026', 'Bernardo Leal', 'bernardo.leal'),
-                ('202400027', 'Cristiano Soares', 'cristiano.soares'),
-                ('202400028', 'Daniela Cunha', 'daniela.cunha'),
-            ],
-            '10ª EE': [
-                ('202400029', 'Eduardo Brito', 'eduardo.brito'),
-                ('202400030', 'Filipa Cruz', 'filipa.cruz'),
-                ('202400031', 'Gonçalo Tavares', 'goncalo.tavares'),
-                ('202400032', 'Helena Marques', 'helena.marques'),
-            ],
-            '11ª EA': [
-                ('202400033', 'Igor Lima', 'igor.lima'),
-                ('202400034', 'Jéssica Rocha', 'jessica.rocha'),
-                ('202400035', 'Kevin Silva', 'kevin.silva'),
-                ('202400036', 'Lúcia Gonçalves', 'lucia.goncalves'),
-            ],
-            '11ª EE': [
-                ('202400037', 'Manuel Abreu', 'manuel.abreu'),
-                ('202400038', 'Nádia Simões', 'nadia.simoes'),
-                ('202400039', 'Olga Andrade', 'olga.andrade'),
-                ('202400040', 'Paulo Mota', 'paulo.mota'),
-            ],
-            '12ª EA': [
-                ('202400041', 'Raquel Leite', 'raquel.leite'),
-                ('202400042', 'Sérgio Pinheiro', 'sergio.pinheiro'),
-                ('202400043', 'Tânia Dias', 'tania.dias'),
-                ('202400044', 'Ulisses Neves', 'ulisses.neves'),
-            ],
-            '12ª EE': [
-                ('202400045', 'Vera Cardoso', 'vera.cardoso'),
-                ('202400046', 'Wilson Santos', 'wilson.santos'),
-                ('202400047', 'Xénia Luz', 'xenia.luz'),
-                ('202400048', 'Yuri Mendes', 'yuri.mendes'),
-            ],
-        }
+        # Lista fixa de alunos (2 por turma = 24 alunos)
+        alunos_fixos = [
+            # Turma 10ª ID
+            ('10ª ID', 'Ricardo Oliveira', '20240001', 1250),
+            ('10ª ID', 'Fernanda Santos', '20240002', 980),
+            # Turma 10ª IB
+            ('10ª IB', 'Lucas Almeida', '20240003', 2100),
+            ('10ª IB', 'Beatriz Costa', '20240004', 1850),
+            # Turma 11ª ID
+            ('11ª ID', 'Rafael Lima', '20240005', 3420),
+            ('11ª ID', 'Juliana Ferreira', '20240006', 2980),
+            # Turma 11ª IB
+            ('11ª IB', 'Gabriel Souza', '20240007', 1560),
+            ('11ª IB', 'Mariana Silva', '20240008', 2230),
+            # Turma 12ª ID
+            ('12ª ID', 'André Rodrigues', '20240009', 4100),
+            ('12ª ID', 'Camila Nunes', '20240010', 3870),
+            # Turma 12ª IB
+            ('12ª IB', 'Thiago Mendes', '20240011', 2950),
+            ('12ª IB', 'Larissa Rocha', '20240012', 3120),
+            # Turma 10ª EA
+            ('10ª EA', 'Pedro Henrique', '20240013', 890),
+            ('10ª EA', 'Amanda Lima', '20240014', 1340),
+            # Turma 10ª EE
+            ('10ª EE', 'Bruno Cardoso', '20240015', 1670),
+            ('10ª EE', 'Tatiane Oliveira', '20240016', 1430),
+            # Turma 11ª EA
+            ('11ª EA', 'Felipe Augusto', '20240017', 2780),
+            ('11ª EA', 'Natália Souza', '20240018', 2450),
+            # Turma 11ª EE
+            ('11ª EE', 'Vinícius Pereira', '20240019', 1890),
+            ('11ª EE', 'Patrícia Lima', '20240020', 2120),
+            # Turma 12ª EA
+            ('12ª EA', 'Eduardo Martins', '20240021', 5230),
+            ('12ª EA', 'Carolina Ribeiro', '20240022', 4980),
+            # Turma 12ª EE
+            ('12ª EE', 'Guilherme Castro', '20240023', 3670),
+            ('12ª EE', 'Vanessa Alves', '20240024', 3890),
+        ]
         
-        for turma_nome, alunos_lista in alunos_por_turma.items():
-            turma = turmas.get(turma_nome)
-            if not turma:
-                continue
-                
-            for processo, nome_completo, username in alunos_lista:
-                primeiro = nome_completo.split()[0]
-                ultimo = nome_completo.split()[1]
-                email = f"{username}@aluno.colegioarvore.ao"
-                
-                usuario, created = Usuario.objects.get_or_create(
-                    username=username,
-                    defaults={
-                        'first_name': primeiro,
-                        'last_name': ultimo,
-                        'email': email,
-                        'password': make_password('aluno9999'),
-                        'tipo': 'aluno'
-                    }
-                )
-                
-                if not created:
-                    usuario.first_name = primeiro
-                    usuario.last_name = ultimo
-                    usuario.email = email
-                    usuario.save()
-                
-                PerfilAluno.objects.get_or_create(
-                    usuario=usuario,
-                    defaults={
-                        'numero_processo': processo,
-                        'turma': turma,
-                        'saldo_pontos': 9999
-                    }
-                )
-                
-                self.stdout.write(f'      - {processo}: {nome_completo} - {turma_nome}')
+        for turma_nome, nome_completo, processo, saldo in alunos_fixos:
+            turma = turmas[turma_nome]
+            primeiro, ultimo = nome_completo.split()
+            username = f"{primeiro.lower()}.{ultimo.lower()}".replace('ã', 'a').replace('á', 'a').replace('é', 'e').replace('í', 'i').replace('ó', 'o').replace('ú', 'u')
+            email = f"{username}@aluno.caf.ao"
+            
+            usuario, _ = Usuario.objects.get_or_create(
+                username=username,
+                defaults={
+                    'first_name': primeiro,
+                    'last_name': ultimo,
+                    'email': email,
+                    'password': make_password('aluno123'),
+                    'tipo': 'aluno'
+                }
+            )
+            PerfilAluno.objects.get_or_create(
+                usuario=usuario,
+                defaults={
+                    'numero_processo': processo,
+                    'turma': turma,
+                    'saldo_pontos': saldo
+                }
+            )
         
         self.stdout.write(f'   ✅ {PerfilAluno.objects.count()} alunos criados.')
 
         # =========================================================
-        # 4. PROFESSORES
+        # 4. USUÁRIOS (Professor, Coordenador, Diretor) - FIXOS
         # =========================================================
-        self.stdout.write('👨‍🏫 Criando professores...')
+        self.stdout.write('👨‍🏫 Criando usuários...')
         
         primeira_disciplina = Disciplina.objects.first()
+        turma_12ea = turmas.get('12ª EA')
         
-        # Professor apenas
-        prof_only, _ = Usuario.objects.get_or_create(
+        # Professor
+        prof, _ = Usuario.objects.get_or_create(
             username='professor.carlos',
             defaults={
                 'first_name': 'Carlos', 'last_name': 'Mendes',
-                'email': 'professor@colegioarvore.ao',
+                'email': 'professor@caf.ao',
                 'password': make_password('prof123'),
                 'tipo': 'professor', 'is_professor': True
             }
         )
         if primeira_disciplina:
-            PerfilProfessor.objects.get_or_create(
-                usuario=prof_only,
-                defaults={'disciplina': primeira_disciplina}
-            )
-        self.stdout.write('      - professor@colegioarvore.ao (Professor Carlos Mendes)')
+            PerfilProfessor.objects.get_or_create(usuario=prof, defaults={'disciplina': primeira_disciplina})
         
-        # Coordenador apenas
-        coord_only, _ = Usuario.objects.get_or_create(
+        # Coordenador
+        coord, _ = Usuario.objects.get_or_create(
             username='coordenador.ana',
             defaults={
                 'first_name': 'Ana', 'last_name': 'Paula',
-                'email': 'coordenador@colegioarvore.ao',
+                'email': 'coordenador@caf.ao',
                 'password': make_password('coord123'),
                 'tipo': 'coordenador', 'is_coordenador': True
             }
         )
-        self.stdout.write('      - coordenador@colegioarvore.ao (Coordenadora Ana Paula)')
         
-        # Diretor apenas
-        turma_12ea = turmas.get('12ª EA')
-        diretor_only, _ = Usuario.objects.get_or_create(
+        # Diretor
+        diretor, _ = Usuario.objects.get_or_create(
             username='diretor.joao',
             defaults={
                 'first_name': 'João', 'last_name': 'Zinga',
-                'email': 'diretor@colegioarvore.ao',
+                'email': 'diretor@caf.ao',
                 'password': make_password('diretor123'),
                 'tipo': 'diretor_turma', 'is_diretor_turma': True,
                 'turma_vinculada': turma_12ea
             }
         )
-        self.stdout.write('      - diretor@colegioarvore.ao (Diretor João Zinga)')
         
-        # Professor + Coordenador
-        prof_coord, _ = Usuario.objects.get_or_create(
-            username='prof.coord.ricardo',
-            defaults={
-                'first_name': 'Ricardo', 'last_name': 'Lima',
-                'email': 'prof.coord@colegioarvore.ao',
-                'password': make_password('multi123'),
-                'tipo': 'professor', 'is_professor': True, 'is_coordenador': True
-            }
-        )
-        if primeira_disciplina:
-            PerfilProfessor.objects.get_or_create(
-                usuario=prof_coord,
-                defaults={'disciplina': primeira_disciplina}
-            )
-        self.stdout.write('      - prof.coord@colegioarvore.ao (Professor Ricardo Lima + Coordenador)')
-        
-        # Professor + Diretor
-        turma_11id = turmas.get('11ª ID')
-        prof_diretor, _ = Usuario.objects.get_or_create(
-            username='prof.diretor.marcos',
-            defaults={
-                'first_name': 'Marcos', 'last_name': 'Silva',
-                'email': 'prof.diretor@colegioarvore.ao',
-                'password': make_password('multi123'),
-                'tipo': 'professor', 'is_professor': True, 'is_diretor_turma': True,
-                'turma_vinculada': turma_11id
-            }
-        )
-        if primeira_disciplina:
-            PerfilProfessor.objects.get_or_create(
-                usuario=prof_diretor,
-                defaults={'disciplina': primeira_disciplina}
-            )
-        self.stdout.write('      - prof.diretor@colegioarvore.ao (Professor Marcos Silva + Diretor)')
-        
-        # Super usuário (todos os cargos)
-        turma_10ee = turmas.get('10ª EE')
-        todos_cargos, _ = Usuario.objects.get_or_create(
-            username='super.user',
-            defaults={
-                'first_name': 'Super', 'last_name': 'User',
-                'email': 'super.user@colegioarvore.ao',
-                'password': make_password('super123'),
-                'tipo': 'professor',
-                'is_professor': True, 'is_coordenador': True, 'is_diretor_turma': True,
-                'turma_vinculada': turma_10ee
-            }
-        )
-        if primeira_disciplina:
-            PerfilProfessor.objects.get_or_create(
-                usuario=todos_cargos,
-                defaults={'disciplina': primeira_disciplina}
-            )
-        self.stdout.write('      - super.user@colegioarvore.ao (Super User - todos os perfis)')
-        
-        self.stdout.write('   ✅ Professores criados.')
+        self.stdout.write('   ✅ Usuários criados.')
 
         # =========================================================
-        # 5. BENEFÍCIOS
+        # 5. BENEFÍCIOS (FIXOS)
         # =========================================================
         self.stdout.write('🎁 Criando benefícios...')
-        beneficios_lista = [
-            {'nome': 'Boletim de Notas Oficial', 'descricao': 'Impressão colorida do boletim oficial', 'custo_pontos': 200, 'categoria': 'academico'},
-            {'nome': 'Folhas para Provas (Professor)', 'descricao': '10 folhas pautadas para provas', 'custo_pontos': 30, 'categoria': 'academico'},
-            {'nome': 'Folhas para Provas Trimestrais', 'descricao': '20 folhas pautadas', 'custo_pontos': 60, 'categoria': 'academico'},
-            {'nome': 'Internet Grátis (7 dias)', 'descricao': 'Wi-Fi de alta velocidade por 7 dias', 'custo_pontos': 300, 'categoria': 'tecnologia'},
-            {'nome': 'Internet Grátis (30 dias)', 'descricao': 'Wi-Fi por 30 dias', 'custo_pontos': 1000, 'categoria': 'tecnologia'},
-            {'nome': 'Certificado de Mérito', 'descricao': 'Certificado oficial de reconhecimento', 'custo_pontos': 150, 'categoria': 'premios'},
-            {'nome': 'Dia sem Uniforme', 'descricao': 'Permissão para trajes civis', 'custo_pontos': 80, 'categoria': 'eventos'},
+        beneficios_fixos = [
+            {'nome': 'Boletim de Notas', 'descricao': 'Impressão oficial do boletim', 'custo': 200, 'categoria': 'academico', 'estoque': -1},
+            {'nome': 'Internet 7 dias', 'descricao': 'Wi-Fi de alta velocidade por 7 dias', 'custo': 300, 'categoria': 'tecnologia', 'estoque': 50},
+            {'nome': 'Internet 30 dias', 'descricao': 'Wi-Fi de alta velocidade por 30 dias', 'custo': 1000, 'categoria': 'tecnologia', 'estoque': 20},
+            {'nome': 'Certificado de Mérito', 'descricao': 'Certificado oficial de reconhecimento', 'custo': 150, 'categoria': 'premios', 'estoque': -1},
+            {'nome': 'Dia sem Uniforme', 'descricao': 'Permissão para trajes civis por um dia', 'custo': 80, 'categoria': 'eventos', 'estoque': 100},
         ]
-        for b in beneficios_lista:
+        for b in beneficios_fixos:
             Beneficio.objects.get_or_create(
                 nome=b['nome'],
                 defaults={
                     'descricao': b['descricao'],
-                    'custo_pontos': b['custo_pontos'],
+                    'custo_pontos': b['custo'],
                     'categoria': b['categoria'],
+                    'estoque': b['estoque'],
                     'disponivel': True
                 }
             )
-        self.stdout.write(f'   ✅ {Beneficio.objects.count()} benefícios criados.')
+        self.stdout.write(f'   ✅ {Beneficio.objects.count()} benefícios.')
 
         # =========================================================
-        # 6. ATIVIDADES
+        # 6. ATIVIDADES DO COORDENADOR (FIXAS)
         # =========================================================
-        self.stdout.write('📝 Criando atividades...')
+        self.stdout.write('📝 Criando atividades do coordenador...')
         hoje = date.today()
-        atividade_count = 0
-        for disciplina in Disciplina.objects.all():
-            for j in range(2):
-                nome_atv = f"{disciplina.nome} - Atividade {j+1}"
-                data_inicio = hoje - timedelta(days=random.randint(5, 30))
-                data_fim = data_inicio + timedelta(days=random.randint(1, 7))
+        
+        atividades_coord_fixas = [
+            {'nome': 'Feira de Ciências 2024', 'tipo': 'ciencia_tecnologia', 'pontos': 300, 'interrompe': True, 
+             'data_ini': hoje - timedelta(days=30), 'data_fim': hoje - timedelta(days=25)},
+            {'nome': 'Workshop de Robótica', 'tipo': 'ciencia_tecnologia', 'pontos': 250, 'interrompe': False,
+             'data_ini': hoje - timedelta(days=20), 'data_fim': hoje - timedelta(days=18)},
+            {'nome': 'Peça de Teatro "O Auto da Compadecida"', 'tipo': 'cultural', 'pontos': 200, 'interrompe': True,
+             'data_ini': hoje - timedelta(days=15), 'data_fim': hoje - timedelta(days=12)},
+            {'nome': 'Concurso de Fotografia "Minha Escola"', 'tipo': 'cultural', 'pontos': 180, 'interrompe': False,
+             'data_ini': hoje - timedelta(days=10), 'data_fim': hoje - timedelta(days=8)},
+            {'nome': 'Olimpíada de Matemática', 'tipo': 'ciencia_tecnologia', 'pontos': 350, 'interrompe': True,
+             'data_ini': hoje - timedelta(days=5), 'data_fim': hoje - timedelta(days=2)},
+            {'nome': 'Clube de Leitura "Machado de Assis"', 'tipo': 'cultural', 'pontos': 150, 'interrompe': False,
+             'data_ini': hoje - timedelta(days=25), 'data_fim': hoje - timedelta(days=22)},
+        ]
+        
+        for ac in atividades_coord_fixas:
+            atividade = Atividade.objects.create(
+                nome=ac['nome'],
+                descricao=f'Atividade {ac["tipo"]} organizada pelo coordenador',
+                criterios_avaliacao='Participação, desempenho e criatividade',
+                data_inicio=ac['data_ini'],
+                data_fim=ac['data_fim'],
+                hora_inicio=time(8, 0),
+                hora_fim=time(12, 0),
+                max_pontos_por_aluno=ac['pontos'],
+                tipo_atividade=ac['tipo'],
+                interrompe_aula=ac['interrompe']
+            )
+            atividade.turmas.set(turmas.values())
+        
+        self.stdout.write(f'   ✅ {Atividade.objects.filter(disciplina__isnull=True).count()} atividades do coordenador.')
+
+        # =========================================================
+        # 7. ATIVIDADES DOS PROFESSORES (Curriculares - FIXAS)
+        # =========================================================
+        self.stdout.write('📝 Criando atividades dos professores...')
+        
+        atividades_prof_fixas = [
+            ('Matemática', 'Prova Trimestral', 100, hoje - timedelta(days=14), hoje - timedelta(days=10)),
+            ('Matemática', 'Trabalho em Grupo', 80, hoje - timedelta(days=21), hoje - timedelta(days=18)),
+            ('Física', 'Experiência de Laboratório', 120, hoje - timedelta(days=12), hoje - timedelta(days=9)),
+            ('Física', 'Prova de Mecânica', 100, hoje - timedelta(days=7), hoje - timedelta(days=5)),
+            ('Língua Portuguesa', 'Redação Dissertativa', 60, hoje - timedelta(days=18), hoje - timedelta(days=15)),
+            ('Língua Portuguesa', 'Apresentação Oral', 70, hoje - timedelta(days=10), hoje - timedelta(days=8)),
+            ('Inglês', 'Listening Test', 50, hoje - timedelta(days=22), hoje - timedelta(days=20)),
+            ('Inglês', 'Apresentação de Diálogo', 65, hoje - timedelta(days=6), hoje - timedelta(days=4)),
+            ('Química', 'Tabela Periódica', 90, hoje - timedelta(days=16), hoje - timedelta(days=13)),
+            ('História', 'Seminário sobre Independência', 85, hoje - timedelta(days=9), hoje - timedelta(days=6)),
+        ]
+        
+        for disc_nome, nome_atv, pontos, data_ini, data_fim in atividades_prof_fixas:
+            disciplina = Disciplina.objects.filter(nome=disc_nome).first()
+            if disciplina:
                 atividade = Atividade.objects.create(
                     nome=nome_atv,
-                    descricao=f"Atividade avaliativa de {disciplina.nome}",
-                    criterios_avaliacao="Participação, assiduidade, desempenho",
-                    data_inicio=data_inicio,
+                    descricao=f'Atividade avaliativa de {disc_nome}',
+                    criterios_avaliacao='Participação, assiduidade, qualidade das respostas',
+                    data_inicio=data_ini,
                     data_fim=data_fim,
                     hora_inicio=time(8, 0),
                     hora_fim=time(12, 0),
-                    max_pontos_por_aluno=random.randint(50, 200),
-                    disciplina=disciplina
+                    max_pontos_por_aluno=pontos,
+                    disciplina=disciplina,
+                    interrompe_aula=False
                 )
-                turmas_da_disciplina = Turma.objects.filter(disciplinas_relacionadas__disciplina=disciplina)
-                atividade.turmas.set(turmas_da_disciplina)
-                atividade_count += 1
-        self.stdout.write(f'   ✅ {atividade_count} atividades criadas.')
-
-        # =========================================================
-        # 7. RESGATES DE BENEFÍCIOS
-        # =========================================================
-        self.stdout.write('🛒 Criando resgates de benefícios...')
-        resgates_count = 0
-        beneficios_disponiveis = list(Beneficio.objects.filter(disponivel=True))
+                turmas_disc = Turma.objects.filter(disciplinas_relacionadas__disciplina=disciplina)
+                atividade.turmas.set(turmas_disc)
         
-        for aluno in PerfilAluno.objects.all():
-            if random.random() < 0.3 and beneficios_disponiveis:
-                beneficio = random.choice(beneficios_disponiveis)
-                if aluno.saldo_pontos >= beneficio.custo_pontos:
-                    ResgateBeneficio.objects.create(
-                        aluno=aluno,
-                        beneficio=beneficio,
-                        pontos_gastos=beneficio.custo_pontos,
-                        status='confirmado'
-                    )
-                    aluno.saldo_pontos -= beneficio.custo_pontos
-                    aluno.save()
-                    resgates_count += 1
-        self.stdout.write(f'   ✅ {resgates_count} resgates de benefícios criados.')
+        self.stdout.write(f'   ✅ {Atividade.objects.filter(disciplina__isnull=False).count()} atividades dos professores.')
 
         # =========================================================
-        # 8. TRANSAÇÕES
+        # 8. TRANSAÇÕES (Distribuição de pontos - FIXAS)
         # =========================================================
         self.stdout.write('💰 Criando transações...')
-        transacoes_count = 0
         
-        # Distribuição de pontos por atividades
-        for atividade in Atividade.objects.all():
-            for turma in atividade.turmas.all():
-                for aluno in PerfilAluno.objects.filter(turma=turma):
-                    pontos = random.randint(10, atividade.max_pontos_por_aluno)
-                    aluno.saldo_pontos += pontos
-                    aluno.save()
-                    Transacao.objects.create(
-                        aluno=aluno,
-                        quantidade=pontos,
-                        tipo='distribuicao',
-                        descricao=f"Pontos da atividade: {atividade.nome}",
-                        professor=prof_only,
-                        atividade=atividade
-                    )
-                    transacoes_count += 1
+        transacoes_fixas = [
+            # (aluno_processo, atividade_nome, pontos)
+            ('20240001', 'Feira de Ciências 2024', 300),
+            ('20240002', 'Feira de Ciências 2024', 280),
+            ('20240005', 'Olimpíada de Matemática', 350),
+            ('20240006', 'Olimpíada de Matemática', 310),
+            ('20240009', 'Prova Trimestral', 95),
+            ('20240010', 'Prova Trimestral', 88),
+            ('20240011', 'Prova Trimestral', 100),
+            ('20240013', 'Workshop de Robótica', 250),
+            ('20240014', 'Workshop de Robótica', 230),
+            ('20240017', 'Peça de Teatro "O Auto da Compadecida"', 200),
+            ('20240018', 'Peça de Teatro "O Auto da Compadecida"', 190),
+            ('20240021', 'Experiência de Laboratório', 120),
+            ('20240022', 'Experiência de Laboratório', 115),
+            ('20240023', 'Trabalho em Grupo', 80),
+            ('20240024', 'Trabalho em Grupo', 75),
+        ]
         
-        # Transações adicionais (adição e remoção)
-        for aluno in PerfilAluno.objects.all():
-            Transacao.objects.create(
-                aluno=aluno,
-                quantidade=random.randint(10, 50),
-                tipo='adicao',
-                descricao="Participação ativa na aula",
-                professor=prof_only
-            )
-            transacoes_count += 1
-            
-            Transacao.objects.create(
-                aluno=aluno,
-                quantidade=-random.randint(5, 20),
-                tipo='remocao',
-                descricao="Penalização por comportamento",
-                professor=prof_only
-            )
-            transacoes_count += 1
+        for processo, atividade_nome, pontos in transacoes_fixas:
+            aluno = PerfilAluno.objects.filter(numero_processo=processo).first()
+            atividade = Atividade.objects.filter(nome=atividade_nome).first()
+            if aluno and atividade:
+                aluno.saldo_pontos += pontos
+                aluno.save()
+                Transacao.objects.create(
+                    aluno=aluno,
+                    quantidade=pontos,
+                    tipo='distribuicao',
+                    descricao=f'Pontos da atividade: {atividade_nome}',
+                    professor=prof,
+                    atividade=atividade
+                )
         
-        self.stdout.write(f'   ✅ {transacoes_count} transações criadas.')
+        self.stdout.write(f'   ✅ {Transacao.objects.count()} transações criadas.')
 
         # =========================================================
-        # 9. RELATÓRIO FINAL
+        # 9. RESGATES DE BENEFÍCIOS (FIXOS)
         # =========================================================
-        self.stdout.write(self.style.SUCCESS('\n🎉 POPULAÇÃO COMPLETA CONCLUÍDA!'))
-        self.stdout.write('\n📊 RESUMO FINAL:')
+        self.stdout.write('🛒 Criando resgates...')
+        
+        resgates_fixos = [
+            ('20240001', 'Internet 7 dias', 300),
+            ('20240005', 'Certificado de Mérito', 150),
+            ('20240009', 'Dia sem Uniforme', 80),
+            ('20240011', 'Internet 30 dias', 1000),
+            ('20240021', 'Boletim de Notas', 200),
+        ]
+        
+        for processo, beneficio_nome, pontos in resgates_fixos:
+            aluno = PerfilAluno.objects.filter(numero_processo=processo).first()
+            beneficio = Beneficio.objects.filter(nome=beneficio_nome).first()
+            if aluno and beneficio and aluno.saldo_pontos >= pontos:
+                aluno.saldo_pontos -= pontos
+                aluno.save()
+                ResgateBeneficio.objects.create(
+                    aluno=aluno,
+                    beneficio=beneficio,
+                    pontos_gastos=pontos,
+                    status='confirmado'
+                )
+        
+        self.stdout.write(f'   ✅ {ResgateBeneficio.objects.count()} resgates criados.')
+
+        # =========================================================
+        # 10. RELATÓRIO FINAL
+        # =========================================================
+        self.stdout.write(self.style.SUCCESS('\n🎉 POPULAÇÃO CONCLUÍDA COM DADOS FIXOS!'))
+        self.stdout.write('\n📊 RESUMO:')
         self.stdout.write(f'   - Turmas: {Turma.objects.count()}')
         self.stdout.write(f'   - Disciplinas: {Disciplina.objects.count()}')
         self.stdout.write(f'   - Alunos: {PerfilAluno.objects.count()}')
         self.stdout.write(f'   - Benefícios: {Beneficio.objects.count()}')
-        self.stdout.write(f'   - Atividades: {Atividade.objects.count()}')
+        self.stdout.write(f'   - Atividades Coordenador: {Atividade.objects.filter(disciplina__isnull=True).count()}')
+        self.stdout.write(f'   - Atividades Professor: {Atividade.objects.filter(disciplina__isnull=False).count()}')
         self.stdout.write(f'   - Resgates: {ResgateBeneficio.objects.count()}')
         self.stdout.write(f'   - Transações: {Transacao.objects.count()}')
         
-        self.stdout.write('\n🔑 CREDENCIAIS:')
-        self.stdout.write('   ALUNOS:')
+        self.stdout.write('\n🔑 CREDENCIAIS (FIXAS):')
+        self.stdout.write('   ALUNO: qualquer número de processo - senha "aluno123"')
+        self.stdout.write('   PROFESSOR: professor@caf.ao / prof123')
+        self.stdout.write('   COORDENADOR: coordenador@caf.ao / coord123')
+        self.stdout.write('   DIRETOR: diretor@caf.ao / diretor123')
+        
+        self.stdout.write('\n📋 ALUNOS COM Nº PROCESSO:')
         for aluno in PerfilAluno.objects.all().order_by('numero_processo'):
-            self.stdout.write(f'      - {aluno.numero_processo}: {aluno.usuario.get_full_name()} (senha: aluno9999) - Turma: {aluno.turma.nome if aluno.turma else "Sem turma"}')
-        self.stdout.write('   PROFESSOR: professor@colegioarvore.ao / prof123')
-        self.stdout.write('   COORDENADOR: coordenador@colegioarvore.ao / coord123')
-        self.stdout.write('   DIRETOR: diretor@colegioarvore.ao / diretor123')
-        self.stdout.write('   PROF+COORD: prof.coord@colegioarvore.ao / multi123')
-        self.stdout.write('   PROF+DIRETOR: prof.diretor@colegioarvore.ao / multi123')
-        self.stdout.write('   SUPER: super.user@colegioarvore.ao / super123')
+            self.stdout.write(f'   - {aluno.numero_processo}: {aluno.usuario.get_full_name()} - {aluno.saldo_pontos} pts - Turma {aluno.turma.nome}')

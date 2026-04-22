@@ -30,8 +30,6 @@ urlpatterns = [
     path('professor/dashboard/', views.dashboard_professor, name='dashboard_professor'),
     path('api/turmas-por-disciplina/<int:disciplina_id>/', views.get_turmas_por_disciplina, name='get_turmas_por_disciplina'),
     path('turma/<int:turma_id>/', views.turma_detail, name='turma_detail'),
-    
-    # Gestão de atividades
     path('atividade/criar/<int:turma_id>/', views.criar_atividade, name='criar_atividade'),
     path('atividade/distribuir/<int:atividade_id>/', views.distribuir_pontos, name='distribuir_pontos'),
     

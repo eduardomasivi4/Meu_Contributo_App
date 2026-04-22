@@ -468,24 +468,23 @@ def turma_detail(request, turma_id):
     
     turma = get_object_or_404(Turma, id=turma_id)
     disciplina_id = request.GET.get('disciplina_id')
-    disciplina = get_object_or_404(Disciplina, id=disciplina_id) if disciplina_id else None
+    
+    if not disciplina_id:
+        messages.error(request, 'Nenhuma disciplina selecionada. Volte ao dashboard e escolha uma disciplina.')
+        return redirect('dashboard_professor')
+    
+    disciplina = get_object_or_404(Disciplina, id=disciplina_id)
     
     alunos = turma.alunos.all().order_by('usuario__first_name')
+    atividades = Atividade.objects.filter(disciplina=disciplina, turmas=turma).order_by('-created_at')
     
-    # Buscar atividades da disciplina nesta turma
-    atividades = Atividade.objects.filter(
-        disciplina=disciplina, turmas=turma
-    ).order_by('-created_at') if disciplina else []
-    
-    # CORREÇÃO 3: Calcular se cada atividade já terminou (baseado em data E hora)
+    # ... resto igual (cálculo de pode_distribuir)
     from django.utils import timezone
     agora = timezone.now()
     hoje = agora.date()
     hora_atual = agora.time()
-    
     for atividade in atividades:
         if atividade.data_fim and atividade.hora_fim:
-            # Verificar se a atividade já terminou
             if atividade.data_fim < hoje:
                 atividade.pode_distribuir = True
             elif atividade.data_fim == hoje and atividade.hora_fim <= hora_atual:
@@ -506,11 +505,17 @@ def turma_detail(request, turma_id):
 @login_required
 def criar_atividade(request, turma_id):
     if not request.user.is_professor:
+        messages.error(request, 'Acesso não autorizado.')
         return redirect('index')
     
     turma = get_object_or_404(Turma, id=turma_id)
     disciplina_id = request.GET.get('disciplina_id')
-    disciplina = get_object_or_404(Disciplina, id=disciplina_id) if disciplina_id else None
+    
+    if not disciplina_id:
+        messages.error(request, 'Nenhuma disciplina selecionada.')
+        return redirect('turma_detail', turma_id=turma.id)
+    
+    disciplina = get_object_or_404(Disciplina, id=disciplina_id)
     
     if request.method == 'POST':
         nome = request.POST.get('nome')
@@ -543,7 +548,8 @@ def criar_atividade(request, turma_id):
                 atividade.turmas.add(Turma.objects.get(id=tid))
         
         messages.success(request, f'Atividade "{nome}" criada com sucesso!')
-        return redirect('dashboard_professor')
+        # Redirecionar com o mesmo disciplina_id
+        return redirect(f'{reverse("turma_detail", args=[turma.id])}?disciplina_id={disciplina.id}')
     
     todas_turmas = Turma.objects.all().order_by('curso', 'nome')
     context = {
@@ -648,7 +654,7 @@ def is_diretor_turma(user):
 @login_required
 @user_passes_test(is_diretor_turma)
 def diretor_dashboard(request):
-    """Dashboard do diretor de turma"""
+    """Dashboard do diretor de turma - mostra apenas atividades do coordenador"""
     turma = request.user.turma_vinculada
     
     if not turma:
@@ -658,18 +664,20 @@ def diretor_dashboard(request):
     # Alunos da turma em ordem alfabética
     alunos = turma.alunos.all().order_by('usuario__first_name', 'usuario__username')
     
-    # Atividades associadas à turma (criadas pelo coordenador)
+    # CORREÇÃO: Mostrar apenas atividades do coordenador (sem disciplina)
+    # Atividades que NÃO têm disciplina (criadas pelo coordenador)
     hoje = timezone.now().date()
     hora_atual = timezone.now().time()
     
-    # Buscar atividades que estão associadas a esta turma
     atividades = Atividade.objects.filter(
-        turmas=turma
+        turmas=turma,
+        disciplina__isnull=True  # ← Apenas atividades do coordenador
     ).order_by('-created_at')
     
-    # Para cada atividade, verificar se pode distribuir pontos
+    print(f"DEBUG Diretor: Turma {turma.nome} - Atividades do coordenador: {atividades.count()}")  # Debug
+    
     for atividade in atividades:
-        # Verificar se a atividade já terminou
+        # Verificar se pode distribuir pontos
         if atividade.data_fim and atividade.hora_fim:
             if atividade.data_fim < hoje:
                 atividade.pode_distribuir = True
@@ -679,6 +687,10 @@ def diretor_dashboard(request):
                 atividade.pode_distribuir = False
         else:
             atividade.pode_distribuir = False
+        
+        # Verificar se já foi distribuído (usando session)
+        session_key = f'atividade_{atividade.id}_turma_{turma.id}_distribuida'
+        atividade.ja_distribuida = request.session.get(session_key, False)
     
     context = {
         'turma': turma,
@@ -794,19 +806,32 @@ def diretor_reduzir_pontos(request, aluno_id):
 @login_required
 @user_passes_test(is_diretor_turma)
 def diretor_distribuir_pontos(request, atividade_id):
-    """Distribuir pontos de uma atividade para os alunos da turma"""
+    """Distribuir pontos de uma atividade do coordenador para os alunos da turma"""
     turma = request.user.turma_vinculada
     
     if not turma:
         messages.error(request, 'Você não está vinculado a nenhuma turma.')
         return redirect('diretor_dashboard')
     
-    # Verificar se a atividade pertence à turma
-    atividade = get_object_or_404(Atividade, id=atividade_id, turmas=turma)
+    # CORREÇÃO: Verificar se é atividade do coordenador (sem disciplina)
+    atividade = get_object_or_404(
+        Atividade, 
+        id=atividade_id, 
+        turmas=turma,
+        disciplina__isnull=True  # ← Apenas atividades do coordenador
+    )
     
-    # Verificar se a atividade já terminou
-    hoje = timezone.now().date()
-    hora_atual = timezone.now().time()
+    # Verificar se já foi distribuído
+    session_key = f'atividade_{atividade_id}_turma_{turma.id}_distribuida'
+    if request.session.get(session_key, False):
+        messages.warning(request, 'Os pontos desta atividade já foram distribuídos para esta turma.')
+        return redirect('diretor_dashboard')
+    
+    # Verificar se pode distribuir
+    from django.utils import timezone
+    agora = timezone.now()
+    hoje = agora.date()
+    hora_atual = agora.time()
     
     pode_distribuir = False
     if atividade.data_fim and atividade.hora_fim:
@@ -816,7 +841,7 @@ def diretor_distribuir_pontos(request, atividade_id):
             pode_distribuir = True
     
     if not pode_distribuir:
-        messages.error(request, 'Esta atividade ainda não terminou. Não é possível distribuir pontos.')
+        messages.error(request, f'Esta atividade ainda não terminou. Data/Hora de fim: {atividade.data_fim} {atividade.hora_fim}')
         return redirect('diretor_dashboard')
     
     alunos = turma.alunos.all().order_by('usuario__first_name', 'usuario__username')
@@ -826,7 +851,7 @@ def diretor_distribuir_pontos(request, atividade_id):
         
         for aluno in alunos:
             pontos_str = request.POST.get(f'pontos_{aluno.id}')
-            if pontos_str:
+            if pontos_str and pontos_str.strip():
                 pontos = int(pontos_str)
                 if pontos > 0 and pontos <= atividade.max_pontos_por_aluno:
                     aluno.saldo_pontos += pontos
@@ -843,10 +868,8 @@ def diretor_distribuir_pontos(request, atividade_id):
                     pontos_distribuidos += 1
         
         if pontos_distribuidos > 0:
-            messages.success(
-                request, 
-                f'Pontos distribuídos com sucesso para {pontos_distribuidos} aluno(s)!'
-            )
+            request.session[session_key] = True
+            messages.success(request, f'Pontos distribuídos com sucesso para {pontos_distribuidos} aluno(s)!')
         else:
             messages.warning(request, 'Nenhum ponto foi distribuído.')
         
@@ -857,6 +880,7 @@ def diretor_distribuir_pontos(request, atividade_id):
         'turma': turma,
         'alunos': alunos,
         'max_pontos': atividade.max_pontos_por_aluno,
+        'pode_distribuir': pode_distribuir,
     }
     return render(request, 'core/diretor_distribuir_pontos.html', context)
 
@@ -934,14 +958,15 @@ def diretor_distribuir_pontos(request, atividade_id):
 def is_coordenador(user):
     return user.is_authenticated and user.is_coordenador
 
+
 @login_required
 @user_passes_test(is_coordenador)
 def coordenador_dashboard(request):
     """Dashboard do coordenador com lista de atividades criadas pelo coordenador"""
     
-    # CORREÇÃO: Mostrar apenas atividades SEM disciplina (criadas pelo coordenador)
+    # Mostrar apenas atividades SEM disciplina (criadas pelo coordenador)
     atividades = Atividade.objects.filter(
-        disciplina__isnull=True  # Atividades do coordenador não têm disciplina
+        disciplina__isnull=True
     ).order_by('-created_at')
     
     # Barra de pesquisa
@@ -958,7 +983,7 @@ def coordenador_dashboard(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
-    # Contar total de atividades curriculares (para mostrar no link)
+    # Contar total de atividades curriculares
     total_curriculares = Atividade.objects.filter(disciplina__isnull=False).count()
     
     context = {
@@ -966,9 +991,192 @@ def coordenador_dashboard(request):
         'search_query': search_query,
         'total_count': atividades.count(),
         'total_curriculares': total_curriculares,
-        'tem_multiplos_cargos': request.session.get('tem_multiplos_cargos', False),
     }
     return render(request, 'core/coordenador_dashboard.html', context)
+
+
+@login_required
+@user_passes_test(is_coordenador)
+def coordenador_criar_atividade(request):
+    """Criar nova atividade como coordenador (com interrupção de aula)"""
+    if request.method == 'POST':
+        try:
+            # Dados básicos
+            tipo_atividade = request.POST.get('tipo_atividade')
+            nome = request.POST.get('nome')
+            descricao = request.POST.get('descricao', '')
+            criterios = request.POST.get('criterios')
+            data_inicio = request.POST.get('data_inicio')
+            data_fim = request.POST.get('data_fim')
+            hora_inicio = request.POST.get('hora_inicio')
+            hora_fim = request.POST.get('hora_fim')
+            max_pontos = request.POST.get('max_pontos')
+            selecao_cursos = request.POST.get('selecao_cursos')
+            curso_selecionado = request.POST.get('curso_selecionado')
+            
+            # NOVO CAMPO: Interrupção de aula
+            interrompe_aula = request.POST.get('interrompe_aula') == 'sim'
+            
+            # Validar datas
+            from datetime import datetime
+            if data_inicio > data_fim:
+                messages.error(request, 'A data de fim não pode ser anterior à data de início.')
+                return redirect('coordenador_criar_atividade')
+            
+            if data_inicio == data_fim and hora_inicio >= hora_fim:
+                messages.error(request, 'No mesmo dia, a hora de fim deve ser posterior à hora de início.')
+                return redirect('coordenador_criar_atividade')
+            
+            # Criar atividade
+            atividade = Atividade.objects.create(
+                tipo_atividade=tipo_atividade,
+                nome=nome,
+                descricao=descricao,
+                criterios_avaliacao=criterios,
+                data_inicio=data_inicio,
+                data_fim=data_fim,
+                hora_inicio=hora_inicio,
+                hora_fim=hora_fim,
+                max_pontos_por_aluno=max_pontos,
+                interrompe_aula=interrompe_aula,  # NOVO CAMPO
+            )
+            
+            # Associar turmas baseado na seleção de cursos
+            if selecao_cursos == 'ambos':
+                atividade.todos_cursos = True
+                turmas = Turma.objects.all()
+                atividade.turmas.set(turmas)
+            else:
+                atividade.cursos_associados = curso_selecionado
+                turmas = Turma.objects.filter(curso=curso_selecionado)
+                atividade.turmas.set(turmas)
+            
+            atividade.save()
+            messages.success(request, f'Atividade "{nome}" criada com sucesso!')
+            return redirect('coordenador_dashboard')
+            
+        except Exception as e:
+            messages.error(request, f'Erro ao criar atividade: {str(e)}')
+            return redirect('coordenador_criar_atividade')
+    
+    # GET - mostrar formulário
+    cursos = Turma.CURSO_CHOICES
+    context = {
+        'cursos': cursos,
+        'is_edit': False,
+    }
+    return render(request, 'core/coordenador_criar_atividade.html', context)
+
+
+@login_required
+@user_passes_test(is_coordenador)
+def coordenador_editar_atividade(request, pk):
+    """Editar atividade existente (com interrupção de aula)"""
+    atividade = get_object_or_404(Atividade, id=pk)
+    
+    # Verificar se é atividade do coordenador (sem disciplina)
+    if atividade.disciplina is not None:
+        messages.error(request, 'Esta atividade é curricular e não pode ser editada aqui.')
+        return redirect('coordenador_dashboard')
+    
+    if request.method == 'POST':
+        try:
+            # Dados básicos
+            tipo_atividade = request.POST.get('tipo_atividade')
+            nome = request.POST.get('nome')
+            descricao = request.POST.get('descricao', '')
+            criterios = request.POST.get('criterios')
+            data_inicio = request.POST.get('data_inicio')
+            data_fim = request.POST.get('data_fim')
+            hora_inicio = request.POST.get('hora_inicio')
+            hora_fim = request.POST.get('hora_fim')
+            max_pontos = request.POST.get('max_pontos')
+            selecao_cursos = request.POST.get('selecao_cursos')
+            curso_selecionado = request.POST.get('curso_selecionado')
+            
+            # NOVO CAMPO: Interrupção de aula
+            interrompe_aula = request.POST.get('interrompe_aula') == 'sim'
+            
+            # Validar datas
+            if data_inicio > data_fim:
+                messages.error(request, 'A data de fim não pode ser anterior à data de início.')
+                return redirect('coordenador_editar_atividade', pk=pk)
+            
+            if data_inicio == data_fim and hora_inicio >= hora_fim:
+                messages.error(request, 'No mesmo dia, a hora de fim deve ser posterior à hora de início.')
+                return redirect('coordenador_editar_atividade', pk=pk)
+            
+            # Atualizar dados básicos
+            atividade.tipo_atividade = tipo_atividade
+            atividade.nome = nome
+            atividade.descricao = descricao
+            atividade.criterios_avaliacao = criterios
+            atividade.data_inicio = data_inicio
+            atividade.data_fim = data_fim
+            atividade.hora_inicio = hora_inicio
+            atividade.hora_fim = hora_fim
+            atividade.max_pontos_por_aluno = max_pontos
+            atividade.interrompe_aula = interrompe_aula  # NOVO CAMPO
+            
+            # Atualizar associações de turmas
+            atividade.turmas.clear()
+            if selecao_cursos == 'ambos':
+                atividade.todos_cursos = True
+                atividade.cursos_associados = None
+                turmas = Turma.objects.all()
+                atividade.turmas.set(turmas)
+            else:
+                atividade.todos_cursos = False
+                atividade.cursos_associados = curso_selecionado
+                turmas = Turma.objects.filter(curso=curso_selecionado)
+                atividade.turmas.set(turmas)
+            
+            atividade.save()
+            messages.success(request, f'Atividade "{nome}" atualizada com sucesso!')
+            return redirect('coordenador_dashboard')
+            
+        except Exception as e:
+            messages.error(request, f'Erro ao atualizar atividade: {str(e)}')
+            return redirect('coordenador_editar_atividade', pk=pk)
+    
+    # GET - mostrar formulário preenchido
+    cursos = Turma.CURSO_CHOICES
+    selecao_atual = 'ambos' if atividade.todos_cursos else 'um_curso'
+    context = {
+        'atividade': atividade,
+        'cursos': cursos,
+        'selecao_atual': selecao_atual,
+        'is_edit': True,
+    }
+    return render(request, 'core/coordenador_criar_atividade.html', context)
+
+
+@csrf_exempt
+@login_required
+@user_passes_test(is_coordenador)
+def coordenador_eliminar_atividade(request, pk):
+    """Eliminar atividade (AJAX ou POST)"""
+    atividade = get_object_or_404(Atividade, id=pk)
+    
+    # Verificar se é atividade do coordenador
+    if atividade.disciplina is not None:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'erro': 'Não é possível eliminar atividade curricular.'})
+        messages.error(request, 'Não é possível eliminar atividade curricular.')
+        return redirect('coordenador_dashboard')
+    
+    if request.method == 'POST':
+        nome = atividade.nome
+        atividade.delete()
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': True, 'message': f'Atividade "{nome}" eliminada!'})
+        
+        messages.success(request, f'Atividade "{nome}" eliminada com sucesso!')
+        return redirect('coordenador_dashboard')
+    
+    return render(request, 'core/coordenador_confirmar_delete.html', {'atividade': atividade})
+
 
 @login_required
 @user_passes_test(is_coordenador)
@@ -977,7 +1185,7 @@ def coordenador_atividades_curriculares(request):
     
     # Buscar apenas atividades COM disciplina (atividades dos professores)
     atividades = Atividade.objects.filter(
-        disciplina__isnull=False  # Atividades curriculares têm disciplina
+        disciplina__isnull=False
     ).order_by('-created_at')
     
     # Barra de pesquisa
@@ -1001,156 +1209,13 @@ def coordenador_atividades_curriculares(request):
     }
     return render(request, 'core/coordenador_atividades_curriculares.html', context)
 
-@login_required
-@user_passes_test(is_coordenador)
-def coordenador_criar_atividade(request):
-    if request.method == 'POST':
-        try:
-            tipo_atividade = request.POST.get('tipo_atividade')
-            nome = request.POST.get('nome')
-            descricao = request.POST.get('descricao', '')
-            criterios = request.POST.get('criterios')
-            data_inicio = request.POST.get('data_inicio')
-            data_fim = request.POST.get('data_fim')
-            hora_inicio = request.POST.get('hora_inicio')
-            hora_fim = request.POST.get('hora_fim')
-            max_pontos = request.POST.get('max_pontos')
-            selecao_cursos = request.POST.get('selecao_cursos')
-            curso_selecionado = request.POST.get('curso_selecionado')
-            
-            # NOVO CAMPO: Interrupção de aula
-            interrompe_aula = request.POST.get('interrompe_aula') == 'sim'
-            
-            # Criar atividade
-            atividade = Atividade.objects.create(
-                tipo_atividade=tipo_atividade,
-                nome=nome,
-                descricao=descricao,
-                criterios_avaliacao=criterios,
-                data_inicio=data_inicio,
-                data_fim=data_fim,
-                hora_inicio=hora_inicio,
-                hora_fim=hora_fim,
-                max_pontos_por_aluno=max_pontos,
-                interrompe_aula=interrompe_aula,  # NOVO
-            )
-            
-            # Associar turmas
-            if selecao_cursos == 'ambos':
-                atividade.todos_cursos = True
-                turmas = Turma.objects.all()
-                atividade.turmas.set(turmas)
-            else:
-                atividade.cursos_associados = curso_selecionado
-                turmas = Turma.objects.filter(curso=curso_selecionado)
-                atividade.turmas.set(turmas)
-            
-            atividade.save()
-            messages.success(request, f'Atividade "{nome}" criada com sucesso!')
-            return redirect('coordenador_dashboard')
-            
-        except Exception as e:
-            messages.error(request, f'Erro ao criar atividade: {str(e)}')
-            return redirect('coordenador_dashboard')
-    
-    # GET - mostrar formulário
-    cursos = Turma.CURSO_CHOICES
-    context = {
-        'cursos': cursos,
-        'is_edit': False,
-    }
-    return render(request, 'core/coordenador_criar_atividade.html', context)
-
-@login_required
-@user_passes_test(is_coordenador)
-def coordenador_editar_atividade(request, pk):
-    atividade = get_object_or_404(Atividade, id=pk)
-    
-    if request.method == 'POST':
-        try:
-            tipo_atividade = request.POST.get('tipo_atividade')
-            nome = request.POST.get('nome')
-            descricao = request.POST.get('descricao', '')
-            criterios = request.POST.get('criterios')
-            data_inicio = request.POST.get('data_inicio')
-            data_fim = request.POST.get('data_fim')
-            hora_inicio = request.POST.get('hora_inicio')
-            hora_fim = request.POST.get('hora_fim')
-            max_pontos = request.POST.get('max_pontos')
-            selecao_cursos = request.POST.get('selecao_cursos')
-            curso_selecionado = request.POST.get('curso_selecionado')
-            
-            # NOVO CAMPO: Interrupção de aula
-            interrompe_aula = request.POST.get('interrompe_aula') == 'sim'
-            
-            # Atualizar dados
-            atividade.tipo_atividade = tipo_atividade
-            atividade.nome = nome
-            atividade.descricao = descricao
-            atividade.criterios_avaliacao = criterios
-            atividade.data_inicio = data_inicio
-            atividade.data_fim = data_fim
-            atividade.hora_inicio = hora_inicio
-            atividade.hora_fim = hora_fim
-            atividade.max_pontos_por_aluno = max_pontos
-            atividade.interrompe_aula = interrompe_aula  # NOVO
-            
-            # Atualizar turmas
-            atividade.turmas.clear()
-            if selecao_cursos == 'ambos':
-                atividade.todos_cursos = True
-                atividade.cursos_associados = None
-                turmas = Turma.objects.all()
-                atividade.turmas.set(turmas)
-            else:
-                atividade.todos_cursos = False
-                atividade.cursos_associados = curso_selecionado
-                turmas = Turma.objects.filter(curso=curso_selecionado)
-                atividade.turmas.set(turmas)
-            
-            atividade.save()
-            messages.success(request, f'Atividade "{nome}" atualizada com sucesso!')
-            return redirect('coordenador_dashboard')
-            
-        except Exception as e:
-            messages.error(request, f'Erro ao atualizar atividade: {str(e)}')
-            return redirect('coordenador_dashboard')
-    
-    cursos = Turma.CURSO_CHOICES
-    selecao_atual = 'ambos' if atividade.todos_cursos else 'um_curso'
-    context = {
-        'atividade': atividade,
-        'cursos': cursos,
-        'selecao_atual': selecao_atual,
-        'is_edit': True,
-    }
-    return render(request, 'core/coordenador_criar_atividade.html', context)
-
-@csrf_exempt
-@login_required
-@user_passes_test(is_coordenador)
-def coordenador_eliminar_atividade(request, pk):
-    """Eliminar atividade (AJAX ou POST)"""
-    atividade = get_object_or_404(Atividade, id=pk)
-    
-    if request.method == 'POST':
-        nome = atividade.nome
-        atividade.delete()
-        
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({'success': True, 'message': f'Atividade "{nome}" eliminada!'})
-        
-        messages.success(request, f'Atividade "{nome}" eliminada com sucesso!')
-        return redirect('coordenador_dashboard')
-    
-    return render(request, 'core/coordenador_confirmar_delete.html', {'atividade': atividade})
 
 @login_required
 @user_passes_test(is_coordenador)
 def api_buscar_atividades(request):
     """API para busca de atividades (AJAX)"""
     search_query = request.GET.get('q', '')
-    atividades = Atividade.objects.all().order_by('-created_at')
+    atividades = Atividade.objects.filter(disciplina__isnull=True).order_by('-created_at')
     
     if search_query:
         atividades = atividades.filter(
@@ -1168,7 +1233,7 @@ def api_buscar_atividades(request):
             'data_fim': atv.data_fim.strftime('%d/%m/%Y') if atv.data_fim else '-',
             'max_pontos': atv.max_pontos_por_aluno,
             'cursos': atv.get_cursos_display,
+            'interrompe_aula': atv.interrompe_aula,  # NOVO CAMPO
         })
     
     return JsonResponse({'success': True, 'atividades': data})
-

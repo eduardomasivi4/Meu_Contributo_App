@@ -198,6 +198,7 @@
     </div>
 
     <script>
+        // ==================== FUNÇÃO PARA OBTER CSRF TOKEN ====================
         function getCookie(name) {
             let cookieValue = null;
             if (document.cookie && document.cookie !== '') {
@@ -213,45 +214,102 @@
             return cookieValue;
         }
 
+        // ==================== FUNÇÕES DO MODAL ====================
+        const modal = document.getElementById('infoModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalMessage = document.getElementById('modalMessage');
+        const modalIcon = document.getElementById('modalIcon');
+        const modalCloseBtn = document.getElementById('modalCloseBtn');
+
+        function showModal(title, message, isSuccess = true) {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            modalIcon.parentElement.style.background = isSuccess ? '#2B7A4B' : '#D4A373';
+            modalIcon.className = isSuccess ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle';
+            modal.style.display = 'flex';
+        }
+
+        function hideModal() {
+            modal.style.display = 'none';
+        }
+
+        // ==================== CARREGAR TURMAS POR DISCIPLINA ====================
         document.querySelectorAll('.disciplina-card').forEach(card => {
             card.addEventListener('click', async function(e) {
+                // Evitar que o clique no botão dentro do card dispare o evento
                 if (e.target.classList.contains('btn-turma')) return;
                 
                 const disciplinaId = this.dataset.disciplinaId;
+                const disciplinaNome = this.dataset.disciplinaNome;
                 const turmasDiv = document.getElementById(`turmas-${disciplinaId}`);
                 
+                // Toggle: fechar se já estiver aberto
                 if (turmasDiv.classList.contains('visible')) {
                     turmasDiv.classList.remove('visible');
                     return;
                 }
                 
+                // Fechar todas as outras listas de turmas abertas
+                document.querySelectorAll('.turmas-lista.visible').forEach(div => {
+                    if (div.id !== `turmas-${disciplinaId}`) {
+                        div.classList.remove('visible');
+                    }
+                });
+                
+                // Mostrar loading e abrir
                 turmasDiv.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-pulse"></i> Carregando turmas...</div>';
                 turmasDiv.classList.add('visible');
                 
                 try {
                     const response = await fetch(`/api/turmas-por-disciplina/${disciplinaId}/`, {
-                        headers: { 'X-CSRFToken': getCookie('csrftoken') }
+                        method: 'GET',
+                        headers: {
+                            'X-CSRFToken': getCookie('csrftoken'),
+                            'Content-Type': 'application/json'
+                        },
+                        credentials: 'same-origin'
                     });
+                    
                     const data = await response.json();
                     
                     if (data.turmas && data.turmas.length > 0) {
+                        // CORREÇÃO: Construir URL com disciplina_id corretamente
                         turmasDiv.innerHTML = data.turmas.map(t => `
                             <div class="turma-item">
-                                <span class="turma-nome"><i class="fas fa-users"></i> ${t.nome} - ${t.curso}</span>
-                                <a href="/turma/${t.id}/?disciplina_id=${disciplinaId}" class="btn-turma">Ver Turma <i class="fas fa-arrow-right"></i></a>
+                                <span class="turma-nome">
+                                    <i class="fas fa-users"></i> ${t.nome} - ${t.curso}
+                                </span>
+                                <a href="/turma/${t.id}/?disciplina_id=${disciplinaId}" class="btn-turma">
+                                    Ver Turma <i class="fas fa-arrow-right"></i>
+                                </a>
                             </div>
                         `).join('');
                     } else {
-                        turmasDiv.innerHTML = '<div class="loading">Nenhuma turma encontrada.</div>';
+                        turmasDiv.innerHTML = '<div class="loading">Nenhuma turma encontrada para esta disciplina.</div>';
                     }
                 } catch (error) {
-                    turmasDiv.innerHTML = '<div class="loading">Erro ao carregar turmas.</div>';
+                    console.error('Erro ao carregar turmas:', error);
+                    turmasDiv.innerHTML = '<div class="loading">Erro ao carregar turmas. Tente novamente.</div>';
                 }
             });
         });
 
+        // ==================== MENSAGENS DE SUCESSO (se houver) ====================
+        {% if messages %}
+            {% for message in messages %}
+                showModal('{{ message.tags|title }}', '{{ message|escapejs }}');
+            {% endfor %}
+        {% endif %}
+
+        // ==================== LOGOUT ====================
         document.getElementById('logoutBtn').addEventListener('click', () => {
-            window.location.href = '/';
+            window.location.href = "{% url 'index' %}";
+        });
+
+        // ==================== FECHAR MODAL ====================
+        modalCloseBtn.addEventListener('click', hideModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) hideModal();
         });
     </script>
 </body>

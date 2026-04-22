@@ -32,6 +32,7 @@
         .user-area { display: flex; align-items: center; gap: 15px; background: #FBF7E9; padding: 6px 18px; border-radius: 40px; }
         .user-avatar { width: 38px; height: 38px; background: #2B7A4B; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; }
         .user-name { font-weight: 600; color: #5C3A21; font-size: 14px; }
+        .user-info { font-size: 11px; color: #8B694C; }
         .logout-btn { background: none; border: 1px solid #F5EDDA; padding: 6px 14px; border-radius: 30px; cursor: pointer; }
         
         .turma-header {
@@ -57,6 +58,20 @@
             flex-wrap: wrap;
             gap: 10px;
         }
+        
+        /* Estilo para atividades com interrupção */
+        .atividade-item.interrompe {
+            border-left: 4px solid #D9534F;
+            padding-left: 15px;
+            background: #FFF8F0;
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+        .atividade-item.normal {
+            border-left: 4px solid #2B7A4B;
+            padding-left: 15px;
+        }
+        
         .aluno-nome { font-weight: 600; color: #5C3A21; }
         .aluno-pontos { background: #E9F5EF; padding: 4px 10px; border-radius: 20px; font-size: 12px; color: #2B7A4B; }
         .btn-add, .btn-remove { background: #D4A373; border: none; padding: 5px 12px; border-radius: 20px; color: white; cursor: pointer; font-size: 11px; }
@@ -65,10 +80,33 @@
         
         .atividade-nome { font-weight: 600; color: #5C3A21; }
         .atividade-data { font-size: 11px; color: #8B694C; margin-top: 3px; }
+        .badge-interrompe {
+            background: #D9534F;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 10px;
+            margin-left: 8px;
+        }
         
         .form-pontos { background: #FBF7E9; border-radius: 16px; padding: 15px; margin-top: 15px; }
         .form-pontos input, .form-pontos textarea { width: 100%; padding: 10px; border: 1px solid #F5EDDA; border-radius: 12px; margin-bottom: 10px; }
         .form-pontos button { background: #2B7A4B; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; }
+        
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(92, 58, 33, 0.6);
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
         
         @media (max-width: 900px) { .dashboard-grid { grid-template-columns: 1fr; } }
         @media (max-width: 600px) { .header { flex-direction: column; text-align: center; } }
@@ -93,7 +131,7 @@
 
         <div class="turma-header">
             <h2><i class="fas fa-users"></i> {{ turma.nome }} - {{ turma.get_curso_display }}</h2>
-            <p><i class="fas fa-calendar"></i> Ano: {{ turma.ano }}</p>
+            <p><i class="fas fa-calendar"></i> Ano: {{ turma.ano }} | {{ turma.alunos.count }} alunos</p>
         </div>
 
         <div class="dashboard-grid">
@@ -121,57 +159,71 @@
                 </div>
             </div>
 
-            <!-- Lista de Atividades -->
+            <!-- Lista de Atividades do Coordenador -->
             <div class="card">
                 <div class="card-header">
-                    <h3><i class="fas fa-tasks"></i> Atividades</h3>
+                    <h3><i class="fas fa-tasks"></i> Atividades do Coordenador</h3>
                 </div>
                 <div id="atividadesList">
-                    {% for atividade in atividades %}
-                    <div class="atividade-item">
-                        <div>
-                            <div class="atividade-nome">
-                                <i class="fas {% if atividade.tipo_atividade == 'cultural' %}fa-palette{% else %}fa-flask{% endif %}"></i>
-                                {{ atividade.nome }}
+                    {% if atividades %}
+                        {% for atividade in atividades %}
+                        <div class="atividade-item {% if atividade.interrompe_aula %}interrompe{% else %}normal{% endif %}">
+                            <div style="flex: 1;">
+                                <div class="atividade-nome">
+                                    <i class="fas {% if atividade.tipo_atividade == 'cultural' %}fa-palette{% else %}fa-flask{% endif %}"></i>
+                                    {{ atividade.nome }}
+                                    {% if atividade.interrompe_aula %}
+                                    <span class="badge-interrompe">
+                                        <i class="fas fa-bell"></i> Interrompe aulas
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <div class="atividade-data">
+                                    <i class="fas fa-calendar"></i> {{ atividade.data_inicio|date:"d/m/Y" }} - {{ atividade.data_fim|date:"d/m/Y" }}
+                                    <i class="fas fa-clock"></i> {{ atividade.hora_inicio|time:"H:i" }} - {{ atividade.hora_fim|time:"H:i" }}
+                                </div>
+                                <div><span class="aluno-pontos">Max: {{ atividade.max_pontos_por_aluno }} pts/aluno</span></div>
                             </div>
-                            <div class="atividade-data">
-                                <i class="fas fa-calendar"></i> {{ atividade.data_inicio|date:"d/m/Y" }} - {{ atividade.data_fim|date:"d/m/Y" }}
-                                <i class="fas fa-clock"></i> {{ atividade.hora_inicio|time:"H:i" }} - {{ atividade.hora_fim|time:"H:i" }}
-                            </div>
-                            <div><span class="aluno-pontos">Max: {{ atividade.max_pontos_por_aluno }} pts/aluno</span></div>
+                            {% if atividade.ja_distribuida %}
+                                <span style="background:#E9F5EF; color:#2B7A4B; padding:5px 12px; border-radius:20px; font-size:11px;">
+                                    <i class="fas fa-check-circle"></i> Pontos distribuídos
+                                </span>
+                            {% elif atividade.pode_distribuir %}
+                                <a href="{% url 'diretor_distribuir_pontos' atividade.id %}" class="btn-distribuir">
+                                    <i class="fas fa-share-alt"></i> Distribuir Pontos
+                                </a>
+                            {% else %}
+                                <span style="font-size:11px;color:#A58E6F;">
+                                    <i class="fas fa-hourglass-half"></i> Aguardando término
+                                </span>
+                            {% endif %}
                         </div>
-                        {% if atividade.pode_distribuir %}
-                        <a href="{% url 'diretor_distribuir_pontos' atividade.id %}" class="btn-distribuir">
-                            <i class="fas fa-share-alt"></i> Distribuir Pontos
-                        </a>
-                        {% else %}
-                        <span style="font-size: 11px; color: #A58E6F;">
-                            <i class="fas fa-hourglass-half"></i> Aguardando término
-                        </span>
-                        {% endif %}
-                    </div>
-                    {% empty %}
-                    <div style="text-align: center; padding: 20px;">Nenhuma atividade disponível.</div>
-                    {% endfor %}
+                        {% endfor %}
+                    {% else %}
+                        <div style="text-align: center; padding: 20px;">
+                            <i class="fas fa-info-circle"></i> Nenhuma atividade do coordenador disponível para esta turma.
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Modal para adicionar/reduzir pontos -->
-    <div id="pontosModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(92,58,33,0.6); backdrop-filter:blur(4px); align-items:center; justify-content:center; z-index:1000;">
+    <div id="pontosModal" class="modal-overlay">
         <div style="background:white; border-radius:24px; padding:30px; max-width:400px; width:90%;">
             <h3 id="modalTitle" style="color:#5C3A21; margin-bottom:15px;">Adicionar Pontos</h3>
-            <input type="number" id="pontosInput" placeholder="Quantidade de pontos" min="1" class="form-control" style="width:100%; padding:10px; border:1px solid #F5EDDA; border-radius:12px; margin-bottom:10px;">
+            <input type="number" id="pontosInput" placeholder="Quantidade de pontos" min="1" style="width:100%; padding:10px; border:1px solid #F5EDDA; border-radius:12px; margin-bottom:10px;">
             <textarea id="motivoInput" rows="3" placeholder="Motivo (opcional)" style="width:100%; padding:10px; border:1px solid #F5EDDA; border-radius:12px; margin-bottom:15px;"></textarea>
             <div style="display: flex; gap: 10px;">
-                <button id="confirmarBtn" class="btn-confirmar" style="background:#2B7A4B; color:white; border:none; padding:10px 20px; border-radius:30px; cursor:pointer;">Confirmar</button>
+                <button id="confirmarBtn" style="background:#2B7A4B; color:white; border:none; padding:10px 20px; border-radius:30px; cursor:pointer;">Confirmar</button>
                 <button id="cancelarBtn" style="background:#F5EDDA; color:#5C3A21; border:none; padding:10px 20px; border-radius:30px; cursor:pointer;">Cancelar</button>
             </div>
         </div>
     </div>
 
-    <div id="infoModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(92,58,33,0.6); backdrop-filter:blur(4px); align-items:center; justify-content:center; z-index:1000;">
+    <!-- Modal de Mensagem -->
+    <div id="infoModal" class="modal-overlay">
         <div style="background:white; border-radius:24px; padding:30px; max-width:350px; text-align:center;">
             <div style="width:60px; height:60px; background:#2B7A4B; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 15px;">
                 <i id="modalIcon" class="fas fa-check-circle" style="font-size:30px; color:white;"></i>
@@ -292,6 +344,18 @@
         
         document.getElementById('pontosInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') confirmarAcao();
+        });
+        
+        // Fechar modais ao clicar fora
+        document.getElementById('pontosModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('pontosModal')) {
+                document.getElementById('pontosModal').style.display = 'none';
+            }
+        });
+        document.getElementById('infoModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('infoModal')) {
+                hideModalMessage();
+            }
         });
     </script>
 </body>

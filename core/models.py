@@ -95,6 +95,7 @@ class Atividade(models.Model):
     disciplina = models.ForeignKey(Disciplina, on_delete=models.CASCADE, related_name='atividades', null=True, blank=True)
     turmas = models.ManyToManyField(Turma, related_name='atividades', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    interrompe_aula = models.BooleanField(default=False, verbose_name='Interrompe aula?', help_text='Marque se esta atividade interrompe as aulas normais')
     
     # NOVOS CAMPOS PARA COORDENADOR
     tipo_atividade = models.CharField(max_length=20, choices=TIPO_CHOICES, default='cultural')
