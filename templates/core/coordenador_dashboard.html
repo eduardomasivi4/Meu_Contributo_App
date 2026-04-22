@@ -76,16 +76,13 @@
                 <div class="logo-icon"><img src="{% static 'images/logo-caf.png' %}" alt="Logo"></div>
                 <h1>Colégio Árvore da Felicidade</h1>
             </div>
-            <div>
+            <div style="display: flex; gap: 15px;">
                 <a href="{% url 'coordenador_criar_atividade' %}" class="btn-criar"><i class="fas fa-plus"></i> Criar Atividade</a>
+                <!-- NOVO BOTÃO - será implementado na próxima melhoria -->
+                <a href="#" class="btn-criar btn-secundario" style="background: #D4A373;"><i class="fas fa-book"></i> Atividades Curriculares ({{ total_curriculares }})</a>
             </div>
             <div class="user-area">
-                <div class="user-avatar"><i class="fas fa-calendar-alt"></i></div>
-                <div>
-                    <div class="user-name">{{ request.user.get_full_name|default:request.user.username }}</div>
-                    <div class="user-info">Coordenador de Atividades</div>
-                </div>
-                <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Sair</button>
+                <!-- ... resto do header ... -->
             </div>
         </div>
 

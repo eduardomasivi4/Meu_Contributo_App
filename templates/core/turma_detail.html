@@ -77,6 +77,27 @@
             flex-wrap: wrap;
             gap: 10px;
         }
+
+        .filter-btn {
+            background: #FBF7E9;
+            border: 1px solid #F5EDDA;
+            padding: 6px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .filter-btn.active {
+            background: #2B7A4B;
+            color: white;
+            border-color: #2B7A4B;
+        }
+
+        .filter-btn:hover:not(.active) {
+            background: #F5EDDA;
+        }
+
         .aluno-nome { font-weight: 600; color: #5C3A21; }
         .aluno-pontos { background: #E9F5EF; padding: 4px 10px; border-radius: 20px; font-size: 12px; color: #2B7A4B; }
         .btn-add { background: #D4A373; border: none; padding: 5px 12px; border-radius: 20px; color: white; cursor: pointer; font-size: 11px; }
@@ -131,19 +152,24 @@
         </div>
 
         <div class="dashboard-grid">
+            <!-- Card Alunos -->
             <div class="card">
                 <div class="card-header">
                     <h3><i class="fas fa-user-graduate"></i> Alunos</h3>
                 </div>
-                <div id="alunosList"></div>
+                <div id="alunosContainer">
+                    <div id="alunosList"></div>
+                </div>
             </div>
 
+            <!-- Card Atividades -->
             <div class="card">
                 <div class="card-header">
                     <h3><i class="fas fa-tasks"></i> Atividades</h3>
-                    <a href="{% url 'criar_atividade' turma.id %}?disciplina_id={{ disciplina.id }}" class="btn-criar"><i class="fas fa-plus"></i> Criar Atividade</a>
                 </div>
-                <div id="atividadesList"></div>
+                <div id="atividadesContainer">
+                    <div id="atividadesList"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -172,6 +198,9 @@
 
         const hoje = new Date();
         const hojeStr = hoje.toISOString().split('T')[0];
+
+        let filtroAtivo = 'alunos'; // 'alunos' ou 'atividades'
+        let pesquisaAtual = '';
 
         function showModal(title, message, isSuccess = true) {
             document.getElementById('modalTitle').innerText = title;
@@ -207,27 +236,115 @@
             `).join('');
         }
 
-        function renderAtividades() {
+        function renderAtividades(pesquisa = '') {
+            let filtered = [...atividades];
+            
+            if (pesquisa) {
+                filtered = atividades.filter(a => 
+                    a.nome.toLowerCase().includes(pesquisa)
+                );
+            }
+            
             const container = document.getElementById('atividadesList');
-            if (atividades.length === 0) {
-                container.innerHTML = '<div style="text-align:center;padding:20px;">Nenhuma atividade criada ainda.</div>';
+            if (filtered.length === 0) {
+                container.innerHTML = '<div style="text-align:center;padding:20px;">Nenhuma atividade encontrada</div>';
                 return;
             }
-            container.innerHTML = atividades.map(a => {
-                const podeDistribuir = a.data_fim < hojeStr;
+            
+            // CORREÇÃO 3: Calcular se a atividade pode distribuir baseado na data E hora atual
+            const agora = new Date();
+            const hojeStr = agora.toISOString().split('T')[0];
+            const horaAtual = agora.getHours() * 60 + agora.getMinutes(); // minutos desde meia-noite
+            
+            container.innerHTML = filtered.map(a => {
+                // Converter hora_fim para minutos
+                let podeDistribuir = false;
+                if (a.data_fim) {
+                    const [horaFim, minFim] = a.hora_fim.split(':').map(Number);
+                    const horaFimMinutos = horaFim * 60 + minFim;
+                    
+                    if (a.data_fim < hojeStr) {
+                        podeDistribuir = true;
+                    } else if (a.data_fim === hojeStr && horaFimMinutos <= horaAtual) {
+                        podeDistribuir = true;
+                    }
+                }
+                
                 return `
                     <div class="atividade-item">
                         <div>
                             <div class="atividade-nome">📝 ${a.nome}</div>
-                            <div class="atividade-data"><i class="fas fa-calendar"></i> até ${a.data_fim} | <i class="fas fa-clock"></i> ${a.hora_fim}</div>
+                            <div class="atividade-data">
+                                <i class="fas fa-calendar"></i> até ${a.data_fim} | 
+                                <i class="fas fa-clock"></i> ${a.hora_fim}
+                            </div>
                             <div><span class="atividade-pontos">Max: ${a.max_pontos} pts por aluno</span></div>
                         </div>
-                        ${podeDistribuir ? `<a href="{% url 'distribuir_pontos' 0 %}?turma_id={{ turma.id }}".replace('0', a.id) class="btn-distribuir"><i class="fas fa-share-alt"></i> Distribuir Pontos</a>` : '<span style="font-size:11px;color:#A58E6F;"><i class="fas fa-hourglass-half"></i> Aguardando data de fim</span>'}
+                        ${podeDistribuir ? 
+                            `<a href="/atividade/distribuir/${a.id}/?turma_id={{ turma.id }}" class="btn-distribuir">
+                                <i class="fas fa-share-alt"></i> Distribuir Pontos
+                            </a>` : 
+                            '<span style="font-size:11px;color:#A58E6F;"><i class="fas fa-hourglass-half"></i> Aguardando data de fim</span>'
+                        }
                     </div>
                 `;
             }).join('');
         }
 
+        function atualizarVisualizacao() {
+            if (filtroAtivo === 'alunos') {
+                document.getElementById('alunosContainer').style.display = 'block';
+                document.getElementById('atividadesContainer').style.display = 'none';
+                renderAlunos(pesquisaAtual);
+            } else {
+                document.getElementById('alunosContainer').style.display = 'none';
+                document.getElementById('atividadesContainer').style.display = 'block';
+                renderAtividades(pesquisaAtual);
+            }
+        }
+
+        function realizarPesquisa() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            pesquisaAtual = searchTerm;
+            
+            if (filtroAtivo === 'alunos') {
+                renderAlunos(searchTerm);
+            } else {
+                renderAtividades(searchTerm);
+            }
+        }
+
+        // Eventos dos botões de filtro
+        document.getElementById('filterAlunosBtn').addEventListener('click', () => {
+            filtroAtivo = 'alunos';
+            document.getElementById('filterAlunosBtn').classList.add('active');
+            document.getElementById('filterAtividadesBtn').classList.remove('active');
+            atualizarVisualizacao();
+        });
+
+        document.getElementById('filterAtividadesBtn').addEventListener('click', () => {
+            filtroAtivo = 'atividades';
+            document.getElementById('filterAtividadesBtn').classList.add('active');
+            document.getElementById('filterAlunosBtn').classList.remove('active');
+            atualizarVisualizacao();
+        });
+
+        document.getElementById('searchBtn').addEventListener('click', realizarPesquisa);
+        document.getElementById('clearSearchBtn').addEventListener('click', () => {
+            document.getElementById('searchInput').value = '';
+            pesquisaAtual = '';
+            if (filtroAtivo === 'alunos') {
+                renderAlunos('');
+            } else {
+                renderAtividades('');
+            }
+        });
+
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') realizarPesquisa();
+        });
+
+        // Funções existentes de adicionar pontos
         window.mostrarFormulario = (id, nome) => {
             const existingForm = document.getElementById(`form-${id}`);
             if (existingForm) { existingForm.remove(); return; }
@@ -252,7 +369,7 @@
             const aluno = alunos.find(a => a.id === id);
             if (aluno && pontos > 0) {
                 aluno.pontos += pontos;
-                renderAlunos(document.getElementById('searchInput').value.toLowerCase());
+                renderAlunos(pesquisaAtual);
                 showModal('Pontos Adicionados!', `${pontos} pontos adicionados a ${nome}. Motivo: ${motivo}`);
                 document.getElementById(`form-${id}`)?.remove();
             } else {
@@ -260,18 +377,34 @@
             }
         };
 
-        document.getElementById('searchBtn').addEventListener('click', () => {
-            renderAlunos(document.getElementById('searchInput').value.toLowerCase());
-        });
-        document.getElementById('clearSearchBtn').addEventListener('click', () => {
-            document.getElementById('searchInput').value = '';
-            renderAlunos('');
-        });
         document.getElementById('logoutBtn').addEventListener('click', () => window.location.href = "{% url 'index' %}");
         document.getElementById('modalCloseBtn').addEventListener('click', hideModal);
         
+        // Inicializar com container separado para alunos e atividades
+        const alunosContainer = document.querySelector('.card:first-child .card-header');
+        const atividadesContainer = document.querySelector('.card:last-child .card-header');
+        
+        // Renomear containers para permitir toggle
+        document.querySelector('.card:first-child').innerHTML = `
+            <div class="card-header">
+                <h3><i class="fas fa-user-graduate"></i> Alunos</h3>
+            </div>
+            <div id="alunosContainer">${document.querySelector('.card:first-child #alunosList').outerHTML}</div>
+        `;
+        document.querySelector('.card:last-child').innerHTML = `
+            <div class="card-header">
+                <h3><i class="fas fa-tasks"></i> Atividades</h3>
+            </div>
+            <div id="atividadesContainer">${document.querySelector('.card:last-child #atividadesList').outerHTML}</div>
+        `;
+        
+        // Reatribuir referências
+        window.alunosList = document.getElementById('alunosList');
+        window.atividadesList = document.getElementById('atividadesList');
+        
         renderAlunos('');
-        renderAtividades();
+        renderAtividades('');
+        atualizarVisualizacao();
     </script>
 </body>
 </html>

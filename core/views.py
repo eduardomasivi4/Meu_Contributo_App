@@ -96,12 +96,31 @@ def dashboard_aluno(request):
 
 @login_required
 def atividades(request):
+    """Exibe lista de atividades (curriculares e extra-curriculares) com filtros"""
     if request.user.tipo != 'aluno':
         return redirect('index')
     
-    atividades_list = Atividade.objects.all().order_by('data_inicio', 'hora_inicio')
+    # CORREÇÃO: Buscar atividades curriculares (com disciplina associada - não nula)
+    atividades_curriculares = Atividade.objects.filter(
+        disciplina__isnull=False
+    ).exclude(disciplina=None).order_by('disciplina__nome', 'data_inicio')
+    
+    # Buscar atividades extra-curriculares (criadas pelo coordenador - sem disciplina)
+    atividades_extra = Atividade.objects.filter(
+        disciplina__isnull=True
+    ).exclude(tipo_atividade=None).order_by('-created_at')
+    
+    # Buscar todas as disciplinas para o filtro
+    disciplinas = Disciplina.objects.all().order_by('nome')
+    
     context = {
-        'atividades': atividades_list,
+        'atividades_curriculares': atividades_curriculares,
+        'atividades_extra': atividades_extra,
+        'disciplinas': disciplinas,
+        'nome': request.user.get_full_name() or request.user.username,
+        'processo': request.user.perfil_aluno.numero_processo,
+        'turma': request.user.perfil_aluno.get_turma_nome(),
+        'saldo': request.user.perfil_aluno.saldo_pontos,
     }
     return render(request, 'core/atividades.html', context)
 
@@ -326,7 +345,7 @@ def verificar_credenciais_professor(request):
                 elif cargos[0] == 'coordenador':
                     return JsonResponse({'success': True, 'redirect': reverse('coordenador_dashboard')})
                 elif cargos[0] == 'diretor_turma':
-                    return JsonResponse({'success': True, 'redirect': reverse('diretor_turma')})
+                    return JsonResponse({'success': True, 'redirect': reverse('diretor_dashboard')})
             
             # Múltiplos cargos
             request.session['cargos_disponiveis'] = cargos
@@ -363,7 +382,7 @@ def redirecionar_perfil(request):
         elif perfil == 'coordenador':
             return JsonResponse({'redirect': reverse('coordenador_dashboard')})
         elif perfil == 'diretor_turma':
-            return JsonResponse({'redirect': reverse('diretor_turma')})
+            return JsonResponse({'redirect': reverse('diretor_dashboard')})  # ← Nome correto
         else:
             return JsonResponse({'erro': 'Perfil inválido'}, status=400)
     
@@ -375,38 +394,43 @@ def dashboard_professor(request):
         messages.error(request, 'Acesso não autorizado.')
         return redirect('index')
     
-    # Buscar disciplinas que o professor leciona via PerfilProfessor
-    try:
-        perfil_prof = request.user.perfil_professor
-        if perfil_prof.disciplina:
-            disciplinas_usuario = [perfil_prof.disciplina]
-        else:
-            disciplinas_usuario = []
-    except:
-        # Se não tiver perfil, mostrar todas (fallback)
-        disciplinas_usuario = Disciplina.objects.all()
-    
-    # Agrupar disciplinas por curso
+    # Inicializar estrutura para agrupar disciplinas por curso
     disciplinas_por_curso = {
         'eletronica': {'nome': 'Eletrónica e Telecomunicações', 'disciplinas': []},
         'informatica': {'nome': 'Informática', 'disciplinas': []},
-        'comum': {'nome': 'Comum', 'disciplinas': []},
+        'comum': {'nome': 'Comum (Ambos os Cursos)', 'disciplinas': []},
     }
     
-    for disc in disciplinas_usuario:
-        # Descobrir curso através das turmas associadas
-        turmas_disc = Turma.objects.filter(disciplinas_relacionadas__disciplina=disc)
-        cursos = set(turmas_disc.values_list('curso', flat=True))
-        if 'eletronica' in cursos:
-            if disc not in disciplinas_por_curso['eletronica']['disciplinas']:
-                disciplinas_por_curso['eletronica']['disciplinas'].append(disc)
-        elif 'informatica' in cursos:
-            if disc not in disciplinas_por_curso['informatica']['disciplinas']:
-                disciplinas_por_curso['informatica']['disciplinas'].append(disc)
-        else:
-            if disc not in disciplinas_por_curso['comum']['disciplinas']:
-                disciplinas_por_curso['comum']['disciplinas'].append(disc)
+    # CORREÇÃO 6: Buscar todas as disciplinas com suas turmas associadas
+    todas_disciplinas = Disciplina.objects.all()
     
+    for disciplina in todas_disciplinas:
+        # Buscar todos os cursos que esta disciplina atende
+        turmas_da_disciplina = Turma.objects.filter(disciplinas_relacionadas__disciplina=disciplina)
+        cursos_presentes = set(turmas_da_disciplina.values_list('curso', flat=True))
+        
+        # Verificar se a disciplina pertence a ambos os cursos
+        tem_eletronica = 'eletronica' in cursos_presentes
+        tem_informatica = 'informatica' in cursos_presentes
+        
+        if tem_eletronica and tem_informatica:
+            # Disciplina comum a ambos os cursos
+            if disciplina not in disciplinas_por_curso['comum']['disciplinas']:
+                disciplinas_por_curso['comum']['disciplinas'].append(disciplina)
+        elif tem_eletronica:
+            # Disciplina apenas de Eletrónica
+            if disciplina not in disciplinas_por_curso['eletronica']['disciplinas']:
+                disciplinas_por_curso['eletronica']['disciplinas'].append(disciplina)
+        elif tem_informatica:
+            # Disciplina apenas de Informática
+            if disciplina not in disciplinas_por_curso['informatica']['disciplinas']:
+                disciplinas_por_curso['informatica']['disciplinas'].append(disciplina)
+        else:
+            # Disciplina sem turmas associadas (fallback para comum)
+            if disciplina not in disciplinas_por_curso['comum']['disciplinas']:
+                disciplinas_por_curso['comum']['disciplinas'].append(disciplina)
+    
+    # Remover cursos que não têm disciplinas (opcional)
     context = {
         'disciplinas_por_curso': disciplinas_por_curso,
     }
@@ -433,9 +457,29 @@ def turma_detail(request, turma_id):
     disciplina = get_object_or_404(Disciplina, id=disciplina_id) if disciplina_id else None
     
     alunos = turma.alunos.all().order_by('usuario__first_name')
+    
+    # Buscar atividades da disciplina nesta turma
     atividades = Atividade.objects.filter(
         disciplina=disciplina, turmas=turma
     ).order_by('-created_at') if disciplina else []
+    
+    # CORREÇÃO 3: Calcular se cada atividade já terminou (baseado em data E hora)
+    from django.utils import timezone
+    agora = timezone.now()
+    hoje = agora.date()
+    hora_atual = agora.time()
+    
+    for atividade in atividades:
+        if atividade.data_fim and atividade.hora_fim:
+            # Verificar se a atividade já terminou
+            if atividade.data_fim < hoje:
+                atividade.pode_distribuir = True
+            elif atividade.data_fim == hoje and atividade.hora_fim <= hora_atual:
+                atividade.pode_distribuir = True
+            else:
+                atividade.pode_distribuir = False
+        else:
+            atividade.pode_distribuir = False
     
     context = {
         'turma': turma,
@@ -503,16 +547,53 @@ def distribuir_pontos(request, atividade_id):
     atividade = get_object_or_404(Atividade, id=atividade_id)
     turma_id = request.GET.get('turma_id')
     turma = get_object_or_404(Turma, id=turma_id)
-    alunos = turma.alunos.all().order_by('usuario__first_name')
+    
+    # CORREÇÃO: Verificar se a atividade pertence à turma
+    if not atividade.turmas.filter(id=turma.id).exists():
+        messages.error(request, 'Esta atividade não está associada a esta turma.')
+        return redirect('turma_detail', turma_id=turma.id)
+    
+    # CORREÇÃO: Verificar se pode distribuir (baseado em data e hora)
+    from django.utils import timezone
+    agora = timezone.now()
+    hoje = agora.date()
+    hora_atual = agora.time()
+    
+    pode_distribuir = False
+    
+    # Se a atividade não tem data/hora de fim, permitir distribuir
+    if not atividade.data_fim or not atividade.hora_fim:
+        pode_distribuir = True
+    else:
+        # Verificar se a atividade já terminou
+        if atividade.data_fim < hoje:
+            pode_distribuir = True
+        elif atividade.data_fim == hoje and atividade.hora_fim <= hora_atual:
+            pode_distribuir = True
+    
+    # DEBUG: Imprimir informações no terminal
+    print(f"DEBUG Atividade {atividade.id}:")
+    print(f"  - data_fim: {atividade.data_fim}, hora_fim: {atividade.hora_fim}")
+    print(f"  - hoje: {hoje}, hora_atual: {hora_atual}")
+    print(f"  - pode_distribuir: {pode_distribuir}")
+    
+    if not pode_distribuir:
+        messages.error(request, f'Esta atividade ainda não terminou. Data/Hora de fim: {atividade.data_fim} {atividade.hora_fim}')
+        return redirect('turma_detail', turma_id=turma.id)
+    
+    alunos = turma.alunos.all().order_by('usuario__first_name', 'usuario__username')
     
     if request.method == 'POST':
+        pontos_distribuidos = 0
+        
         for aluno in alunos:
             pontos_str = request.POST.get(f'pontos_{aluno.id}')
-            if pontos_str:
+            if pontos_str and pontos_str.strip():
                 pontos = int(pontos_str)
                 if pontos > 0 and pontos <= atividade.max_pontos_por_aluno:
                     aluno.saldo_pontos += pontos
                     aluno.save()
+                    
                     Transacao.objects.create(
                         aluno=aluno,
                         quantidade=pontos,
@@ -521,17 +602,25 @@ def distribuir_pontos(request, atividade_id):
                         professor=request.user,
                         atividade=atividade
                     )
-                elif pontos < 0:
-                    messages.error(request, f'Pontos negativos não são permitidos para {aluno.usuario.get_full_name()}.')
+                    pontos_distribuidos += 1
                 elif pontos > atividade.max_pontos_por_aluno:
-                    messages.error(request, f'Pontos excedem o máximo permitido ({atividade.max_pontos_por_aluno}) para {aluno.usuario.get_full_name()}.')
-        messages.success(request, 'Pontos distribuídos com sucesso!')
+                    messages.warning(request, f'Pontos excedem o máximo ({atividade.max_pontos_por_aluno}) para {aluno.usuario.get_full_name()}.')
+                elif pontos < 0:
+                    messages.warning(request, f'Pontos negativos não são permitidos para {aluno.usuario.get_full_name()}.')
+        
+        if pontos_distribuidos > 0:
+            messages.success(request, f'Pontos distribuídos com sucesso para {pontos_distribuidos} aluno(s)!')
+        else:
+            messages.warning(request, 'Nenhum ponto foi distribuído. Verifique se inseriu valores válidos.')
+        
         return redirect('turma_detail', turma_id=turma.id)
     
     context = {
         'atividade': atividade,
         'turma': turma,
         'alunos': alunos,
+        'max_pontos': atividade.max_pontos_por_aluno,
+        'pode_distribuir': pode_distribuir,
     }
     return render(request, 'core/distribuir_pontos.html', context)
 
@@ -540,7 +629,6 @@ def distribuir_pontos(request, atividade_id):
 # ==================== DIRETOR DE TURMA ====================
 
 def is_diretor_turma(user):
-    """Verifica se o usuário é diretor de turma e tem uma turma vinculada"""
     return user.is_authenticated and user.is_diretor_turma and user.turma_vinculada is not None
 
 @login_required
@@ -757,6 +845,73 @@ def diretor_distribuir_pontos(request, atividade_id):
     }
     return render(request, 'core/diretor_distribuir_pontos.html', context)
 
+@login_required
+@user_passes_test(is_diretor_turma)
+def diretor_distribuir_pontos(request, atividade_id):
+    """Distribuir pontos de uma atividade para os alunos da turma"""
+    turma = request.user.turma_vinculada
+    
+    if not turma:
+        messages.error(request, 'Você não está vinculado a nenhuma turma.')
+        return redirect('diretor_dashboard')
+    
+    atividade = get_object_or_404(Atividade, id=atividade_id, turmas=turma)
+    
+    # Verificar se pode distribuir
+    from django.utils import timezone
+    agora = timezone.now()
+    hoje = agora.date()
+    hora_atual = agora.time()
+    
+    pode_distribuir = False
+    if atividade.data_fim and atividade.hora_fim:
+        if atividade.data_fim < hoje:
+            pode_distribuir = True
+        elif atividade.data_fim == hoje and atividade.hora_fim <= hora_atual:
+            pode_distribuir = True
+    
+    if not pode_distribuir:
+        messages.error(request, 'Esta atividade ainda não terminou. Não é possível distribuir pontos.')
+        return redirect('diretor_dashboard')
+    
+    alunos = turma.alunos.all().order_by('usuario__first_name', 'usuario__username')
+    
+    if request.method == 'POST':
+        pontos_distribuidos = 0
+        
+        for aluno in alunos:
+            pontos_str = request.POST.get(f'pontos_{aluno.id}')
+            if pontos_str and pontos_str.strip():
+                pontos = int(pontos_str)
+                if pontos > 0 and pontos <= atividade.max_pontos_por_aluno:
+                    aluno.saldo_pontos += pontos
+                    aluno.save()
+                    Transacao.objects.create(
+                        aluno=aluno,
+                        quantidade=pontos,
+                        tipo='distribuicao',
+                        descricao=f'Distribuição de pontos da atividade: {atividade.nome}',
+                        professor=request.user,
+                        atividade=atividade
+                    )
+                    pontos_distribuidos += 1
+        
+        if pontos_distribuidos > 0:
+            messages.success(request, f'Pontos distribuídos com sucesso para {pontos_distribuidos} aluno(s)!')
+        else:
+            messages.warning(request, 'Nenhum ponto foi distribuído.')
+        
+        return redirect('diretor_dashboard')
+    
+    context = {
+        'atividade': atividade,
+        'turma': turma,
+        'alunos': alunos,
+        'max_pontos': atividade.max_pontos_por_aluno,
+        'pode_distribuir': pode_distribuir,
+    }
+    return render(request, 'core/diretor_distribuir_pontos.html', context)
+
 
 
 # ==================== COORDENADOR DE ATIVIDADES ====================
@@ -767,8 +922,12 @@ def is_coordenador(user):
 @login_required
 @user_passes_test(is_coordenador)
 def coordenador_dashboard(request):
-    """Dashboard do coordenador com lista de atividades"""
-    atividades = Atividade.objects.all().order_by('-created_at')
+    """Dashboard do coordenador com lista de atividades criadas pelo coordenador"""
+    
+    # CORREÇÃO: Mostrar apenas atividades SEM disciplina (criadas pelo coordenador)
+    atividades = Atividade.objects.filter(
+        disciplina__isnull=True  # Atividades do coordenador não têm disciplina
+    ).order_by('-created_at')
     
     # Barra de pesquisa
     search_query = request.GET.get('search', '')
@@ -784,10 +943,14 @@ def coordenador_dashboard(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
+    # Contar total de atividades curriculares (para mostrar no link)
+    total_curriculares = Atividade.objects.filter(disciplina__isnull=False).count()
+    
     context = {
         'atividades': page_obj,
         'search_query': search_query,
         'total_count': atividades.count(),
+        'total_curriculares': total_curriculares,
     }
     return render(request, 'core/coordenador_dashboard.html', context)
 
@@ -978,3 +1141,4 @@ def api_buscar_atividades(request):
         })
     
     return JsonResponse({'success': True, 'atividades': data})
+

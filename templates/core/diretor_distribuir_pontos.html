@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Distribuir Pontos - Colégio Árvore da Felicidade</title>
+    <title>Distribuir Pontos - Diretor de Turma</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     {% load static %}
@@ -81,6 +81,7 @@
             transition: all 0.3s;
         }
         .btn-distribuir:hover { background: #1E5A38; transform: translateY(-2px); }
+        .btn-distribuir:disabled { background: #A58E6F; cursor: not-allowed; }
 
         .info-box {
             background: #FBF7E9;
@@ -90,6 +91,15 @@
             text-align: center;
         }
         .info-box span { font-weight: 700; color: #2B7A4B; }
+
+        .alert-warning {
+            background: #FEF3C7;
+            color: #B45309;
+            padding: 15px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            border-left: 4px solid #B45309;
+        }
 
         @media (max-width: 600px) {
             .container { padding: 15px; }
@@ -106,10 +116,10 @@
                 <h1>Colégio Árvore da Felicidade</h1>
             </div>
             <div>
-                <a href="{% url 'turma_detail' turma.id %}?disciplina_id={{ atividade.disciplina.id }}" class="back-link"><i class="fas fa-arrow-left"></i> Voltar para Turma</a>
+                <a href="{% url 'diretor_dashboard' %}" class="back-link"><i class="fas fa-arrow-left"></i> Voltar ao Dashboard</a>
             </div>
             <div class="user-area">
-                <div class="user-avatar"><i class="fas fa-chalkboard-user"></i></div>
+                <div class="user-avatar"><i class="fas fa-users"></i></div>
                 <div><div class="user-name">{{ request.user.get_full_name|default:request.user.username }}</div></div>
                 <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Sair</button>
             </div>
@@ -123,21 +133,20 @@
 
         <div class="card">
             <div class="card-header">
-                <h3><i class="fas fa-user-graduate"></i> Distribuir Pontos para os Alunos</h3>
+                <h3><i class="fas fa-user-graduate"></i> Distribuir Pontos para os Alunos da {{ turma.nome }}</h3>
             </div>
             <div class="info-box">
-                <i class="fas fa-info-circle"></i> Máximo de pontos por aluno: <span>{{ atividade.max_pontos_por_aluno }} pontos</span>
+                <i class="fas fa-info-circle"></i> Máximo de pontos por aluno: <span>{{ max_pontos }} pontos</span>
             </div>
-            
-            <!-- SCRIPT 4: Mensagem de alerta -->
+
             {% if not pode_distribuir %}
-            <div class="alert alert-warning" style="background: #FEF3C7; color: #B45309; padding: 15px; border-radius: 16px; margin-bottom: 20px; border-left: 4px solid #B45309;">
+            <div class="alert-warning">
                 <i class="fas fa-exclamation-triangle"></i> 
                 <strong>Atenção!</strong> Esta atividade ainda não terminou. 
                 A distribuição de pontos só é permitida após a data e hora de fim.
             </div>
             {% endif %}
-            
+
             <form method="POST">
                 {% csrf_token %}
                 {% for aluno in alunos %}
@@ -148,11 +157,11 @@
                     </div>
                     <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
                         <span class="aluno-pontos">Saldo atual: {{ aluno.saldo_pontos }} pts</span>
-                        <input type="number" name="pontos_{{ aluno.id }}" class="pontos-input" placeholder="Pontos" min="0" max="{{ atividade.max_pontos_por_aluno }}" value="0">
+                        <input type="number" name="pontos_{{ aluno.id }}" class="pontos-input" placeholder="Pontos" min="0" max="{{ max_pontos }}" value="0" {% if not pode_distribuir %}disabled{% endif %}>
                     </div>
                 </div>
                 {% endfor %}
-                <button type="submit" class="btn-distribuir" {% if not pode_distribuir %}disabled style="opacity:0.5; cursor:not-allowed;"{% endif %}>
+                <button type="submit" class="btn-distribuir" {% if not pode_distribuir %}disabled{% endif %}>
                     <i class="fas fa-share-alt"></i> Distribuir Pontos
                 </button>
             </form>
