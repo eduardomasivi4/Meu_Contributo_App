@@ -78,8 +78,7 @@
             </div>
             <div style="display: flex; gap: 15px;">
                 <a href="{% url 'coordenador_criar_atividade' %}" class="btn-criar"><i class="fas fa-plus"></i> Criar Atividade</a>
-                <!-- NOVO BOTÃO - será implementado na próxima melhoria -->
-                <a href="{% url 'coordenador_atividades_curriculares' %}" class="btn-criar btn-secundario" style="background: #D4A373;">
+                 <a href="{% url 'coordenador_atividades_curriculares' %}" class="btn-criar btn-secundario" style="background: #D4A373;">
                     <i class="fas fa-book"></i> Atividades Curriculares ({{ total_curriculares }})
                 </a>
             </div>
@@ -103,10 +102,15 @@
         <div class="atividades-grid" id="atividadesGrid">
             {% for atividade in atividades %}
             <div class="atividade-card" data-id="{{ atividade.id }}">
-                <div class="atividade-header">
+                <div class="atividade-header" style="background: {% if atividade.interrompe_aula %}linear-gradient(135deg, #D9534F, #C9302C){% else %}linear-gradient(135deg, #2B7A4B, #1E5A38){% endif %}">
                     <div class="atividade-tipo">
                         <i class="fas {% if atividade.tipo_atividade == 'cultural' %}fa-palette{% else %}fa-flask{% endif %}"></i>
                         {{ atividade.get_tipo_atividade_display }}
+                        {% if atividade.interrompe_aula %}
+                        <span style="background: rgba(255,255,255,0.3); padding: 2px 8px; border-radius: 20px; margin-left: 8px;">
+                            <i class="fas fa-bell"></i> Interrompe aulas
+                        </span>
+                        {% endif %}
                     </div>
                     <h3>{{ atividade.nome }}</h3>
                 </div>

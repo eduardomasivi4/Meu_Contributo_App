@@ -289,6 +289,21 @@
             {% endfor %}
         ];
 
+        // No início do JavaScript, após carregar as disciplinas
+        function removerDisciplinasDuplicadas(disciplinas) {
+            const nomes = new Set();
+            return disciplinas.filter(disciplina => {
+                if (nomes.has(disciplina.nome)) {
+                    return false;
+                }
+                nomes.add(disciplina.nome);
+                return true;
+            });
+        }
+
+        // Usar esta função ao processar as disciplinas
+        const disciplinasUnicas = removerDisciplinasDuplicadas(disciplinas);
+
         const atividadesExtra = [
             {% for atv in atividades_extra %}
             {

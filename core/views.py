@@ -101,18 +101,21 @@ def atividades(request):
     if request.user.tipo != 'aluno':
         return redirect('index')
     
-    # CORREÇÃO: Buscar atividades curriculares (com disciplina associada - não nula)
+    # Buscar atividades curriculares (com disciplina associada)
     atividades_curriculares = Atividade.objects.filter(
         disciplina__isnull=False
     ).exclude(disciplina=None).order_by('disciplina__nome', 'data_inicio')
     
-    # Buscar atividades extra-curriculares (criadas pelo coordenador - sem disciplina)
+    # Buscar atividades extra-curriculares
     atividades_extra = Atividade.objects.filter(
         disciplina__isnull=True
     ).exclude(tipo_atividade=None).order_by('-created_at')
     
-    # Buscar todas as disciplinas para o filtro
-    disciplinas = Disciplina.objects.all().order_by('nome')
+    # CORREÇÃO: Buscar disciplinas distintas (sem repetição)
+    # Usando .distinct() para remover duplicatas
+    disciplinas = Disciplina.objects.filter(
+        atividades__isnull=False  # Apenas disciplinas que têm atividades
+    ).distinct().order_by('nome')
     
     context = {
         'atividades_curriculares': atividades_curriculares,
@@ -994,7 +997,6 @@ def coordenador_atividades_curriculares(request):
 @login_required
 @user_passes_test(is_coordenador)
 def coordenador_criar_atividade(request):
-    """Criar nova atividade como coordenador"""
     if request.method == 'POST':
         try:
             tipo_atividade = request.POST.get('tipo_atividade')
@@ -1009,6 +1011,9 @@ def coordenador_criar_atividade(request):
             selecao_cursos = request.POST.get('selecao_cursos')
             curso_selecionado = request.POST.get('curso_selecionado')
             
+            # NOVO CAMPO: Interrupção de aula
+            interrompe_aula = request.POST.get('interrompe_aula') == 'sim'
+            
             # Criar atividade
             atividade = Atividade.objects.create(
                 tipo_atividade=tipo_atividade,
@@ -1020,9 +1025,10 @@ def coordenador_criar_atividade(request):
                 hora_inicio=hora_inicio,
                 hora_fim=hora_fim,
                 max_pontos_por_aluno=max_pontos,
+                interrompe_aula=interrompe_aula,  # NOVO
             )
             
-            # Associar turmas baseado na seleção de cursos
+            # Associar turmas
             if selecao_cursos == 'ambos':
                 atividade.todos_cursos = True
                 turmas = Turma.objects.all()
@@ -1040,6 +1046,7 @@ def coordenador_criar_atividade(request):
             messages.error(request, f'Erro ao criar atividade: {str(e)}')
             return redirect('coordenador_dashboard')
     
+    # GET - mostrar formulário
     cursos = Turma.CURSO_CHOICES
     context = {
         'cursos': cursos,
@@ -1050,7 +1057,6 @@ def coordenador_criar_atividade(request):
 @login_required
 @user_passes_test(is_coordenador)
 def coordenador_editar_atividade(request, pk):
-    """Editar atividade existente"""
     atividade = get_object_or_404(Atividade, id=pk)
     
     if request.method == 'POST':
@@ -1067,7 +1073,10 @@ def coordenador_editar_atividade(request, pk):
             selecao_cursos = request.POST.get('selecao_cursos')
             curso_selecionado = request.POST.get('curso_selecionado')
             
-            # Atualizar dados básicos
+            # NOVO CAMPO: Interrupção de aula
+            interrompe_aula = request.POST.get('interrompe_aula') == 'sim'
+            
+            # Atualizar dados
             atividade.tipo_atividade = tipo_atividade
             atividade.nome = nome
             atividade.descricao = descricao
@@ -1077,8 +1086,9 @@ def coordenador_editar_atividade(request, pk):
             atividade.hora_inicio = hora_inicio
             atividade.hora_fim = hora_fim
             atividade.max_pontos_por_aluno = max_pontos
+            atividade.interrompe_aula = interrompe_aula  # NOVO
             
-            # Atualizar associações de turmas
+            # Atualizar turmas
             atividade.turmas.clear()
             if selecao_cursos == 'ambos':
                 atividade.todos_cursos = True
@@ -1155,13 +1165,3 @@ def api_buscar_atividades(request):
     
     return JsonResponse({'success': True, 'atividades': data})
 
-
-
-# ==================== LOGOUT ====================
-
-def logout_view(request):
-    """View para fazer logout do usuário"""
-    if request.method == 'POST':
-        auth_logout(request)
-        return JsonResponse({'success': True})
-    return JsonResponse({'success': False}, status=400)

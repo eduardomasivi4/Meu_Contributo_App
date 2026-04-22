@@ -52,7 +52,5 @@ urlpatterns = [
     path('coordenador/atividade/editar/<int:pk>/', views.coordenador_editar_atividade, name='coordenador_editar_atividade'),
     path('coordenador/atividade/eliminar/<int:pk>/', views.coordenador_eliminar_atividade, name='coordenador_eliminar_atividade'),
     path('api/coordenador/buscar-atividades/', views.api_buscar_atividades, name='api_buscar_atividades'),
-    
-    path('logout/', views.logout_view, name='logout'),
 
 ]
