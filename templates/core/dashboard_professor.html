@@ -162,83 +162,38 @@
         <h2 class="section-title"><i class="fas fa-book"></i> Disciplinas</h2>
         
         <div class="cursos-container">
-            <!-- Curso de Eletrónica -->
-            {% if disciplinas_por_curso.eletronica.disciplinas %}
-            <div class="curso-card">
-                <h3 class="curso-titulo">
-                    <i class="fas fa-microchip"></i> {{ disciplinas_por_curso.eletronica.nome }}
-                </h3>
-                <div class="disciplinas-grid">
-                    {% for disciplina in disciplinas_por_curso.eletronica.disciplinas %}
-                    <div class="disciplina-card" data-disciplina-id="{{ disciplina.id }}" data-disciplina-nome="{{ disciplina.nome }}">
-                        <div class="disciplina-nome">{{ disciplina.nome }}</div>
-                        <div class="disciplina-anos">
-                            <i class="fas fa-calendar-alt"></i> 
-                            {% with anos=disciplina.turmas_relacionadas.all|dictsort:"turma.ano" %}
-                                {% for dt in anos|slice:":3" %}
-                                    {{ dt.turma.ano }}{% if not forloop.last %}, {% endif %}
-                                {% endfor %}
-                                {% if anos|length > 3 %}...{% endif %}
-                            {% endwith %}
-                        </div>
-                        <div class="turmas-lista" id="turmas-{{ disciplina.id }}"></div>
+            {% for curso_key, curso in disciplinas_por_curso.items %}
+                {% if curso.disciplinas %}
+                <div class="curso-card">
+                    <h3 class="curso-titulo">
+                        {% if curso_key == 'eletronica' %}
+                            <i class="fas fa-microchip"></i> {{ curso.nome }}
+                        {% elif curso_key == 'informatica' %}
+                            <i class="fas fa-laptop-code"></i> {{ curso.nome }}
+                        {% else %}
+                            <i class="fas fa-star-of-life"></i> {{ curso.nome }}
+                        {% endif %}
+                    </h3>
+                    <div class="disciplinas-grid">
+                        {% for disciplina in curso.disciplinas %}
+                            <div class="disciplina-card" data-disciplina-id="{{ disciplina.id }}" data-disciplina-nome="{{ disciplina.nome }}">
+                                <div class="disciplina-nome">{{ disciplina.nome }}</div>
+                                <div class="disciplina-anos">
+                                    <i class="fas fa-calendar-alt"></i> 
+                                    {% with anos=disciplina.turmas_relacionadas.all|dictsort:"turma.ano" %}
+                                        {% for dt in anos|slice:":3" %}
+                                            {{ dt.turma.ano }}{% if not forloop.last %}, {% endif %}
+                                        {% endfor %}
+                                        {% if anos|length > 3 %}...{% endif %}
+                                    {% endwith %}
+                                </div>
+                                <div class="turmas-lista" id="turmas-{{ disciplina.id }}"></div>
+                            </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
-            </div>
-            {% endif %}
-
-            <!-- Curso de Informática -->
-            {% if disciplinas_por_curso.informatica.disciplinas %}
-            <div class="curso-card">
-                <h3 class="curso-titulo">
-                    <i class="fas fa-laptop-code"></i> {{ disciplinas_por_curso.informatica.nome }}
-                </h3>
-                <div class="disciplinas-grid">
-                    {% for disciplina in disciplinas_por_curso.informatica.disciplinas %}
-                    <div class="disciplina-card" data-disciplina-id="{{ disciplina.id }}" data-disciplina-nome="{{ disciplina.nome }}">
-                        <div class="disciplina-nome">{{ disciplina.nome }}</div>
-                        <div class="disciplina-anos">
-                            <i class="fas fa-calendar-alt"></i> 
-                            {% with anos=disciplina.turmas_relacionadas.all|dictsort:"turma.ano" %}
-                                {% for dt in anos|slice:":3" %}
-                                    {{ dt.turma.ano }}{% if not forloop.last %}, {% endif %}
-                                {% endfor %}
-                                {% if anos|length > 3 %}...{% endif %}
-                            {% endwith %}
-                        </div>
-                        <div class="turmas-lista" id="turmas-{{ disciplina.id }}"></div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- CORREÇÃO 6: Secção Comum (disciplinas que pertencem a ambos os cursos) -->
-            {% if disciplinas_por_curso.comum.disciplinas %}
-            <div class="curso-card">
-                <h3 class="curso-titulo">
-                    <i class="fas fa-star-of-life"></i> {{ disciplinas_por_curso.comum.nome }}
-                </h3>
-                <div class="disciplinas-grid">
-                    {% for disciplina in disciplinas_por_curso.comum.disciplinas %}
-                    <div class="disciplina-card" data-disciplina-id="{{ disciplina.id }}" data-disciplina-nome="{{ disciplina.nome }}">
-                        <div class="disciplina-nome">{{ disciplina.nome }}</div>
-                        <div class="disciplina-anos">
-                            <i class="fas fa-calendar-alt"></i> 
-                            {% with anos=disciplina.turmas_relacionadas.all|dictsort:"turma.ano" %}
-                                {% for dt in anos|slice:":3" %}
-                                    {{ dt.turma.ano }}{% if not forloop.last %}, {% endif %}
-                                {% endfor %}
-                                {% if anos|length > 3 %}...{% endif %}
-                            {% endwith %}
-                        </div>
-                        <div class="turmas-lista" id="turmas-{{ disciplina.id }}"></div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
+                {% endif %}
+            {% endfor %}
         </div>
     </div>
 

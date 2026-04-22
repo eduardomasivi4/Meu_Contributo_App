@@ -47,8 +47,12 @@ urlpatterns = [
     # ==================== COORDENADOR ====================
     
     path('coordenador/dashboard/', views.coordenador_dashboard, name='coordenador_dashboard'),
+    path('coordenador/atividades-curriculares/', views.coordenador_atividades_curriculares, name='coordenador_atividades_curriculares'),
     path('coordenador/atividade/criar/', views.coordenador_criar_atividade, name='coordenador_criar_atividade'),
     path('coordenador/atividade/editar/<int:pk>/', views.coordenador_editar_atividade, name='coordenador_editar_atividade'),
     path('coordenador/atividade/eliminar/<int:pk>/', views.coordenador_eliminar_atividade, name='coordenador_eliminar_atividade'),
     path('api/coordenador/buscar-atividades/', views.api_buscar_atividades, name='api_buscar_atividades'),
+    
+    path('logout/', views.logout_view, name='logout'),
+
 ]

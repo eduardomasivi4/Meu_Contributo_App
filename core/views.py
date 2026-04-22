@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login
+from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
@@ -348,7 +349,9 @@ def verificar_credenciais_professor(request):
                     return JsonResponse({'success': True, 'redirect': reverse('diretor_dashboard')})
             
             # Múltiplos cargos
+            # No final da view, quando o usuário tem múltiplos cargos
             request.session['cargos_disponiveis'] = cargos
+            request.session['tem_multiplos_cargos'] = len(cargos) > 1
             return JsonResponse({'success': True, 'redirect': reverse('selecionar_perfil')})
             
         except json.JSONDecodeError:
@@ -433,6 +436,7 @@ def dashboard_professor(request):
     # Remover cursos que não têm disciplinas (opcional)
     context = {
         'disciplinas_por_curso': disciplinas_por_curso,
+        'tem_multiplos_cargos': request.session.get('tem_multiplos_cargos', False),
     }
     return render(request, 'core/dashboard_professor.html', context)
 
@@ -671,6 +675,7 @@ def diretor_dashboard(request):
         'alunos': alunos,
         'atividades': atividades,
         'nome': request.user.get_full_name() or request.user.username,
+        'tem_multiplos_cargos': request.session.get('tem_multiplos_cargos', False),
     }
     return render(request, 'core/diretor_dashboard.html', context)
 
@@ -951,8 +956,40 @@ def coordenador_dashboard(request):
         'search_query': search_query,
         'total_count': atividades.count(),
         'total_curriculares': total_curriculares,
+        'tem_multiplos_cargos': request.session.get('tem_multiplos_cargos', False),
     }
     return render(request, 'core/coordenador_dashboard.html', context)
+
+@login_required
+@user_passes_test(is_coordenador)
+def coordenador_atividades_curriculares(request):
+    """Lista todas as atividades curriculares (criadas pelos professores)"""
+    
+    # Buscar apenas atividades COM disciplina (atividades dos professores)
+    atividades = Atividade.objects.filter(
+        disciplina__isnull=False  # Atividades curriculares têm disciplina
+    ).order_by('-created_at')
+    
+    # Barra de pesquisa
+    search_query = request.GET.get('search', '')
+    if search_query:
+        atividades = atividades.filter(
+            Q(nome__icontains=search_query) |
+            Q(disciplina__nome__icontains=search_query) |
+            Q(descricao__icontains=search_query)
+        )
+    
+    # Paginação
+    paginator = Paginator(atividades, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'atividades': page_obj,
+        'search_query': search_query,
+        'total_count': atividades.count(),
+    }
+    return render(request, 'core/coordenador_atividades_curriculares.html', context)
 
 @login_required
 @user_passes_test(is_coordenador)
@@ -1118,27 +1155,13 @@ def api_buscar_atividades(request):
     
     return JsonResponse({'success': True, 'atividades': data})
 
-    """API para busca de atividades (AJAX)"""
-    search_query = request.GET.get('q', '')
-    atividades = Atividade.objects.all().order_by('-created_at')
-    
-    if search_query:
-        atividades = atividades.filter(
-            Q(nome__icontains=search_query) |
-            Q(tipo_atividade__icontains=search_query)
-        )
-    
-    data = []
-    for atv in atividades[:20]:  # Limitar a 20 resultados
-        data.append({
-            'id': atv.id,
-            'nome': atv.nome,
-            'tipo': atv.get_tipo_atividade_display(),
-            'data_inicio': atv.data_inicio.strftime('%d/%m/%Y') if atv.data_inicio else '-',
-            'data_fim': atv.data_fim.strftime('%d/%m/%Y') if atv.data_fim else '-',
-            'max_pontos': atv.max_pontos_por_aluno,
-            'cursos': atv.get_cursos_display,
-        })
-    
-    return JsonResponse({'success': True, 'atividades': data})
 
+
+# ==================== LOGOUT ====================
+
+def logout_view(request):
+    """View para fazer logout do usuário"""
+    if request.method == 'POST':
+        auth_logout(request)
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False}, status=400)
