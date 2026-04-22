@@ -40,7 +40,6 @@
         .saldo-card { background: #2B7A4B; padding: 6px 16px; border-radius: 30px; color: white; font-size: 14px; font-weight: 600; }
         .logout-btn { background: none; border: 1px solid #F5EDDA; padding: 6px 14px; border-radius: 30px; cursor: pointer; }
 
-        /* Filtros principais */
         .main-tabs {
             display: flex;
             gap: 15px;
@@ -62,12 +61,7 @@
             border-color: #2B7A4B;
             color: white;
         }
-        .main-tab:hover:not(.active) {
-            border-color: #2B7A4B;
-            color: #2B7A4B;
-        }
 
-        /* Sub-filtros */
         .sub-filters {
             display: flex;
             gap: 10px;
@@ -87,17 +81,12 @@
             font-weight: 500;
             color: #8B694C;
             cursor: pointer;
-            transition: all 0.3s;
         }
         .sub-filter-btn.active {
             background: #D4A373;
             color: white;
         }
-        .sub-filter-btn:hover:not(.active) {
-            background: #F5EDDA;
-        }
 
-        /* Grid de atividades */
         .atividades-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -110,105 +99,23 @@
             border: 1px solid #F5EDDA;
             transition: all 0.3s;
         }
-        .atividade-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-        .atividade-header {
-            padding: 20px 24px;
-            color: white;
-        }
-        .atividade-header.curricular {
-            background: linear-gradient(135deg, #2B7A4B, #1E5A38);
-        }
-        .atividade-header.cultural {
-            background: linear-gradient(135deg, #D4A373, #B5835A);
-        }
-        .atividade-header.ciencia {
-            background: linear-gradient(135deg, #5C3A21, #7A5233);
-        }
-        .atividade-tipo {
-            display: inline-block;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-        .atividade-disciplina {
-            font-size: 12px;
-            margin-bottom: 5px;
-            opacity: 0.9;
-        }
-        .atividade-header h3 {
-            font-size: 18px;
-            font-weight: 700;
-        }
-        .atividade-body {
-            padding: 20px;
-        }
-        .atividade-pontos {
-            display: inline-block;
-            background: #FBF7E9;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-weight: 700;
-            font-size: 14px;
-            color: #2B7A4B;
-            margin-bottom: 15px;
-        }
-        .requisitos-section {
-            background: #f8f9fa;
-            border-radius: 16px;
-            padding: 15px;
-            margin-bottom: 15px;
-        }
-        .requisitos-title {
-            font-size: 13px;
-            font-weight: 700;
-            color: #5C3A21;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .requisitos-lista {
-            list-style: none;
-            padding-left: 0;
-        }
-        .requisitos-lista li {
-            font-size: 13px;
-            color: #8B694C;
-            padding: 6px 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .requisitos-lista li i {
-            color: #2B7A4B;
-            font-size: 12px;
-        }
-        .atividade-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 15px;
-            border-top: 1px solid #F5EDDA;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .status-badge {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
+        .atividade-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .atividade-header { padding: 20px 24px; color: white; }
+        .atividade-header.curricular { background: linear-gradient(135deg, #2B7A4B, #1E5A38); }
+        .atividade-header.cultural { background: linear-gradient(135deg, #D4A373, #B5835A); }
+        .atividade-header.ciencia { background: linear-gradient(135deg, #5C3A21, #7A5233); }
+        .atividade-tipo { display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 11px; margin-bottom: 10px; }
+        .atividade-header h3 { font-size: 18px; font-weight: 700; }
+        .atividade-body { padding: 20px; }
+        .atividade-pontos { display: inline-block; background: #FBF7E9; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 14px; color: #2B7A4B; margin-bottom: 15px; }
+        .requisitos-section { background: #f8f9fa; border-radius: 16px; padding: 15px; margin-bottom: 15px; }
+        .requisitos-title { font-size: 13px; font-weight: 700; color: #5C3A21; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .requisitos-lista { list-style: none; padding-left: 0; }
+        .requisitos-lista li { font-size: 13px; color: #8B694C; padding: 6px 0; display: flex; align-items: center; gap: 8px; }
+        .requisitos-lista li i { color: #2B7A4B; font-size: 12px; }
+        .atividade-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 15px; border-top: 1px solid #F5EDDA; flex-wrap: wrap; gap: 10px; }
+        .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
         .status-disponivel { background: #E9F5EF; color: #2B7A4B; }
-        .status-em_andamento { background: #FFE4D6; color: #FF6B35; }
         .status-encerrada { background: #F5EDDA; color: #8B694C; }
         .info-text { font-size: 12px; color: #8B694C; display: flex; align-items: center; gap: 6px; }
         .sem-atividades { text-align: center; padding: 60px; background: white; border-radius: 20px; color: #8B694C; }
@@ -216,7 +123,6 @@
         @media (max-width: 768px) {
             .atividades-grid { grid-template-columns: 1fr; }
             .header { flex-direction: column; text-align: center; }
-            .main-tabs { flex-direction: column; align-items: center; }
         }
     </style>
 </head>
@@ -244,13 +150,11 @@
             </div>
         </div>
 
-        <!-- Abas principais -->
         <div class="main-tabs">
             <div class="main-tab active" data-tipo="curriculares">📚 Atividades Curriculares</div>
             <div class="main-tab" data-tipo="extra">🎭 Atividades Extra-Curriculares</div>
         </div>
 
-        <!-- Sub-filtros para Curriculares (por disciplina) -->
         <div id="subFiltrosCurriculares" class="sub-filters">
             <button class="sub-filter-btn active" data-disciplina="todas">Todas as Disciplinas</button>
             {% for disciplina in disciplinas %}
@@ -258,19 +162,22 @@
             {% endfor %}
         </div>
 
-        <!-- Sub-filtros para Extra-Curriculares (por tipo) -->
         <div id="subFiltrosExtra" class="sub-filters" style="display: none;">
             <button class="sub-filter-btn active" data-extra-tipo="todos">Todos</button>
             <button class="sub-filter-btn" data-extra-tipo="cultural">🎨 Culturais</button>
             <button class="sub-filter-btn" data-extra-tipo="ciencia_tecnologia">🔬 Ciência e Tecnologia</button>
         </div>
 
-        <!-- Grid de Atividades -->
-        <div id="atividadesGrid" class="atividades-grid"></div>
+        <div id="atividadesGrid" class="atividades-grid">
+            <div class="sem-atividades">
+                <i class="fas fa-spinner fa-pulse" style="font-size: 48px;"></i>
+                <h3>Carregando atividades...</h3>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Dados das atividades vindo do Django
+        // Dados passados do Django
         const atividadesCurriculares = [
             {% for atv in atividades_curriculares %}
             {
@@ -289,21 +196,6 @@
             {% endfor %}
         ];
 
-        // No início do JavaScript, após carregar as disciplinas
-        function removerDisciplinasDuplicadas(disciplinas) {
-            const nomes = new Set();
-            return disciplinas.filter(disciplina => {
-                if (nomes.has(disciplina.nome)) {
-                    return false;
-                }
-                nomes.add(disciplina.nome);
-                return true;
-            });
-        }
-
-        // Usar esta função ao processar as disciplinas
-        const disciplinasUnicas = removerDisciplinasDuplicadas(disciplinas);
-
         const atividadesExtra = [
             {% for atv in atividades_extra %}
             {
@@ -311,7 +203,7 @@
                 nome: "{{ atv.nome|escapejs }}",
                 tipo: "extra",
                 extra_tipo: "{{ atv.tipo_atividade }}",
-                extra_tipo_display: "{{ atv.get_tipo_atividade_display }}",
+                extra_tipo_display: "{{ atv.get_tipo_atividade_display|escapejs }}",
                 criterios: "{{ atv.criterios_avaliacao|escapejs }}",
                 data_inicio: "{{ atv.data_inicio|date:'Y-m-d' }}",
                 data_fim: "{{ atv.data_fim|date:'Y-m-d' }}",
@@ -322,23 +214,27 @@
             {% endfor %}
         ];
 
+        console.log("Atividades Curriculares:", atividadesCurriculares.length);
+        console.log("Atividades Extra:", atividadesExtra.length);
+
         let tipoAtivo = 'curriculares';
         let disciplinaFiltro = 'todas';
         let extraTipoFiltro = 'todos';
 
-        function getStatusClass(status) {
-            const classes = {
-                'disponivel': 'status-disponivel',
-                'em_andamento': 'status-em_andamento',
-                'encerrada': 'status-encerrada'
-            };
-            return classes[status] || 'status-disponivel';
+        function formatarData(dataStr) {
+            if (!dataStr || dataStr === 'None') return '-';
+            const data = new Date(dataStr);
+            return data.toLocaleDateString('pt-BR');
         }
 
         function calcularStatus(dataFim, horaFim) {
             const agora = new Date();
             const hoje = agora.toISOString().split('T')[0];
             const horaAtual = agora.getHours() * 60 + agora.getMinutes();
+            
+            if (!dataFim || dataFim === 'None') {
+                return { status: 'disponivel', texto: 'Disponível', icon: 'fa-calendar-check' };
+            }
             
             const [horaFimH, horaFimM] = horaFim.split(':').map(Number);
             const horaFimMinutos = horaFimH * 60 + horaFimM;
@@ -350,12 +246,6 @@
             } else {
                 return { status: 'disponivel', texto: 'Disponível', icon: 'fa-calendar-check' };
             }
-        }
-
-        function formatarData(dataStr) {
-            if (!dataStr) return '-';
-            const data = new Date(dataStr);
-            return data.toLocaleDateString('pt-BR');
         }
 
         function getHeaderClass(atividade) {
@@ -392,10 +282,11 @@
             }
             
             const grid = document.getElementById('atividadesGrid');
+            
             if (atividades.length === 0) {
                 grid.innerHTML = `
                     <div class="sem-atividades">
-                        <i class="fas fa-calendar-times" style="font-size: 48px; margin-bottom: 16px; color: #D4A373;"></i>
+                        <i class="fas fa-calendar-times" style="font-size: 48px; color: #D4A373;"></i>
                         <h3>Nenhuma atividade encontrada</h3>
                         <p>Não há atividades disponíveis nesta categoria no momento.</p>
                     </div>
@@ -428,7 +319,7 @@
                                 <i class="fas fa-star"></i> ${a.max_pontos} pontos
                             </div>
                             <div class="atividade-footer">
-                                <span class="status-badge ${getStatusClass(statusInfo.status)}">
+                                <span class="status-badge status-${statusInfo.status}">
                                     <i class="fas ${statusInfo.icon}"></i> ${statusInfo.texto}
                                 </span>
                                 <span class="info-text">
@@ -448,7 +339,6 @@
                 tab.classList.add('active');
                 tipoAtivo = tab.dataset.tipo;
                 
-                // Mostrar/esconder sub-filtros
                 document.getElementById('subFiltrosCurriculares').style.display = tipoAtivo === 'curriculares' ? 'flex' : 'none';
                 document.getElementById('subFiltrosExtra').style.display = tipoAtivo === 'extra' ? 'flex' : 'none';
                 
@@ -456,7 +346,7 @@
             });
         });
 
-        // Eventos dos sub-filtros de curriculares
+        // Eventos dos sub-filtros
         document.querySelectorAll('#subFiltrosCurriculares .sub-filter-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('#subFiltrosCurriculares .sub-filter-btn').forEach(b => b.classList.remove('active'));
@@ -466,7 +356,6 @@
             });
         });
 
-        // Eventos dos sub-filtros de extra
         document.querySelectorAll('#subFiltrosExtra .sub-filter-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('#subFiltrosExtra .sub-filter-btn').forEach(b => b.classList.remove('active'));
@@ -476,6 +365,7 @@
             });
         });
 
+        // Logout
         document.getElementById('logoutBtn').addEventListener('click', () => {
             window.location.href = "{% url 'index' %}";
         });

@@ -101,21 +101,28 @@ def atividades(request):
     if request.user.tipo != 'aluno':
         return redirect('index')
     
+    print("DEBUG: Entrou na view atividades")  # Debug
+    
     # Buscar atividades curriculares (com disciplina associada)
     atividades_curriculares = Atividade.objects.filter(
         disciplina__isnull=False
     ).exclude(disciplina=None).order_by('disciplina__nome', 'data_inicio')
+    
+    print(f"DEBUG: Atividades curriculares encontradas: {atividades_curriculares.count()}")  # Debug
     
     # Buscar atividades extra-curriculares
     atividades_extra = Atividade.objects.filter(
         disciplina__isnull=True
     ).exclude(tipo_atividade=None).order_by('-created_at')
     
-    # CORREÇÃO: Buscar disciplinas distintas (sem repetição)
-    # Usando .distinct() para remover duplicatas
+    print(f"DEBUG: Atividades extra encontradas: {atividades_extra.count()}")  # Debug
+    
+    # Buscar disciplinas distintas
     disciplinas = Disciplina.objects.filter(
-        atividades__isnull=False  # Apenas disciplinas que têm atividades
+        atividades__isnull=False
     ).distinct().order_by('nome')
+    
+    print(f"DEBUG: Disciplinas encontradas: {disciplinas.count()}")  # Debug
     
     context = {
         'atividades_curriculares': atividades_curriculares,
