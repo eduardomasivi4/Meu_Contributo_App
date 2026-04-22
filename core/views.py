@@ -470,7 +470,7 @@ def turma_detail(request, turma_id):
     disciplina_id = request.GET.get('disciplina_id')
     
     if not disciplina_id:
-        messages.error(request, 'Nenhuma disciplina selecionada. Volte ao dashboard e escolha uma disciplina.')
+        messages.error(request, 'Nenhuma disciplina selecionada.')
         return redirect('dashboard_professor')
     
     disciplina = get_object_or_404(Disciplina, id=disciplina_id)
@@ -478,21 +478,22 @@ def turma_detail(request, turma_id):
     alunos = turma.alunos.all().order_by('usuario__first_name')
     atividades = Atividade.objects.filter(disciplina=disciplina, turmas=turma).order_by('-created_at')
     
-    # ... resto igual (cálculo de pode_distribuir)
     from django.utils import timezone
     agora = timezone.now()
     hoje = agora.date()
     hora_atual = agora.time()
+    
     for atividade in atividades:
+        # CORREÇÃO: Data OU Hora de fim
+        pode = False
         if atividade.data_fim and atividade.hora_fim:
+            # Se a data de fim já passou
             if atividade.data_fim < hoje:
-                atividade.pode_distribuir = True
+                pode = True
+            # Se é hoje e a hora atual já passou da hora de fim
             elif atividade.data_fim == hoje and atividade.hora_fim <= hora_atual:
-                atividade.pode_distribuir = True
-            else:
-                atividade.pode_distribuir = False
-        else:
-            atividade.pode_distribuir = False
+                pode = True
+        atividade.pode_distribuir = pode
     
     context = {
         'turma': turma,
@@ -566,46 +567,38 @@ def distribuir_pontos(request, atividade_id):
     
     atividade = get_object_or_404(Atividade, id=atividade_id)
     turma_id = request.GET.get('turma_id')
+    
+    if not turma_id:
+        messages.error(request, 'Nenhuma turma selecionada.')
+        return redirect('dashboard_professor')
+    
     turma = get_object_or_404(Turma, id=turma_id)
     
-    # CORREÇÃO: Verificar se a atividade pertence à turma
     if not atividade.turmas.filter(id=turma.id).exists():
         messages.error(request, 'Esta atividade não está associada a esta turma.')
         return redirect('turma_detail', turma_id=turma.id)
     
-    # CORREÇÃO: Verificar se pode distribuir (baseado em data e hora)
     from django.utils import timezone
     agora = timezone.now()
     hoje = agora.date()
     hora_atual = agora.time()
     
+    # CORREÇÃO: Data OU Hora de fim
     pode_distribuir = False
-    
-    # Se a atividade não tem data/hora de fim, permitir distribuir
-    if not atividade.data_fim or not atividade.hora_fim:
-        pode_distribuir = True
-    else:
-        # Verificar se a atividade já terminou
+    if atividade.data_fim and atividade.hora_fim:
         if atividade.data_fim < hoje:
             pode_distribuir = True
         elif atividade.data_fim == hoje and atividade.hora_fim <= hora_atual:
             pode_distribuir = True
     
-    # DEBUG: Imprimir informações no terminal
-    print(f"DEBUG Atividade {atividade.id}:")
-    print(f"  - data_fim: {atividade.data_fim}, hora_fim: {atividade.hora_fim}")
-    print(f"  - hoje: {hoje}, hora_atual: {hora_atual}")
-    print(f"  - pode_distribuir: {pode_distribuir}")
-    
-    if not pode_distribuir:
-        messages.error(request, f'Esta atividade ainda não terminou. Data/Hora de fim: {atividade.data_fim} {atividade.hora_fim}')
-        return redirect('turma_detail', turma_id=turma.id)
-    
     alunos = turma.alunos.all().order_by('usuario__first_name', 'usuario__username')
     
     if request.method == 'POST':
-        pontos_distribuidos = 0
+        if not pode_distribuir:
+            messages.error(request, 'Esta atividade ainda não terminou. Não é possível distribuir pontos.')
+            return redirect('turma_detail', turma_id=turma.id)
         
+        pontos_distribuidos = 0
         for aluno in alunos:
             pontos_str = request.POST.get(f'pontos_{aluno.id}')
             if pontos_str and pontos_str.strip():
@@ -613,7 +606,6 @@ def distribuir_pontos(request, atividade_id):
                 if pontos > 0 and pontos <= atividade.max_pontos_por_aluno:
                     aluno.saldo_pontos += pontos
                     aluno.save()
-                    
                     Transacao.objects.create(
                         aluno=aluno,
                         quantidade=pontos,
@@ -623,15 +615,11 @@ def distribuir_pontos(request, atividade_id):
                         atividade=atividade
                     )
                     pontos_distribuidos += 1
-                elif pontos > atividade.max_pontos_por_aluno:
-                    messages.warning(request, f'Pontos excedem o máximo ({atividade.max_pontos_por_aluno}) para {aluno.usuario.get_full_name()}.')
-                elif pontos < 0:
-                    messages.warning(request, f'Pontos negativos não são permitidos para {aluno.usuario.get_full_name()}.')
         
         if pontos_distribuidos > 0:
             messages.success(request, f'Pontos distribuídos com sucesso para {pontos_distribuidos} aluno(s)!')
         else:
-            messages.warning(request, 'Nenhum ponto foi distribuído. Verifique se inseriu valores válidos.')
+            messages.warning(request, 'Nenhum ponto foi distribuído.')
         
         return redirect('turma_detail', turma_id=turma.id)
     

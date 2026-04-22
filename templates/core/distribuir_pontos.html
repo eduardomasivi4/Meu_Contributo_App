@@ -125,19 +125,22 @@
             <div class="card-header">
                 <h3><i class="fas fa-user-graduate"></i> Distribuir Pontos para os Alunos</h3>
             </div>
+
             <div class="info-box">
-                <i class="fas fa-info-circle"></i> Máximo de pontos por aluno: <span>{{ atividade.max_pontos_por_aluno }} pontos</span>
+                <i class="fas fa-info-circle"></i> Máximo de pontos por aluno: <span>{{ max_pontos }} pontos</span>
             </div>
-            
-            <!-- SCRIPT 4: Mensagem de alerta -->
+
             {% if not pode_distribuir %}
             <div class="alert alert-warning" style="background: #FEF3C7; color: #B45309; padding: 15px; border-radius: 16px; margin-bottom: 20px; border-left: 4px solid #B45309;">
                 <i class="fas fa-exclamation-triangle"></i> 
-                <strong>Atenção!</strong> Esta atividade ainda não terminou. 
-                A distribuição de pontos só é permitida após a data e hora de fim.
+                <strong>Atenção!</strong> Esta atividade ainda não terminou.
+                <br>
+                <small>Data/Hora de fim: {{ atividade.data_fim|date:"d/m/Y" }} às {{ atividade.hora_fim|time:"H:i" }}</small>
+                <br>
+                <small>A distribuição só é permitida APÓS esta data/hora.</small>
             </div>
             {% endif %}
-            
+
             <form method="POST">
                 {% csrf_token %}
                 {% for aluno in alunos %}
@@ -148,11 +151,11 @@
                     </div>
                     <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
                         <span class="aluno-pontos">Saldo atual: {{ aluno.saldo_pontos }} pts</span>
-                        <input type="number" name="pontos_{{ aluno.id }}" class="pontos-input" placeholder="Pontos" min="0" max="{{ atividade.max_pontos_por_aluno }}" value="0">
+                        <input type="number" name="pontos_{{ aluno.id }}" class="pontos-input" placeholder="Pontos" min="0" max="{{ max_pontos }}" value="0" {% if not pode_distribuir %}disabled{% endif %}>
                     </div>
                 </div>
                 {% endfor %}
-                <button type="submit" class="btn-distribuir" {% if not pode_distribuir %}disabled style="opacity:0.5; cursor:not-allowed;"{% endif %}>
+                <button type="submit" class="btn-distribuir" {% if not pode_distribuir %}disabled{% endif %}>
                     <i class="fas fa-share-alt"></i> Distribuir Pontos
                 </button>
             </form>
