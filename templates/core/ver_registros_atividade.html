@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <div class="cabecalho">
+        <h2><i class="fas fa-eye"></i> Registos da Actividade</h2>
+        <a href="{% url 'dashboard_professor' %}" class="btn-voltar">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+
+    <div class="atividade-info">
+        <h3>{{ atividade.nome }}</h3>
+        <p>Finalizada em: {{ atividade.registros_alunos.first.data_registro|date:"d/m/Y H:i"|default:"-" }}</p>
+    </div>
+
+    {% for aluno_data in alunos_data %}
+    <div class="aluno-registo-card">
+        <div class="aluno-cabecalho">
+            <h4>{{ aluno_data.aluno.usuario.get_full_name }}</h4>
+            <div class="resumo-pontos">
+                <span class="pontos-positivos">+{{ aluno_data.pos }}</span>
+                <span class="pontos-negativos">-{{ aluno_data.neg }}</span>
+                <span class="pontos-total {% if aluno_data.total >= 0 %}positivo{% else %}negativo{% endif %}">
+                    Total: {{ aluno_data.total }} pts
+                </span>
+            </div>
+        </div>
+        <table class="tabela-registos">
+            <thead><tr><th>Data/Hora</th><th>Critério</th><th>Pontos</th></tr></thead>
+            <tbody>
+                {% for reg in aluno_data.registos %}
+                <tr>
+                    <td>{{ reg.data_registro|date:"d/m/Y H:i" }}</td>
+                    <td>{{ reg.criterio.nome }}</td>
+                    <td class="{% if reg.pontos_atribuidos >= 0 %}pontos-positivo{% else %}pontos-negativo{% endif %}">
+                        {% if reg.pontos_atribuidos >= 0 %}+{% endif %}{{ reg.pontos_atribuidos }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% empty %}
+    <div class="empty-state"><i class="fas fa-inbox"></i><p>Nenhum registo encontrado.</p></div>
+    {% endfor %}
+</div>
+
+<style>
+    .atividade-info { background: linear-gradient(135deg, #2B7A4B, #1E5A38); color: white; padding: 20px; border-radius: 16px; margin-bottom: 25px; }
+    .aluno-registo-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid #F5EDDA; }
+    .aluno-cabecalho { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #F5EDDA; }
+    .resumo-pontos { display: flex; gap: 15px; font-size: 14px; }
+    .pontos-positivos { color: #2B7A4B; font-weight: bold; }
+    .pontos-negativos { color: #D9534F; font-weight: bold; }
+    .pontos-total { font-weight: bold; }
+    .pontos-total.positivo { color: #2B7A4B; }
+    .pontos-total.negativo { color: #D9534F; }
+    .tabela-registos { width: 100%; border-collapse: collapse; }
+    .tabela-registos th, .tabela-registos td { padding: 10px; text-align: left; border-bottom: 1px solid #F5EDDA; }
+    .tabela-registos th { color: #8B694C; font-weight: 600; }
+    .pontos-positivo { color: #2B7A4B; font-weight: bold; }
+    .pontos-negativo { color: #D9534F; font-weight: bold; }
+    .empty-state { text-align: center; padding: 60px; background: white; border-radius: 16px; color: #8B694C; }
+</style>
+{% endblock %}

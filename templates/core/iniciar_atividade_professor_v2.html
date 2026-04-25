@@ -1,0 +1,306 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <div class="cabecalho">
+        <h2><i class="fas fa-play-circle"></i> Actividade: {{ atividade.nome }}</h2>
+        <div>
+            <span class="etiqueta">{{ turma.nome }} - {{ turma.get_curso_display }}</span>
+            <a href="{% url 'dashboard_professor' %}" class="btn-voltar">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    <div class="resumo-bar">
+        <div class="resumo-item">
+            <i class="fas fa-users"></i>
+            <span>Total de Alunos: <strong>{{ turma.alunos.count }}</strong></span>
+        </div>
+        <div class="resumo-item">
+            <i class="fas fa-star"></i>
+            <span>Critérios: 
+                {% for c in criterios %}
+                <span class="criterio-badge">{{ c.nome }} ({% if c.pontos >= 0 %}+{% endif %}{{ c.pontos }})</span>
+                {% endfor %}
+            </span>
+        </div>
+    </div>
+
+    {% if tem_grupos %}
+    <div class="card grupo-card">
+        <div class="card-header">
+            <h3><i class="fas fa-layer-group"></i> Aplicar Critério a Grupo Inteiro</h3>
+        </div>
+        <div class="form-grupo-aplicacao">
+            <select id="grupoSelect" class="select-grupo">
+                {% for grupo in grupos %}
+                <option value="{{ grupo.id }}" data-total-alunos="{{ grupo.alunos.count }}">
+                    {{ grupo.nome }} ({{ grupo.alunos.count }} alunos)
+                </option>
+                {% endfor %}
+            </select>
+            <select id="criterioGrupoSelect" class="select-criterio">
+                {% for criterio in criterios %}
+                <option value="{{ criterio.id }}" data-pontos="{{ criterio.pontos }}">
+                    {{ criterio.nome }} ({% if criterio.pontos >= 0 %}+{% endif %}{{ criterio.pontos }} pts)
+                </option>
+                {% endfor %}
+            </select>
+            <button id="aplicarGrupoBtn" class="btn-aplicar-grupo">
+                <i class="fas fa-users"></i> + Aplicar ao Grupo
+            </button>
+            <button id="removerGrupoBtn" class="btn-remover-grupo">
+                <i class="fas fa-undo-alt"></i> - Remover do Grupo
+            </button>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="alunos-container">
+        <h3><i class="fas fa-user-graduate"></i> Distribuição de Pontos</h3>
+        
+        {% for grupo_id, grupo_data in alunos_por_grupo.items %}
+        <div class="grupo-alunos-card" data-grupo-id="{{ grupo_id }}">
+            <div class="grupo-alunos-header">
+                <i class="fas fa-users"></i>
+                <span class="grupo-alunos-nome">{{ grupo_data.nome }}</span>
+                <span class="grupo-alunos-badge">{{ grupo_data.total_alunos }} alunos</span>
+                <span class="grupo-total-pontos" id="grupo-total-{{ grupo_id }}">Total: 0 pts</span>
+            </div>
+            <div class="grupo-alunos-lista">
+                {% for aluno in grupo_data.alunos %}
+                <div class="aluno-card" data-aluno-id="{{ aluno.id }}" data-grupo-id="{{ grupo_id }}">
+                    <div class="aluno-info">
+                        <strong>{{ aluno.usuario.get_full_name|default:aluno.usuario.username }}</strong>
+                    </div>
+                    <div class="aluno-acoes">
+                        <select class="criterio-select" data-aluno-id="{{ aluno.id }}">
+                            {% for criterio in criterios %}
+                            <option value="{{ criterio.id }}" data-pontos="{{ criterio.pontos }}">
+                                {{ criterio.nome }} ({% if criterio.pontos >= 0 %}+{% endif %}{{ criterio.pontos }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <button class="btn-aplicar" data-aluno-id="{{ aluno.id }}">+ Aplicar</button>
+                        <button class="btn-desfazer" data-aluno-id="{{ aluno.id }}">- Desfazer</button>
+                    </div>
+                    <div class="registos-lista" id="registos-{{ aluno.id }}"></div>
+                    <div class="total-pontos" id="total-{{ aluno.id }}">Total: 0 pts</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+
+        {% if alunos_sem_grupo %}
+        <div class="grupo-alunos-card">
+            <div class="grupo-alunos-header">
+                <i class="fas fa-user"></i>
+                <span class="grupo-alunos-nome">Alunos sem Grupo</span>
+                <span class="grupo-alunos-badge">{{ alunos_sem_grupo|length }} alunos</span>
+                <span class="grupo-total-pontos" id="grupo-total-sem-grupo">Total: 0 pts</span>
+            </div>
+            <div class="grupo-alunos-lista">
+                {% for aluno in alunos_sem_grupo %}
+                <div class="aluno-card" data-aluno-id="{{ aluno.id }}" data-sem-grupo="true">
+                    <div class="aluno-info">
+                        <strong>{{ aluno.usuario.get_full_name|default:aluno.usuario.username }}</strong>
+                    </div>
+                    <div class="aluno-acoes">
+                        <select class="criterio-select" data-aluno-id="{{ aluno.id }}">
+                            {% for criterio in criterios %}
+                            <option value="{{ criterio.id }}" data-pontos="{{ criterio.pontos }}">
+                                {{ criterio.nome }} ({% if criterio.pontos >= 0 %}+{% endif %}{{ criterio.pontos }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <button class="btn-aplicar" data-aluno-id="{{ aluno.id }}">+ Aplicar</button>
+                        <button class="btn-desfazer" data-aluno-id="{{ aluno.id }}">- Desfazer</button>
+                    </div>
+                    <div class="registos-lista" id="registos-{{ aluno.id }}"></div>
+                    <div class="total-pontos" id="total-{{ aluno.id }}">Total: 0 pts</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="footer-acoes">
+        <div class="resumo-final" id="resumoFinal">
+            <span>Total de Pontos a Distribuir: <strong id="totalGeralPontos">0</strong> pts</span>
+            <span>Alunos com registo: <strong id="totalAlunosComRegisto">0</strong></span>
+        </div>
+        <button id="terminarBtn" class="btn-terminar" disabled>
+            <i class="fas fa-check-circle"></i> Terminar Actividade
+        </button>
+    </div>
+</div>
+
+<script>
+    let registosPorAluno = {};
+    
+    function atualizarInterface(alunoId) {
+        const registos = registosPorAluno[alunoId] || [];
+        let total = 0;
+        let html = '';
+        registos.forEach(reg => {
+            total += reg.pontos;
+            const sinal = reg.pontos >= 0 ? '+' : '';
+            html += `<div class="registo-item">${reg.criterio_nome} (${sinal}${reg.pontos} pts)</div>`;
+        });
+        document.getElementById(`registos-${alunoId}`).innerHTML = html;
+        const totalEl = document.getElementById(`total-${alunoId}`);
+        totalEl.innerHTML = `Total: ${total >= 0 ? '+' : ''}${total} pts`;
+        if (total > 0) totalEl.style.color = '#2B7A4B';
+        else if (total < 0) totalEl.style.color = '#D9534F';
+        else totalEl.style.color = '#8B694C';
+        atualizarTotalGrupo(alunoId);
+        atualizarTotaisGerais();
+    }
+    
+    function atualizarTotalGrupo(alunoId) {
+        const alunoCard = document.querySelector(`.aluno-card[data-aluno-id="${alunoId}"]`);
+        if (!alunoCard) return;
+        const grupoId = alunoCard.dataset.grupoId;
+        const isSemGrupo = alunoCard.dataset.semGrupo === 'true';
+        let totalGrupo = 0;
+        let selector = isSemGrupo ? '.aluno-card[data-sem-grupo="true"]' : `.aluno-card[data-grupo-id="${grupoId}"]`;
+        document.querySelectorAll(selector).forEach(card => {
+            const aid = parseInt(card.dataset.alunoId);
+            const total = (registosPorAluno[aid] || []).reduce((s, r) => s + r.pontos, 0);
+            totalGrupo += total;
+        });
+        const targetId = isSemGrupo ? 'grupo-total-sem-grupo' : `grupo-total-${grupoId}`;
+        const totalGrupoEl = document.getElementById(targetId);
+        if (totalGrupoEl) totalGrupoEl.innerHTML = `Total: ${totalGrupo >= 0 ? '+' : ''}${totalGrupo} pts`;
+    }
+    
+    function atualizarTotaisGerais() {
+        let totalGeral = 0, alunosComRegisto = 0;
+        for (const alunoId in registosPorAluno) {
+            const registos = registosPorAluno[alunoId];
+            if (registos.length > 0) {
+                alunosComRegisto++;
+                totalGeral += registos.reduce((s, r) => s + r.pontos, 0);
+            }
+        }
+        document.getElementById('totalGeralPontos').textContent = totalGeral;
+        document.getElementById('totalAlunosComRegisto').textContent = alunosComRegisto;
+        document.getElementById('terminarBtn').disabled = totalGeral === 0;
+    }
+    
+    document.querySelectorAll('.btn-aplicar').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const alunoId = parseInt(this.dataset.alunoId);
+            const select = document.querySelector(`.criterio-select[data-aluno-id="${alunoId}"]`);
+            const option = select.options[select.selectedIndex];
+            const criterioId = parseInt(option.value);
+            const criterioNome = option.text.split('(')[0].trim();
+            const pontos = parseInt(option.dataset.pontos);
+            if (!registosPorAluno[alunoId]) registosPorAluno[alunoId] = [];
+            registosPorAluno[alunoId].push({ criterio_id: criterioId, criterio_nome: criterioNome, pontos: pontos });
+            atualizarInterface(alunoId);
+        });
+    });
+    
+    document.querySelectorAll('.btn-desfazer').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const alunoId = parseInt(this.dataset.alunoId);
+            if (registosPorAluno[alunoId] && registosPorAluno[alunoId].length > 0) {
+                registosPorAluno[alunoId].pop();
+                atualizarInterface(alunoId);
+            }
+        });
+    });
+    
+    const aplicarGrupoBtn = document.getElementById('aplicarGrupoBtn');
+    if (aplicarGrupoBtn) {
+        aplicarGrupoBtn.addEventListener('click', function() {
+            const grupoId = document.getElementById('grupoSelect').value;
+            const criterioSelect = document.getElementById('criterioGrupoSelect');
+            const criterioId = criterioSelect.value;
+            const criterioNome = criterioSelect.options[criterioSelect.selectedIndex].text.split('(')[0].trim();
+            const pontos = parseInt(criterioSelect.options[criterioSelect.selectedIndex].dataset.pontos);
+            document.querySelectorAll(`.aluno-card[data-grupo-id="${grupoId}"]`).forEach(card => {
+                const alunoId = parseInt(card.dataset.alunoId);
+                if (!registosPorAluno[alunoId]) registosPorAluno[alunoId] = [];
+                registosPorAluno[alunoId].push({ criterio_id: parseInt(criterioId), criterio_nome: criterioNome, pontos: pontos });
+                atualizarInterface(alunoId);
+            });
+        });
+    }
+    
+    const removerGrupoBtn = document.getElementById('removerGrupoBtn');
+    if (removerGrupoBtn) {
+        removerGrupoBtn.addEventListener('click', function() {
+            const grupoId = document.getElementById('grupoSelect').value;
+            document.querySelectorAll(`.aluno-card[data-grupo-id="${grupoId}"]`).forEach(card => {
+                const alunoId = parseInt(card.dataset.alunoId);
+                if (registosPorAluno[alunoId] && registosPorAluno[alunoId].length > 0) {
+                    registosPorAluno[alunoId].pop();
+                    atualizarInterface(alunoId);
+                }
+            });
+        });
+    }
+    
+    document.getElementById('terminarBtn').addEventListener('click', async function() {
+        const totalGeral = parseInt(document.getElementById('totalGeralPontos').textContent);
+        if (totalGeral === 0) {
+            alert('Nenhum critério foi aplicado. Adicione pelo menos um critério antes de terminar.');
+            return;
+        }
+        const payload = { registos: [] };
+        for (const alunoId in registosPorAluno) {
+            for (const reg of registosPorAluno[alunoId]) {
+                payload.registos.push({ aluno_id: parseInt(alunoId), criterio_id: reg.criterio_id, pontos: reg.pontos });
+            }
+        }
+        this.disabled = true;
+        this.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> A guardar...';
+        try {
+            const response = await fetch(`/professor/atividade/terminar/{{ atividade.id }}/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            if (data.success) window.location.href = "{% url 'dashboard_professor' %}";
+            else alert('Erro: ' + (data.erro || 'Não foi possível guardar os registos'));
+        } catch (error) {
+            alert('Erro de conexão: ' + error.message);
+        } finally {
+            this.disabled = false;
+            this.innerHTML = '<i class="fas fa-check-circle"></i> Terminar Actividade';
+        }
+    });
+</script>
+
+<style>
+    .resumo-bar { background: #FBF7E9; border-radius: 16px; padding: 12px 20px; margin-bottom: 20px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px; }
+    .criterio-badge { background: #2B7A4B; color: white; padding: 2px 8px; border-radius: 20px; font-size: 11px; margin-left: 5px; display: inline-block; }
+    .form-grupo-aplicacao { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .select-grupo, .select-criterio { padding: 10px 15px; border: 1px solid #F5EDDA; border-radius: 8px; flex: 1; min-width: 150px; }
+    .btn-aplicar-grupo, .btn-remover-grupo { padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+    .btn-aplicar-grupo { background: #2B7A4B; color: white; }
+    .btn-remover-grupo { background: #D4A373; color: white; }
+    .grupo-alunos-card { background: white; border-radius: 16px; margin-bottom: 20px; border: 1px solid #F5EDDA; overflow: hidden; }
+    .grupo-alunos-header { background: #FBF7E9; padding: 12px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid #F5EDDA; }
+    .grupo-alunos-nome { font-weight: 700; color: #5C3A21; }
+    .grupo-alunos-badge { background: #D4A373; color: white; padding: 2px 10px; border-radius: 20px; font-size: 11px; }
+    .grupo-total-pontos { margin-left: auto; font-weight: bold; }
+    .aluno-card { background: white; border-radius: 12px; padding: 12px; margin-bottom: 12px; border: 1px solid #F5EDDA; }
+    .aluno-acoes { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+    .criterio-select { padding: 8px 12px; border: 1px solid #F5EDDA; border-radius: 8px; flex: 1; }
+    .btn-aplicar { background: #2B7A4B; color: white; padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; }
+    .btn-desfazer { background: #D4A373; color: white; padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; }
+    .registos-lista { margin: 10px 0; padding: 8px; background: #FBF7E9; border-radius: 8px; min-height: 35px; }
+    .footer-acoes { margin-top: 30px; position: sticky; bottom: 20px; background: white; padding: 15px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    .resumo-final { display: flex; justify-content: space-between; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #F5EDDA; }
+    .btn-terminar { width: 100%; background: #2B7A4B; color: white; border: none; padding: 14px; border-radius: 30px; font-size: 16px; font-weight: bold; cursor: pointer; }
+    .btn-terminar:disabled { background: #A58E6F; cursor: not-allowed; }
+</style>
+{% endblock %}

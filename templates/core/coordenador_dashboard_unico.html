@@ -1,0 +1,448 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <div class="cabecalho">
+        <h2>
+            <i class="fas {% if tipo == 'cultural' %}fa-palette{% else %}fa-flask{% endif %}"></i>
+            Painel do Coordenador
+            {% if tipo == 'cultural' %}
+                <span class="badge-cultural">Actividades Culturais</span>
+            {% else %}
+                <span class="badge-ciencia">Actividades Ciência e Tecnologia</span>
+            {% endif %}
+        </h2>
+        <div class="user-info">
+            <span>{{ request.user.get_full_name|default:request.user.username }}</span>
+            <button id="logoutBtn" class="btn-sair">Sair</button>
+        </div>
+    </div>
+
+    <div class="acoes">
+        <a href="{% url 'coordenador_criar_atividade_separado' %}?tipo={{ tipo }}" class="btn-criar">
+            <i class="fas fa-plus"></i> Criar Actividade
+        </a>
+    </div>
+
+    <div class="search-bar">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchInput" placeholder="Pesquisar actividades..." value="{{ search_query }}">
+        <button id="searchBtn">Buscar</button>
+        <button id="clearSearchBtn">Limpar</button>
+    </div>
+
+    <div class="atividades-grid">
+        {% for atividade in atividades %}
+        <div class="atividade-card" data-id="{{ atividade.id }}">
+            <div class="atividade-header {% if tipo == 'cultural' %}cultural{% else %}ciencia{% endif %}">
+                <span class="atividade-tipo">
+                    <i class="fas {% if tipo == 'cultural' %}fa-palette{% else %}fa-flask{% endif %}"></i>
+                    {% if tipo == 'cultural' %}Cultural{% else %}Ciência e Tecnologia{% endif %}
+                </span>
+                <h3>{{ atividade.nome }}</h3>
+            </div>
+            <div class="atividade-body">
+                <p><i class="fas fa-calendar"></i> Criada: {{ atividade.created_at|date:"d/m/Y" }}</p>
+                <p><i class="fas fa-graduation-cap"></i> {{ atividade.get_cursos_display }}</p>
+                
+                <div class="status">
+                    {% if atividade.finalizada %}
+                        <span class="badge-finalizada"><i class="fas fa-check-circle"></i> Finalizada</span>
+                    {% endif %}
+                    {% if atividade.distribuida %}
+                        <span class="badge-distribuida"><i class="fas fa-hand-holding-heart"></i> Pontos Distribuídos</span>
+                    {% elif atividade.finalizada %}
+                        <span class="badge-pendente"><i class="fas fa-clock"></i> Aguardando Distribuição</span>
+                    {% endif %}
+                </div>
+
+                {% if atividade.descricao %}
+                <p class="descricao">{{ atividade.descricao|truncatechars:100 }}</p>
+                {% endif %}
+
+                <div class="acoes-card">
+                    {% if not atividade.finalizada %}
+                        <a href="{% url 'coordenador_iniciar_atividade' atividade.id %}" class="btn-iniciar">
+                            <i class="fas fa-play"></i> Iniciar
+                        </a>
+                        <a href="{% url 'coordenador_editar_atividade' atividade.id %}" class="btn-editar">
+                            <i class="fas fa-edit"></i> Editar
+                        </a>
+                        <button class="btn-eliminar" data-id="{{ atividade.id }}" data-nome="{{ atividade.nome }}">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                    {% else %}
+                        <a href="{% url 'coordenador_ver_registos' atividade.id %}" class="btn-ver">
+                            <i class="fas fa-eye"></i> Ver Registos
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="sem-atividades">
+            <i class="fas fa-calendar-times" style="font-size: 48px; color: #D4A373;"></i>
+            <h3>Nenhuma actividade encontrada</h3>
+            <p>Crie sua primeira actividade clicando no botão acima.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if atividades.has_other_pages %}
+    <div class="pagination">
+        {% if atividades.has_previous %}
+            <a href="?page={{ atividades.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">« Anterior</a>
+        {% endif %}
+        <span class="current">Página {{ atividades.number }} de {{ atividades.paginator.num_pages }}</span>
+        {% if atividades.has_next %}
+            <a href="?page={{ atividades.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Próxima »</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .cabecalho {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    .badge-cultural {
+        background: #D4A373;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        margin-left: 10px;
+        display: inline-block;
+    }
+    .badge-ciencia {
+        background: #5C3A21;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        margin-left: 10px;
+        display: inline-block;
+    }
+    .btn-sair {
+        background: #D9534F;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 13px;
+    }
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #FBF7E9;
+        padding: 6px 16px;
+        border-radius: 40px;
+    }
+    .acoes {
+        margin-bottom: 20px;
+    }
+    .btn-criar {
+        background: #2B7A4B;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 30px;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s;
+    }
+    .btn-criar:hover {
+        background: #1E5A38;
+        transform: translateY(-2px);
+    }
+    .search-bar {
+        background: white;
+        border-radius: 16px;
+        padding: 12px 20px;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+        border: 1px solid #F5EDDA;
+    }
+    .search-bar input {
+        flex: 1;
+        border: none;
+        outline: none;
+        padding: 8px 0;
+        font-size: 14px;
+    }
+    .search-bar button {
+        background: #2B7A4B;
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 30px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .search-bar button:hover {
+        background: #1E5A38;
+    }
+    .atividades-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+        gap: 20px;
+    }
+    .atividade-card {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid #F5EDDA;
+        transition: all 0.3s;
+    }
+    .atividade-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    .atividade-header {
+        padding: 15px 20px;
+        color: white;
+    }
+    .atividade-header.cultural {
+        background: linear-gradient(135deg, #D4A373, #B5835A);
+    }
+    .atividade-header.ciencia {
+        background: linear-gradient(135deg, #5C3A21, #7A5233);
+    }
+    .atividade-tipo {
+        display: inline-block;
+        background: rgba(255,255,255,0.2);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        margin-bottom: 8px;
+    }
+    .atividade-header h3 {
+        font-size: 16px;
+        font-weight: 700;
+    }
+    .atividade-body {
+        padding: 15px 20px;
+    }
+    .status {
+        margin: 10px 0;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .badge-finalizada {
+        background: #E9F5EF;
+        color: #2B7A4B;
+        padding: 4px 8px;
+        border-radius: 20px;
+        font-size: 11px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .badge-distribuida {
+        background: #D4A373;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 20px;
+        font-size: 11px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .badge-pendente {
+        background: #FEF3C7;
+        color: #B45309;
+        padding: 4px 8px;
+        border-radius: 20px;
+        font-size: 11px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .descricao {
+        font-size: 12px;
+        color: #8B694C;
+        margin-top: 10px;
+        line-height: 1.4;
+    }
+    .acoes-card {
+        margin-top: 15px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding-top: 12px;
+        border-top: 1px solid #F5EDDA;
+    }
+    .btn-iniciar, .btn-editar, .btn-ver, .btn-eliminar {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.2s;
+    }
+    .btn-iniciar {
+        background: #2B7A4B;
+        color: white;
+        border: none;
+    }
+    .btn-iniciar:hover {
+        background: #1E5A38;
+    }
+    .btn-editar {
+        background: #D4A373;
+        color: white;
+        border: none;
+    }
+    .btn-editar:hover {
+        background: #B5835A;
+    }
+    .btn-ver {
+        background: #2B7A4B;
+        color: white;
+        border: none;
+    }
+    .btn-eliminar {
+        background: #D9534F;
+        color: white;
+        border: none;
+    }
+    .btn-eliminar:hover {
+        background: #C9302C;
+    }
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 30px;
+    }
+    .pagination a, .pagination span {
+        padding: 8px 16px;
+        background: white;
+        border-radius: 20px;
+        text-decoration: none;
+        color: #5C3A21;
+        transition: all 0.2s;
+    }
+    .pagination a:hover {
+        background: #F5EDDA;
+    }
+    .pagination .current {
+        background: #2B7A4B;
+        color: white;
+    }
+    .sem-atividades {
+        text-align: center;
+        padding: 60px;
+        background: white;
+        border-radius: 20px;
+        grid-column: 1/-1;
+    }
+    .sem-atividades i {
+        font-size: 48px;
+        color: #D4A373;
+        margin-bottom: 16px;
+    }
+    .sem-atividades h3 {
+        color: #5C3A21;
+        margin-bottom: 8px;
+    }
+
+    @media (max-width: 768px) {
+        .cabecalho {
+            flex-direction: column;
+            text-align: center;
+        }
+        .atividades-grid {
+            grid-template-columns: 1fr;
+        }
+        .acoes-card {
+            justify-content: center;
+        }
+    }
+</style>
+
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function mostrarModal(mensagem, tipo = 'sucesso') {
+        // Usar a função global do base.html
+        if (typeof mostrarModal === 'function') {
+            window.mostrarModal(tipo === 'sucesso' ? 'Sucesso' : 'Erro', mensagem, tipo);
+        } else {
+            alert(mensagem);
+        }
+    }
+
+    // Pesquisa
+    document.getElementById('searchBtn')?.addEventListener('click', () => {
+        const search = document.getElementById('searchInput').value;
+        window.location.href = `?search=${encodeURIComponent(search)}`;
+    });
+    document.getElementById('clearSearchBtn')?.addEventListener('click', () => {
+        window.location.href = window.location.pathname + `?tipo={{ tipo }}`;
+    });
+    document.getElementById('searchInput')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') document.getElementById('searchBtn').click();
+    });
+
+    // Eliminar actividade
+    document.querySelectorAll('.btn-eliminar').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const id = this.dataset.id;
+            const nome = this.dataset.nome;
+            if (confirm(`Tem certeza que deseja eliminar a actividade "${nome}"?\n\nEsta acção não pode ser desfeita.`)) {
+                try {
+                    const response = await fetch(`/coordenador/atividade/eliminar/${id}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': getCookie('csrftoken'),
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        mostrarModal('Actividade eliminada com sucesso!', 'sucesso');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        mostrarModal(data.erro || 'Erro ao eliminar actividade', 'erro');
+                    }
+                } catch (error) {
+                    mostrarModal('Erro de conexão', 'erro');
+                }
+            }
+        });
+    });
+
+    // Logout
+    document.getElementById('logoutBtn')?.addEventListener('click', () => {
+        window.location.href = "{% url 'index' %}";
+    });
+</script>
+{% endblock %}

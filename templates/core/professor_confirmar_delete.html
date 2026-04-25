@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="cabecalho">
+        <h2>Confirmar Eliminação</h2>
+        <a href="{% url 'turma_detail' atividade.turmas.first.id %}?disciplina_id={{ atividade.disciplina.id }}" class="btn-voltar">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+
+    <div class="cartao">
+        <div class="aviso">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3>Tem certeza que deseja eliminar esta actividade?</h3>
+            <p><strong>{{ atividade.nome }}</strong></p>
+            <p>Esta acção não pode ser desfeita. Todos os critérios e registos associados serão removidos.</p>
+        </div>
+        
+        <form method="POST" class="form-acoes">
+            {% csrf_token %}
+            <button type="submit" class="btn-perigo">Sim, Eliminar</button>
+            <a href="{% url 'turma_detail' atividade.turmas.first.id %}?disciplina_id={{ atividade.disciplina.id }}" class="btn-secundario">Cancelar</a>
+        </form>
+    </div>
+</div>
+
+<style>
+    .aviso {
+        text-align: center;
+        padding: 30px;
+    }
+    .aviso i {
+        font-size: 48px;
+        color: #D9534F;
+        margin-bottom: 15px;
+    }
+    .aviso h3 {
+        color: #5C3A21;
+        margin-bottom: 10px;
+    }
+    .form-acoes {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 20px;
+    }
+    .btn-perigo {
+        background: #D9534F;
+        color: white;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 30px;
+        cursor: pointer;
+    }
+    .btn-secundario {
+        background: #D4A373;
+        color: white;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 30px;
+        cursor: pointer;
+        text-decoration: none;
+    }
+</style>
+{% endblock %}

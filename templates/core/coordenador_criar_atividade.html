@@ -1,285 +1,218 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% if is_edit %}Editar{% else %}Criar{% endif %} Atividade - Coordenador</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/fundo.css' %}">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #FBF7E9; }
-        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
-        
-        .header {
-            background: white;
-            border-radius: 24px;
-            padding: 15px 25px;
-            margin-bottom: 25px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            border: 1px solid #F5EDDA;
-        }
-        .logo-area { display: flex; align-items: center; gap: 12px; }
-        .logo-icon { width: 45px; height: 45px; background: #2B7A4B; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
-        .logo-icon img { width: 28px; height: 28px; }
-        .logo-area h1 { font-size: 18px; color: #5C3A21; font-weight: 700; }
-        .back-link { background: #FBF7E9; border: none; padding: 8px 16px; border-radius: 30px; cursor: pointer; font-size: 13px; color: #5C3A21; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
-        .user-area { display: flex; align-items: center; gap: 15px; background: #FBF7E9; padding: 6px 18px; border-radius: 40px; }
-        .user-avatar { width: 38px; height: 38px; background: #2B7A4B; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; }
-        .user-name { font-weight: 600; color: #5C3A21; font-size: 14px; }
-        .logout-btn { background: none; border: 1px solid #F5EDDA; padding: 6px 14px; border-radius: 30px; cursor: pointer; }
+{% extends 'base.html' %}
+{% load static %}
 
-        .form-card {
-            background: white;
-            border-radius: 24px;
-            padding: 30px;
-            border: 1px solid #F5EDDA;
-        }
-        .form-title {
-            font-size: 24px;
-            color: #5C3A21;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #FBF7E9;
-        }
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #5C3A21; }
-        .form-group label i { margin-right: 8px; color: #D4A373; }
-        .form-group input, .form-group select, .form-group textarea {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #F5EDDA;
-            border-radius: 16px;
-            font-size: 14px;
-            font-family: inherit;
-        }
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-            outline: none;
-            border-color: #2B7A4B;
-        }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .radio-group { display: flex; gap: 30px; margin-top: 5px; flex-wrap: wrap; }
-        .radio-group label { display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer; }
-        .curso-select { margin-top: 15px; padding: 15px; background: #FBF7E9; border-radius: 16px; display: none; }
-        .curso-select.visible { display: block; }
-        .btn-submit {
-            width: 100%;
-            background: #2B7A4B;
-            color: white;
-            border: none;
-            padding: 14px;
-            border-radius: 40px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-        .btn-submit:hover { background: #1E5A38; }
-        
-        /* Estilo para o campo de interrupção */
-        .interrupcao-group {
-            background: #FFF8F0;
-            padding: 15px;
-            border-radius: 16px;
-            border-left: 4px solid #D4A373;
-        }
-        .help-text {
-            color: #8B694C;
-            font-size: 12px;
-            margin-top: 8px;
-            display: block;
-        }
-        
-        @media (max-width: 600px) {
-            .form-row { grid-template-columns: 1fr; gap: 0; }
-            .container { padding: 15px; }
-            .form-card { padding: 20px; }
-            .radio-group { flex-direction: column; gap: 10px; }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="logo-area">
-                <div class="logo-icon"><img src="{% static 'images/logo-caf.png' %}" alt="Logo"></div>
-                <h1>Colégio Árvore da Felicidade</h1>
-            </div>
-            <div>
-                <a href="{% url 'coordenador_dashboard' %}" class="back-link"><i class="fas fa-arrow-left"></i> Voltar ao Dashboard</a>
-            </div>
-            <div class="user-area">
-                <div class="user-avatar"><i class="fas fa-calendar-alt"></i></div>
-                <div><div class="user-name">{{ request.user.get_full_name|default:request.user.username }}</div></div>
-                <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Sair</button>
-            </div>
-        </div>
-
-        <div class="form-card">
-            <h2 class="form-title">
-                <i class="fas {% if is_edit %}fa-edit{% else %}fa-plus-circle{% endif %}"></i>
-                {% if is_edit %}Editar{% else %}Criar Nova{% endif %} Atividade
-            </h2>
-            <form method="POST">
-                {% csrf_token %}
-                
-                <!-- Tipo de Atividade -->
-                <div class="form-group">
-                    <label><i class="fas fa-tag"></i> Tipo de Atividade</label>
-                    <select name="tipo_atividade" required>
-                        <option value="cultural" {% if atividade.tipo_atividade == 'cultural' %}selected{% endif %}>Cultural</option>
-                        <option value="ciencia_tecnologia" {% if atividade.tipo_atividade == 'ciencia_tecnologia' %}selected{% endif %}>Ciência e Tecnologia</option>
-                    </select>
-                </div>
-                
-                <!-- Nome -->
-                <div class="form-group">
-                    <label><i class="fas fa-heading"></i> Nome da Atividade</label>
-                    <input type="text" name="nome" value="{{ atividade.nome|default:'' }}" required placeholder="Ex: Feira de Ciências 2024">
-                </div>
-                
-                <!-- Descrição -->
-                <div class="form-group">
-                    <label><i class="fas fa-align-left"></i> Descrição</label>
-                    <textarea name="descricao" rows="3" placeholder="Descreva a atividade...">{{ atividade.descricao|default:'' }}</textarea>
-                </div>
-                
-                <!-- Critérios -->
-                <div class="form-group">
-                    <label><i class="fas fa-clipboard-list"></i> Critérios de Avaliação</label>
-                    <textarea name="criterios" rows="3" required placeholder="Ex: Participação, Assiduidade, Qualidade do trabalho...">{{ atividade.criterios_avaliacao|default:'' }}</textarea>
-                </div>
-                
-                <!-- Datas -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label><i class="fas fa-calendar"></i> Data de Início</label>
-                        <input type="date" name="data_inicio" value="{{ atividade.data_inicio|date:'Y-m-d'|default:'' }}" required>
-                    </div>
-                    <div class="form-group">
-                        <label><i class="fas fa-calendar-check"></i> Data de Fim</label>
-                        <input type="date" name="data_fim" value="{{ atividade.data_fim|date:'Y-m-d'|default:'' }}" required>
-                    </div>
-                </div>
-                
-                <!-- Horas -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label><i class="fas fa-clock"></i> Hora de Início</label>
-                        <input type="time" name="hora_inicio" value="{{ atividade.hora_inicio|time:'H:i'|default:'' }}" required>
-                    </div>
-                    <div class="form-group">
-                        <label><i class="fas fa-clock"></i> Hora de Fim</label>
-                        <input type="time" name="hora_fim" value="{{ atividade.hora_fim|time:'H:i'|default:'' }}" required>
-                    </div>
-                </div>
-                
-                <!-- Máximo de Pontos -->
-                <div class="form-group">
-                    <label><i class="fas fa-star"></i> Máximo de Pontos por Turma</label>
-                    <input type="number" name="max_pontos" value="{{ atividade.max_pontos_por_aluno|default:'100' }}" min="1" max="1000" required>
-                </div>
-                
-                <!-- INTERRUPÇÃO DE AULA (NOVO CAMPO) -->
-                <div class="form-group interrupcao-group">
-                    <label><i class="fas fa-bell"></i> Interrupção de Aula</label>
-                    <div class="radio-group">
-                        <label>
-                            <input type="radio" name="interrompe_aula" value="sim" {% if atividade.interrompe_aula %}checked{% endif %}> 
-                            <i class="fas fa-exclamation-triangle" style="color: #D9534F;"></i> 
-                            <strong>Sim</strong>, interrompe as aulas normais
-                        </label>
-                        <label>
-                            <input type="radio" name="interrompe_aula" value="nao" {% if not atividade.interrompe_aula %}checked{% endif %}> 
-                            <i class="fas fa-check-circle" style="color: #2B7A4B;"></i> 
-                            <strong>Não</strong>, não interrompe
-                        </label>
-                    </div>
-                    <small class="help-text">
-                        <i class="fas fa-info-circle"></i> 
-                        Atividades que interrompem as aulas terão destaque especial (fundo vermelho) no dashboard do coordenador e diretor.
-                    </small>
-                </div>
-                
-                <!-- Seleção de Cursos -->
-                <div class="form-group">
-                    <label><i class="fas fa-graduation-cap"></i> Selecionar Cursos</label>
-                    <div class="radio-group">
-                        <label>
-                            <input type="radio" name="selecao_cursos" value="um_curso" {% if not is_edit or selecao_atual == 'um_curso' %}checked{% endif %}> 
-                            Um Curso
-                        </label>
-                        <label>
-                            <input type="radio" name="selecao_cursos" value="ambos" {% if is_edit and selecao_atual == 'ambos' %}checked{% endif %}> 
-                            Ambos os Cursos
-                        </label>
-                    </div>
-                </div>
-                
-                <!-- Seleção de Curso específico -->
-                <div id="cursoSelect" class="curso-select {% if not is_edit or selecao_atual == 'um_curso' %}visible{% endif %}">
-                    <label><i class="fas fa-school"></i> Selecione o Curso:</label>
-                    <select name="curso_selecionado" class="curso-select-input">
-                        {% for codigo, nome in cursos %}
-                        <option value="{{ codigo }}" {% if atividade.cursos_associados == codigo %}selected{% endif %}>
-                            {{ nome }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <!-- Botão Submit -->
-                <button type="submit" class="btn-submit">
-                    <i class="fas fa-save"></i> {% if is_edit %}Atualizar{% else %}Criar{% endif %} Atividade
-                </button>
-            </form>
-        </div>
+{% block content %}
+<div class="container">
+    <div class="cabecalho">
+        <h2>
+            <i class="fas {% if tipo == 'cultural' %}fa-palette{% else %}fa-flask{% endif %}"></i>
+            {% if is_edit %}Editar{% else %}Criar Nova{% endif %} Actividade
+            {% if tipo == 'cultural' %}
+                <span class="badge-cultural">Cultural</span>
+            {% else %}
+                <span class="badge-ciencia">Ciência e Tecnologia</span>
+            {% endif %}
+        </h2>
+        <a href="{% url 'coordenador_dashboard' %}" class="btn-voltar">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
     </div>
 
-    <script>
-        // Lógica para mostrar/esconder seleção de curso
-        document.querySelectorAll('input[name="selecao_cursos"]').forEach(radio => {
-            radio.addEventListener('change', function() {
-                const cursoSelect = document.getElementById('cursoSelect');
-                if (this.value === 'um_curso') {
-                    cursoSelect.classList.add('visible');
-                } else {
-                    cursoSelect.classList.remove('visible');
-                }
-            });
-        });
+    <div class="form-card">
+        <form method="POST" id="atividadeForm">
+            {% csrf_token %}
+            
+            <!-- NOME -->
+            <div class="form-group">
+                <label>Nome da Actividade</label>
+                <input type="text" name="nome" value="{{ atividade.nome|default:'' }}" required>
+            </div>
+            
+            <!-- DESCRIÇÃO -->
+            <div class="form-group">
+                <label>Descrição</label>
+                <textarea name="descricao" rows="3">{{ atividade.descricao|default:'' }}</textarea>
+            </div>
+            
+            <!-- CRITÉRIOS DINÂMICOS -->
+            <div class="form-group">
+                <label>Critérios de Avaliação</label>
+                <div id="criterios-container">
+                    {% if atividade and atividade.criterios.exists %}
+                        {% for criterio in atividade.criterios.all %}
+                        <div class="criterio-linha">
+                            <input type="text" name="criterio_nome[]" value="{{ criterio.nome }}" placeholder="Nome do critério" required>
+                            <input type="number" name="criterio_pontos[]" value="{{ criterio.pontos }}" placeholder="Pontos" required>
+                            <button type="button" class="btn-remover">Remover</button>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="criterio-linha">
+                            <input type="text" name="criterio_nome[]" placeholder="Ex: Participação">
+                            <input type="number" name="criterio_pontos[]" placeholder="Ex: 500">
+                            <button type="button" class="btn-remover" disabled>Remover</button>
+                        </div>
+                    {% endif %}
+                </div>
+                <button type="button" id="addCriterioBtn" class="btn-add-criterio">+ Adicionar Critério</button>
+                <small>Cada critério define pontos para a TURMA INTEIRA. O diretor distribuirá depois.</small>
+            </div>
+            
+            <!-- SELEÇÃO DE CURSOS -->
+            <div class="form-group">
+                <label>Cursos</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="selecao_cursos" value="um_curso" checked> Um Curso</label>
+                    <label><input type="radio" name="selecao_cursos" value="ambos"> Ambos os Cursos</label>
+                </div>
+            </div>
+            
+            <div id="cursoSelect" class="curso-select">
+                <label>Selecione o Curso:</label>
+                <select name="curso_selecionado">
+                    {% for codigo, nome in cursos %}
+                    <option value="{{ codigo }}">{{ nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <button type="submit" class="btn-submit">
+                <i class="fas fa-save"></i> {% if is_edit %}Actualizar{% else %}Criar{% endif %} Actividade
+            </button>
+        </form>
+    </div>
+</div>
 
-        // Logout
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            window.location.href = "{% url 'index' %}";
+<style>
+    .cabecalho {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .badge-cultural {
+        background: #D4A373;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        margin-left: 10px;
+    }
+    .badge-ciencia {
+        background: #5C3A21;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        margin-left: 10px;
+    }
+    .btn-voltar {
+        background: #FBF7E9;
+        padding: 8px 16px;
+        border-radius: 30px;
+        text-decoration: none;
+        color: #5C3A21;
+    }
+    .form-card {
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        border: 1px solid #F5EDDA;
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #5C3A21;
+    }
+    .form-group input, .form-group textarea, .form-group select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #F5EDDA;
+        border-radius: 8px;
+    }
+    .criterio-linha {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+        align-items: center;
+    }
+    .criterio-linha input:first-child { flex: 2; }
+    .criterio-linha input:last-child { flex: 1; }
+    .btn-remover {
+        background: #D9534F;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+    .btn-add-criterio {
+        background: #D4A373;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+    .radio-group {
+        display: flex;
+        gap: 20px;
+    }
+    .curso-select {
+        margin-top: 15px;
+        padding: 15px;
+        background: #FBF7E9;
+        border-radius: 12px;
+        display: block;
+    }
+    .btn-submit {
+        width: 100%;
+        background: #2B7A4B;
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 30px;
+        cursor: pointer;
+        margin-top: 20px;
+    }
+</style>
+
+<script>
+    // Mostrar/esconder seleção de curso
+    document.querySelectorAll('input[name="selecao_cursos"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            document.getElementById('cursoSelect').style.display = this.value === 'um_curso' ? 'block' : 'none';
         });
-        
-        // Validação de datas no frontend
-        const form = document.querySelector('form');
-        form.addEventListener('submit', function(e) {
-            const dataInicio = document.querySelector('input[name="data_inicio"]').value;
-            const dataFim = document.querySelector('input[name="data_fim"]').value;
-            const horaInicio = document.querySelector('input[name="hora_inicio"]').value;
-            const horaFim = document.querySelector('input[name="hora_fim"]').value;
-            
-            if (dataInicio > dataFim) {
-                e.preventDefault();
-                alert('A data de fim não pode ser anterior à data de início.');
-                return false;
-            }
-            
-            if (dataInicio === dataFim && horaInicio >= horaFim) {
-                e.preventDefault();
-                alert('No mesmo dia, a hora de fim deve ser posterior à hora de início.');
-                return false;
-            }
-        });
-    </script>
-</body>
-</html>
+    });
+    
+    // Adicionar critério
+    document.getElementById('addCriterioBtn').addEventListener('click', () => {
+        const container = document.getElementById('criterios-container');
+        const novaLinha = document.createElement('div');
+        novaLinha.className = 'criterio-linha';
+        novaLinha.innerHTML = `
+            <input type="text" name="criterio_nome[]" placeholder="Nome do critério" required>
+            <input type="number" name="criterio_pontos[]" placeholder="Pontos" required>
+            <button type="button" class="btn-remover">Remover</button>
+        `;
+        container.appendChild(novaLinha);
+        novaLinha.querySelector('.btn-remover').addEventListener('click', () => novaLinha.remove());
+    });
+    
+    // Remover critérios existentes
+    document.querySelectorAll('.btn-remover').forEach(btn => {
+        if (!btn.disabled) {
+            btn.addEventListener('click', () => btn.closest('.criterio-linha').remove());
+        }
+    });
+    
+    document.getElementById('logoutBtn')?.addEventListener('click', () => {
+        window.location.href = "{% url 'index' %}";
+    });
+</script>
+{% endblock %}

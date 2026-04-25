@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <div class="cabecalho">
+        <h2><i class="fas fa-eye"></i> Registos da Actividade</h2>
+        <a href="{% if atividade.tipo_atividade == 'cultural' %}{% url 'coordenador_cultural_dashboard' %}{% else %}{% url 'coordenador_ciencia_dashboard' %}{% endif %}" class="btn-voltar">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+
+    <div class="atividade-info">
+        <h3>{{ atividade.nome }}</h3>
+        <p>Criada em: {{ atividade.created_at|date:"d/m/Y H:i" }}</p>
+        <p>Tipo: {{ atividade.get_tipo_atividade_display }}</p>
+    </div>
+
+    <div class="registos-grid">
+        {% for registo in registos_por_turma %}
+        <div class="card">
+            <h3><i class="fas fa-users"></i> {{ registo.turma.nome }} - {{ registo.turma.get_curso_display }}</h3>
+            <p><strong>Total de pontos atribuídos:</strong> {{ registo.total_pontos }} pts</p>
+            <p><strong>Estado:</strong> 
+                {% if registo.distribuida %}
+                    <span class="badge-distribuida">Pontos já distribuídos pelo diretor</span>
+                {% else %}
+                    <span class="badge-pendente">Aguardando distribuição do diretor</span>
+                {% endif %}
+            </p>
+            <div class="criterios">
+                <strong>Critérios aplicados:</strong>
+                <ul>
+                    {% for criterio in registo.criterios %}
+                    <li>{{ criterio.nome }} ({{ criterio.pontos }} pts)</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .atividade-info {
+        background: linear-gradient(135deg, #2B7A4B, #1E5A38);
+        color: white;
+        padding: 20px;
+        border-radius: 16px;
+        margin-bottom: 20px;
+    }
+    .registos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 20px;
+    }
+    .card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        border: 1px solid #F5EDDA;
+    }
+    .badge-distribuida {
+        background: #D4A373;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 20px;
+        font-size: 11px;
+    }
+    .badge-pendente {
+        background: #FEF3C7;
+        color: #B45309;
+        padding: 4px 8px;
+        border-radius: 20px;
+        font-size: 11px;
+    }
+    .criterios {
+        margin-top: 15px;
+        padding-top: 10px;
+        border-top: 1px solid #F5EDDA;
+    }
+    .criterios ul {
+        margin-top: 8px;
+        padding-left: 20px;
+    }
+    .btn-voltar {
+        background: #FBF7E9;
+        padding: 8px 16px;
+        border-radius: 30px;
+        text-decoration: none;
+        color: #5C3A21;
+    }
+    .cabecalho {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}

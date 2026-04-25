@@ -1,29 +1,77 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Colégio Árvore da Felicidade - Histórico de Pontos</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  {% load static %}
-  <link rel="stylesheet" href="{% static 'css/fundo.css' %}">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', sans-serif; background: #FBF7E9; }
-    .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
-    
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <div class="logo-area">
+            <div class="logo-icon"><img src="{% static 'images/logo-caf.png' %}" alt="Logo"></div>
+            <h1>Colégio Árvore da Felicidade</h1>
+        </div>
+        <div class="nav-links">
+            <a href="{% url 'dashboard_aluno' %}" class="nav-link"><i class="fas fa-home"></i> Início</a>
+            <a href="{% url 'atividades' %}" class="nav-link"><i class="fas fa-calendar-alt"></i> Atividades</a>
+            <a href="{% url 'loja' %}" class="nav-link"><i class="fas fa-store"></i> Loja</a>
+            <a href="{% url 'historico' %}" class="nav-link active"><i class="fas fa-history"></i> Histórico</a>
+        </div>
+        <div class="user-area">
+            <div class="user-avatar"><i class="fas fa-user-graduate"></i></div>
+            <div>
+                <div class="user-name">{{ nome }}</div>
+                <div class="user-info">PROC: {{ processo }} | {{ turma }}</div>
+            </div>
+            <div class="saldo-card"><i class="fas fa-star"></i> {{ saldo }} pts</div>
+            <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Sair</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-history"></i> Histórico de Transações</h3>
+            <i class="fas fa-chevron-right"></i>
+        </div>
+        
+        {% if transacoes %}
+        <table>
+            <thead>
+                <tr><th>Motivo</th><th>Data</th><th>Pontos</th><th>Comprovativo</th></tr>
+            </thead>
+            <tbody>
+                {% for t in transacoes %}
+                <tr>
+                    <td data-label="Motivo">{{ t.descricao }}</td>
+                    <td data-label="Data">{{ t.data|date:"d/m/Y H:i" }}</td>
+                    <td data-label="Pontos" class="{% if t.quantidade > 0 %}pontos-positive{% else %}pontos-negative{% endif %}">
+                        {% if t.quantidade > 0 %}+{% endif %}{{ t.quantidade }} pts
+                    </td>
+                    <td data-label="Comprovativo">
+                        <button class="btn-pdf" data-id="{{ t.id }}"><i class="fas fa-file-pdf"></i> PDF</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="sem-transacoes">
+            <i class="fas fa-history" style="font-size: 48px; margin-bottom: 16px; color: #D4A373;"></i>
+            <p>Nenhuma transação registrada ainda.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
     .header {
-      background: white;
-      border-radius: 24px;
-      padding: 15px 25px;
-      margin-bottom: 25px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 15px;
-      border: 1px solid #F5EDDA;
+        background: white;
+        border-radius: 24px;
+        padding: 15px 25px;
+        margin-bottom: 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+        border: 1px solid #F5EDDA;
     }
     .logo-area { display: flex; align-items: center; gap: 12px; }
     .logo-icon { width: 45px; height: 45px; background: #2B7A4B; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
@@ -39,11 +87,9 @@
     .user-info { font-size: 11px; color: #8B694C; }
     .saldo-card { background: #2B7A4B; padding: 6px 16px; border-radius: 30px; color: white; font-size: 14px; font-weight: 600; }
     .logout-btn { background: none; border: 1px solid #F5EDDA; padding: 6px 14px; border-radius: 30px; cursor: pointer; }
-
     .card { background: white; border-radius: 20px; padding: 20px; border: 1px solid #F5EDDA; }
     .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 12px; border-bottom: 2px solid #FBF7E9; }
     .card-header h3 { font-size: 18px; color: #5C3A21; }
-    
     table { width: 100%; border-collapse: collapse; }
     th, td { padding: 12px; text-align: left; border-bottom: 1px solid #F5EDDA; }
     th { color: #5C3A21; font-weight: 600; }
@@ -52,157 +98,91 @@
     .btn-pdf { background: #2B7A4B; color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 12px; }
     .btn-pdf:hover { background: #1E5A38; }
     .sem-transacoes { text-align: center; padding: 40px; color: #8B694C; }
-    
     @media (max-width: 768px) {
-      .header { flex-direction: column; text-align: center; }
-      table, thead, tbody, th, td, tr { display: block; }
-      th { display: none; }
-      td { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #F5EDDA; }
-      td::before { content: attr(data-label); font-weight: bold; color: #5C3A21; }
+        .header { flex-direction: column; text-align: center; }
+        table, thead, tbody, th, td, tr { display: block; }
+        th { display: none; }
+        td { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #F5EDDA; }
+        td::before { content: attr(data-label); font-weight: bold; color: #5C3A21; }
     }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <div class="logo-area">
-        <div class="logo-icon"><img src="{% static 'images/logo-caf.png' %}" alt="Logo"></div>
-        <h1>Colégio Árvore da Felicidade</h1>
-      </div>
-      <div class="nav-links">
-        <a href="{% url 'dashboard_aluno' %}" class="nav-link"><i class="fas fa-home"></i> Início</a>
-        <a href="{% url 'atividades' %}" class="nav-link"><i class="fas fa-calendar-alt"></i> Atividades</a>
-        <a href="{% url 'loja' %}" class="nav-link"><i class="fas fa-store"></i> Loja</a>
-        <a href="{% url 'historico' %}" class="nav-link active"><i class="fas fa-history"></i> Histórico</a>
-      </div>
-      <div class="user-area">
-        <div class="user-avatar"><i class="fas fa-user-graduate"></i></div>
-        <div>
-          <div class="user-name">{{ nome }}</div>
-          <div class="user-info">PROC: {{ processo }} | {{ turma }}</div>
-        </div>
-        <div class="saldo-card"><i class="fas fa-star"></i> {{ saldo }} pts</div>
-        <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Sair</button>
-      </div>
-    </div>
+</style>
 
-    <div class="card">
-      <div class="card-header">
-        <h3><i class="fas fa-history"></i> Histórico de Transações</h3>
-        <i class="fas fa-chevron-right"></i>
-      </div>
-      
-      {% if transacoes %}
-      <table>
-        <thead>
-          <tr><th>Motivo</th><th>Data</th><th>Pontos</th><th>Comprovativo</th></tr>
-        </thead>
-        <tbody>
-          {% for t in transacoes %}
-          <tr>
-            <td data-label="Motivo">{{ t.descricao }}</td>
-            <td data-label="Data">{{ t.data|date:"d/m/Y H:i" }}</td>
-            <td data-label="Pontos" class="{% if t.quantidade > 0 %}pontos-positive{% else %}pontos-negative{% endif %}">
-              {% if t.quantidade > 0 %}+{% endif %}{{ t.quantidade }} pts
-            </td>
-            <td data-label="Comprovativo">
-              <button class="btn-pdf" data-id="{{ t.id }}"><i class="fas fa-file-pdf"></i> PDF</button>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% else %}
-      <div class="sem-transacoes">
-        <i class="fas fa-history" style="font-size: 48px; margin-bottom: 16px; color: #D4A373;"></i>
-        <p>Nenhuma transação registrada ainda.</p>
-      </div>
-      {% endif %}
-    </div>
-  </div>
-
-  <div id="infoModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(92,58,33,0.6); backdrop-filter:blur(4px); align-items:center; justify-content:center; z-index:1000;">
-    <div style="background:white; border-radius:24px; padding:30px; max-width:350px; text-align:center;">
-      <div style="width:60px; height:60px; background:#2B7A4B; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 15px;">
-        <i id="modalIcon" class="fas fa-check-circle" style="font-size:30px; color:white;"></i>
-      </div>
-      <h3 id="modalTitle" style="color:#5C3A21;">Processando</h3>
-      <p id="modalMessage" style="color:#8B694C;">Gerando comprovativo...</p>
-      <button id="modalCloseBtn" style="background:#2B7A4B; color:white; border:none; padding:10px 20px; border-radius:30px; cursor:pointer;">Fechar</button>
-    </div>
-  </div>
-
-  <script>
+<script>
     function getCookie(name) {
-      let cookieValue = null;
-      if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-          const cookie = cookies[i].trim();
-          if (cookie.substring(0, name.length + 1) === (name + '=')) {
-            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-            break;
-          }
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
         }
-      }
-      return cookieValue;
+        return cookieValue;
     }
-
-    const modal = document.getElementById('infoModal');
-    const modalTitle = document.getElementById('modalTitle');
-    const modalMessage = document.getElementById('modalMessage');
-    const modalIcon = document.getElementById('modalIcon');
-    const modalCloseBtn = document.getElementById('modalCloseBtn');
 
     function showModal(title, message, isSuccess = true) {
-      modalTitle.textContent = title;
-      modalMessage.textContent = message;
-      modalIcon.parentElement.style.background = isSuccess ? '#2B7A4B' : '#D4A373';
-      modalIcon.className = isSuccess ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle';
-      modal.style.display = 'flex';
+        const modal = document.getElementById('globalModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalMessage = document.getElementById('modalMessage');
+        const modalIcon = document.getElementById('modalIcon');
+        const modalIconI = document.getElementById('modalIconI');
+        
+        modalTitle.textContent = title;
+        modalMessage.textContent = message;
+        modalIcon.className = 'modal-icon';
+        if (isSuccess) {
+            modalIcon.classList.add('sucesso');
+            modalIconI.className = 'fas fa-check-circle';
+        } else {
+            modalIcon.classList.add('erro');
+            modalIconI.className = 'fas fa-exclamation-triangle';
+        }
+        modal.style.display = 'flex';
     }
 
-    function hideModal() { modal.style.display = 'none'; }
+    function hideModal() { document.getElementById('globalModal').style.display = 'none'; }
 
     document.querySelectorAll('.btn-pdf').forEach(btn => {
-      btn.addEventListener('click', async function() {
-        const id = this.dataset.id;
-        showModal('Processando', 'Gerando comprovativo PDF...');
-        
-        try {
-          const response = await fetch(`{% url 'gerar_comprovativo' 0 %}`.replace('0', id), {
-            method: 'GET',
-            headers: { 'X-CSRFToken': getCookie('csrftoken') }
-          });
-          
-          if (response.ok) {
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `comprovativo_${id}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            window.URL.revokeObjectURL(url);
-            hideModal();
-          } else {
-            showModal('Erro', 'Erro ao gerar comprovativo', false);
-            setTimeout(hideModal, 2000);
-          }
-        } catch (error) {
-          showModal('Erro', 'Erro de conexão', false);
-          setTimeout(hideModal, 2000);
-        }
-      });
+        btn.addEventListener('click', async function() {
+            const id = this.dataset.id;
+            showModal('Processando', 'Gerando comprovativo PDF...');
+            try {
+                const response = await fetch(`{% url 'gerar_comprovativo' 0 %}`.replace('0', id), {
+                    method: 'GET',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') }
+                });
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `comprovativo_${id}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+                    hideModal();
+                } else {
+                    showModal('Erro', 'Erro ao gerar comprovativo', false);
+                    setTimeout(hideModal, 2000);
+                }
+            } catch (error) {
+                showModal('Erro', 'Erro de conexão', false);
+                setTimeout(hideModal, 2000);
+            }
+        });
     });
 
     document.getElementById('logoutBtn').addEventListener('click', () => {
-      window.location.href = "{% url 'index' %}";
+        window.location.href = "{% url 'index' %}";
     });
 
-    modalCloseBtn.addEventListener('click', hideModal);
-    modal.addEventListener('click', (e) => { if (e.target === modal) hideModal(); });
-  </script>
-</body>
-</html>
+    document.getElementById('modalCloseBtn')?.addEventListener('click', hideModal);
+    document.getElementById('globalModal')?.addEventListener('click', (e) => {
+        if (e.target === document.getElementById('globalModal')) hideModal();
+    });
+</script>
+{% endblock %}

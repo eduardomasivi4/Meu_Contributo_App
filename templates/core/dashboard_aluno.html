@@ -1,131 +1,199 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Colégio Árvore da Felicidade - Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  {% load static %}
-  <link rel="stylesheet" href="{% static 'css/fundo.css' %}">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', sans-serif; background: #FBF7E9; }
-    .dashboard-container { max-width: 1400px; margin: 0 auto; padding: 20px; }
-    
-    .header {
-      background: white;
-      border-radius: 24px;
-      padding: 15px 25px;
-      margin-bottom: 25px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 15px;
-      border: 1px solid #F5EDDA;
-    }
-    .logo-area { display: flex; align-items: center; gap: 12px; }
-    .logo-icon { width: 45px; height: 45px; background: #2B7A4B; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
-    .logo-icon img { width: 28px; height: 28px; }
-    .logo-area h1 { font-size: 18px; color: #5C3A21; font-weight: 700; }
-    .nav-links { display: flex; gap: 8px; }
-    .nav-link { padding: 8px 18px; text-decoration: none; color: #8B694C; font-weight: 500; border-radius: 10px; font-size: 14px; }
-    .nav-link:hover { background: #FBF7E9; color: #5C3A21; }
-    .nav-link.active { background: #2B7A4B; color: white; }
-    .user-area { display: flex; align-items: center; gap: 15px; background: #FBF7E9; padding: 6px 18px; border-radius: 40px; }
-    .user-avatar { width: 38px; height: 38px; background: #2B7A4B; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; }
-    .user-name { font-weight: 600; color: #5C3A21; font-size: 14px; }
-    .user-info { font-size: 11px; color: #8B694C; }
-    .logout-btn { background: none; border: 1px solid #F5EDDA; padding: 6px 14px; border-radius: 30px; cursor: pointer; }
+{% extends 'base.html' %}
+{% load static %}
 
-    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 25px; }
-    .stat-card { background: white; border-radius: 20px; padding: 20px; border: 1px solid #F5EDDA; transition: all 0.3s; }
-    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-    .stat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-    .stat-header h3 { font-size: 14px; color: #8B694C; font-weight: 500; }
-    .stat-header i { font-size: 24px; color: #D4A373; }
-    .stat-value { font-size: 32px; font-weight: 800; color: #5C3A21; margin-bottom: 8px; }
-
-    .card { background: white; border-radius: 20px; padding: 20px; border: 1px solid #F5EDDA; }
-    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #FBF7E9; }
-    .card-header h3 { font-size: 18px; color: #5C3A21; font-weight: 600; }
-    .ver-todos { display: inline-block; margin-top: 15px; color: #2B7A4B; text-decoration: none; font-size: 13px; font-weight: 500; }
-
-    @media (max-width: 800px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr; } .header { flex-direction: column; text-align: center; } }
-  </style>
-</head>
-<body>
-  <div class="dashboard-container">
-    <div class="header">
-      <div class="logo-area">
-        <div class="logo-icon"><img src="{% static 'images/logo-caf.png' %}" alt="Logo"></div>
-        <h1>Colégio Árvore da Felicidade</h1>
-      </div>
-      <div class="nav-links">
-        <a href="{% url 'dashboard_aluno' %}" class="nav-link active"><i class="fas fa-home"></i> Início</a>
-        <a href="{% url 'atividades' %}" class="nav-link"><i class="fas fa-calendar-alt"></i> Atividades</a>
-        <a href="{% url 'loja' %}" class="nav-link"><i class="fas fa-store"></i> Loja</a>
-        <a href="{% url 'historico' %}" class="nav-link"><i class="fas fa-history"></i> Histórico</a>
-      </div>
-      <div class="user-area">
-        <div class="user-avatar"><i class="fas fa-user-graduate"></i></div>
-        <div>
-          <div class="user-name">{{ nome }}</div>
-          <div class="user-info">PROC: {{ processo }} | {{ turma }}</div>
+{% block content %}
+<div class="dashboard-container">
+    <!-- Header Moderno -->
+    <div class="header" data-aos="fade-down">
+        <div class="logo-area">
+            <div class="logo-icon">
+                <img src="{% static 'images/logo-caf.png' %}" alt="Logo" loading="lazy">
+            </div>
+            <h1>Colégio Árvore da Felicidade</h1>
         </div>
-        <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Sair</button>
-      </div>
-    </div>
-
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-header"><h3>Saldo de Pontos</h3><i class="fas fa-star"></i></div>
-        <div class="stat-value">{{ saldo }}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-header"><h3>Benefícios Resgatados</h3><i class="fas fa-gift"></i></div>
-        <div class="stat-value">{{ resgates_count|default:"0" }}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-header"><h3>Total de Pontos</h3><i class="fas fa-chart-line"></i></div>
-        <div class="stat-value">{{ total_pontos|default:saldo }}</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-header">
-        <h3><i class="fas fa-history"></i> Últimas Transações</h3>
-        <i class="fas fa-chevron-right"></i>
-      </div>
-      <div id="transacoesList">
-        {% if ultimas_transacoes %}
-          {% for t in ultimas_transacoes %}
-          <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #F5EDDA;">
-            <div>
-              <strong>{{ t.descricao|truncatechars:40 }}</strong>
-              <div style="font-size: 11px; color: #8B694C;">{{ t.data|date:"d/m/Y H:i" }}</div>
+        
+        <div class="nav-links">
+            <a href="{% url 'dashboard_aluno' %}" class="nav-link active">
+                <i class="fas fa-home"></i> Início
+            </a>
+            <a href="{% url 'atividades' %}" class="nav-link">
+                <i class="fas fa-calendar-alt"></i> Atividades
+            </a>
+            <a href="{% url 'loja' %}" class="nav-link">
+                <i class="fas fa-store"></i> Loja
+            </a>
+            <a href="{% url 'historico' %}" class="nav-link">
+                <i class="fas fa-history"></i> Histórico
+            </a>
+        </div>
+        
+        <div class="user-area">
+            <div class="user-avatar">
+                <i class="fas fa-user-graduate"></i>
             </div>
-            <div style="color: {% if t.quantidade > 0 %}#2B7A4B{% else %}#D4A373{% endif %}; font-weight: 700;">
-              {% if t.quantidade > 0 %}+{% endif %}{{ t.quantidade }} pts
+            <div class="user-details">
+                <div class="user-name">{{ nome }}</div>
+                <div class="user-processo">
+                    <i class="fas fa-id-card"></i> {{ processo }} | {{ turma }}
+                </div>
             </div>
-          </div>
-          {% endfor %}
-        {% else %}
-          <div style="text-align: center; padding: 20px; color: #8B694C;">
-            <i class="fas fa-inbox"></i> Nenhuma transação registrada
-          </div>
-        {% endif %}
-      </div>
-      <a href="{% url 'historico' %}" class="ver-todos">Ver histórico completo →</a>
+            <div class="saldo-card">
+                <i class="fas fa-star"></i>
+                <span id="saldoValor">{{ saldo }}</span>
+                <span>pts</span>
+            </div>
+            <button class="logout-btn" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </button>
+        </div>
     </div>
-  </div>
 
-  <script>
+    <!-- Stats Cards com animação -->
+    <div class="stats-grid" data-aos="fade-up" data-aos-delay="100">
+        <div class="stat-card">
+            <div class="stat-value">{{ saldo }}</div>
+            <div class="stat-label">
+                <i class="fas fa-star" style="color: var(--verde);"></i> Saldo de Pontos
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ resgates_count|default:"0" }}</div>
+            <div class="stat-label">
+                <i class="fas fa-gift" style="color: var(--bege);"></i> Benefícios Resgatados
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ total_pontos|default:saldo }}</div>
+            <div class="stat-label">
+                <i class="fas fa-chart-line" style="color: var(--verde);"></i> Total de Pontos
+            </div>
+        </div>
+    </div>
+
+    <!-- Últimas Transações -->
+    <div class="card" data-aos="fade-up" data-aos-delay="200">
+        <div class="card-header">
+            <h3><i class="fas fa-history"></i> Últimas Transações</h3>
+            <i class="fas fa-chevron-right"></i>
+        </div>
+        
+        <div id="transacoesList">
+            {% if ultimas_transacoes %}
+                {% for t in ultimas_transacoes %}
+                <div class="transacao-item">
+                    <div class="transacao-info">
+                        <strong>{{ t.descricao|truncatechars:50 }}</strong>
+                        <div class="transacao-data">
+                            <i class="fas fa-calendar-alt"></i> {{ t.data|date:"d/m/Y H:i" }}
+                        </div>
+                    </div>
+                    <div class="transacao-pontos {% if t.quantidade > 0 %}positive{% else %}negative{% endif %}">
+                        {% if t.quantidade > 0 %}+{% endif %}{{ t.quantidade }} pts
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <p>Nenhuma transação registrada ainda</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <a href="{% url 'historico' %}" class="ver-todos">
+            Ver histórico completo <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+</div>
+
+<style>
+    .dashboard-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    
+    .transacao-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--cinza-borda);
+        transition: all 0.3s ease;
+    }
+    
+    .transacao-item:hover {
+        background: var(--creme);
+        padding-left: 8px;
+        border-radius: var(--border-radius-md);
+    }
+    
+    .transacao-info strong {
+        font-size: 14px;
+        color: var(--castanho);
+    }
+    
+    .transacao-data {
+        font-size: 11px;
+        color: var(--castanho-claro);
+        margin-top: 4px;
+    }
+    
+    .transacao-pontos {
+        font-weight: 700;
+        font-size: 16px;
+    }
+    
+    .transacao-pontos.positive {
+        color: var(--verde);
+    }
+    
+    .transacao-pontos.negative {
+        color: var(--bege);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: var(--castanho-claro);
+    }
+    
+    .empty-state i {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+    
+    .ver-todos {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 15px;
+        color: var(--verde);
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .ver-todos:hover {
+        gap: 12px;
+        color: var(--verde-escuro);
+    }
+    
+    .stat-card {
+        cursor: pointer;
+    }
+    
+    .stat-card:active {
+        transform: scale(0.98);
+    }
+</style>
+
+<script>
     document.getElementById('logoutBtn').addEventListener('click', () => {
-      window.location.href = "{% url 'index' %}";
+        mostrarToast('A sessão será encerrada', 'info');
+        setTimeout(() => {
+            window.location.href = "{% url 'index' %}";
+        }, 500);
     });
-  </script>
-</body>
-</html>
+</script>
+{% endblock %}

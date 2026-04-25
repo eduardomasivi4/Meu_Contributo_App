@@ -3,9 +3,9 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-key-para-desenvolvimento'
+SECRET_KEY = 'django-insecure-substitua-por-uma-chave-real'
 DEBUG = True
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '10.138.188.243']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '10.138.188.243', '192.168.18.8']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -14,14 +14,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
     'core',
-    'alunos',
-    'professores',
-    'diretores',
-    'coordenadores',
-    'atividades',
-    'beneficios',
 ]
 
 MIDDLEWARE = [
@@ -32,7 +25,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'core.middleware.ProfessorAccessMiddleware',
+    # 'core.middleware.ProfessorAccessMiddleware',  # Comentado para evitar erro
 ]
 
 ROOT_URLCONF = 'merito_caf_config.urls'
@@ -64,11 +57,7 @@ DATABASES = {
 
 AUTH_USER_MODEL = 'core.Usuario'
 
-LOGIN_URL = 'login_aluno'
-LOGIN_REDIRECT_URL = 'index'
-LOGOUT_REDIRECT_URL = 'index'
-
-LANGUAGE_CODE = 'pt-br'
+LANGUAGE_CODE = 'pt-pt'
 TIME_ZONE = 'Africa/Luanda'
 USE_I18N = True
 USE_TZ = True
@@ -80,4 +69,5 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+LOGIN_URL = 'login_aluno'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

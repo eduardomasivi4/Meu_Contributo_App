@@ -1,0 +1,455 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <div class="cabecalho">
+        <h2>
+            <i class="fas {% if tipo == 'cultural' %}fa-palette{% else %}fa-flask{% endif %}"></i>
+            {% if is_edit %}Editar{% else %}Criar Nova{% endif %} Actividade
+            {% if tipo == 'cultural' %}
+                <span class="badge-cultural">Cultural</span>
+            {% else %}
+                <span class="badge-ciencia">Ciência e Tecnologia</span>
+            {% endif %}
+        </h2>
+        <a href="{% if tipo == 'cultural' %}{% url 'coordenador_cultural_dashboard' %}{% else %}{% url 'coordenador_ciencia_dashboard' %}{% endif %}" class="btn-voltar">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+
+    <div class="form-card">
+        <form method="POST" id="atividadeForm">
+            {% csrf_token %}
+            
+            <!-- NOME -->
+            <div class="form-group">
+                <label>Nome da Actividade *</label>
+                <input type="text" name="nome" value="{{ atividade.nome|default:'' }}" required>
+            </div>
+            
+            <!-- DESCRIÇÃO -->
+            <div class="form-group">
+                <label>Descrição</label>
+                <textarea name="descricao" rows="3">{{ atividade.descricao|default:'' }}</textarea>
+            </div>
+            
+            <!-- CRITÉRIOS DINÂMICOS (COM NÚMEROS NEGATIVOS) -->
+            <div class="form-group">
+                <label><i class="fas fa-list"></i> Critérios de Avaliação *</label>
+                <small class="ajuda-texto" style="display: block; margin-bottom: 10px;">
+                    <i class="fas fa-info-circle"></i> 
+                    Pontos positivos (+) adicionam pontos à turma. Pontos negativos (-) reduzem pontos.
+                    Exemplo: "Participação (+50)" ou "Atraso (-20)"
+                </small>
+                <div id="criterios-container">
+                    {% if atividade and atividade.criterios.exists %}
+                        {% for criterio in atividade.criterios.all %}
+                        <div class="criterio-linha">
+                            <input type="text" name="criterio_nome[]" value="{{ criterio.nome }}" 
+                                   placeholder="Ex: Participação" required>
+                            <input type="number" name="criterio_pontos[]" value="{{ criterio.pontos }}" 
+                                   placeholder="Pontos (ex: +50 ou -20)" step="1" required>
+                            <span class="ponto-sinal">
+                                {% if criterio.pontos >= 0 %}
+                                    <span class="sinal-positivo">(+{{ criterio.pontos }})</span>
+                                {% else %}
+                                    <span class="sinal-negativo">({{ criterio.pontos }})</span>
+                                {% endif %}
+                            </span>
+                            <button type="button" class="btn-remover">Remover</button>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="criterio-linha">
+                            <input type="text" name="criterio_nome[]" placeholder="Ex: Participação" value="Participação">
+                            <input type="number" name="criterio_pontos[]" placeholder="Ex: 50" value="50" step="1">
+                            <span class="ponto-sinal sinal-positivo">(+50)</span>
+                            <button type="button" class="btn-remover" disabled>Remover</button>
+                        </div>
+                        <div class="criterio-linha">
+                            <input type="text" name="criterio_nome[]" placeholder="Ex: Atraso na entrega" value="Atraso">
+                            <input type="number" name="criterio_pontos[]" placeholder="Ex: -20" value="-20" step="1">
+                            <span class="ponto-sinal sinal-negativo">(-20)</span>
+                            <button type="button" class="btn-remover">Remover</button>
+                        </div>
+                    {% endif %}
+                </div>
+                <button type="button" id="addCriterioBtn" class="btn-add-criterio">
+                    <i class="fas fa-plus"></i> Adicionar Critério
+                </button>
+                <small class="ajuda-texto">* Campo obrigatório. Adicione pelo menos um critério.</small>
+            </div>
+            
+            <!-- SELEÇÃO DE CURSOS -->
+            <div class="form-group">
+                <label>Cursos</label>
+                <div class="radio-group">
+                    <label>
+                        <input type="radio" name="selecao_cursos" value="um_curso" 
+                               {% if not atividade.todos_cursos %}checked{% endif %}> 
+                        Um Curso
+                    </label>
+                    <label>
+                        <input type="radio" name="selecao_cursos" value="ambos" 
+                               {% if atividade.todos_cursos %}checked{% endif %}> 
+                        Ambos os Cursos
+                    </label>
+                </div>
+            </div>
+            
+            <div id="cursoSelect" class="curso-select" 
+                 style="display: {% if not atividade.todos_cursos %}block{% else %}none{% endif %};">
+                <label>Selecione o Curso:</label>
+                <select name="curso_selecionado">
+                    {% for codigo, nome in cursos %}
+                    <option value="{{ codigo }}" 
+                            {% if atividade.cursos_associados == codigo %}selected{% endif %}>
+                        {{ nome }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <button type="submit" class="btn-submit">
+                <i class="fas fa-save"></i> {% if is_edit %}Actualizar{% else %}Criar{% endif %} Actividade
+            </button>
+        </form>
+    </div>
+</div>
+
+<style>
+    .cabecalho {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    .badge-cultural {
+        background: #D4A373;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        margin-left: 10px;
+        display: inline-block;
+    }
+    .badge-ciencia {
+        background: #5C3A21;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        margin-left: 10px;
+        display: inline-block;
+    }
+    .btn-voltar {
+        background: #FBF7E9;
+        padding: 8px 16px;
+        border-radius: 30px;
+        text-decoration: none;
+        color: #5C3A21;
+        transition: all 0.3s;
+    }
+    .btn-voltar:hover {
+        background: #F5EDDA;
+        transform: translateX(-3px);
+    }
+    .form-card {
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        border: 1px solid #F5EDDA;
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #5C3A21;
+    }
+    .form-group input, 
+    .form-group textarea, 
+    .form-group select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 2px solid #F5EDDA;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.3s;
+    }
+    .form-group input:focus, 
+    .form-group textarea:focus, 
+    .form-group select:focus {
+        outline: none;
+        border-color: #2B7A4B;
+    }
+    .criterio-linha {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+        background: #FBF7E9;
+        padding: 10px;
+        border-radius: 12px;
+    }
+    .criterio-linha input:first-child {
+        flex: 2;
+        min-width: 150px;
+    }
+    .criterio-linha input:last-child {
+        flex: 1;
+        min-width: 100px;
+    }
+    .ponto-sinal {
+        font-size: 13px;
+        font-weight: bold;
+        min-width: 60px;
+        text-align: center;
+    }
+    .sinal-positivo {
+        color: #2B7A4B;
+    }
+    .sinal-negativo {
+        color: #D9534F;
+    }
+    .btn-remover {
+        background: #D9534F;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .btn-remover:hover {
+        background: #C9302C;
+        transform: scale(1.02);
+    }
+    .btn-add-criterio {
+        background: #D4A373;
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 30px;
+        cursor: pointer;
+        margin-top: 10px;
+        transition: all 0.3s;
+    }
+    .btn-add-criterio:hover {
+        background: #B5835A;
+        transform: translateY(-2px);
+    }
+    .radio-group {
+        display: flex;
+        gap: 20px;
+        margin-top: 5px;
+    }
+    .radio-group label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: normal;
+        cursor: pointer;
+    }
+    .radio-group input {
+        width: auto;
+        margin: 0;
+    }
+    .curso-select {
+        margin-top: 15px;
+        padding: 15px;
+        background: #FBF7E9;
+        border-radius: 12px;
+        transition: all 0.3s;
+    }
+    .btn-submit {
+        width: 100%;
+        background: #2B7A4B;
+        color: white;
+        border: none;
+        padding: 14px;
+        border-radius: 40px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 20px;
+        transition: all 0.3s;
+    }
+    .btn-submit:hover {
+        background: #1E5A38;
+        transform: translateY(-2px);
+    }
+    .ajuda-texto {
+        display: block;
+        margin-top: 5px;
+        font-size: 12px;
+        color: #8B694C;
+    }
+    @media (max-width: 600px) {
+        .criterio-linha {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .criterio-linha input:first-child,
+        .criterio-linha input:last-child {
+            width: 100%;
+        }
+        .ponto-sinal {
+            text-align: left;
+        }
+        .radio-group {
+            flex-direction: column;
+            gap: 10px;
+        }
+        .cabecalho {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+</style>
+
+<script>
+    // Mostrar/esconder seleção de curso
+    document.querySelectorAll('input[name="selecao_cursos"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const cursoSelect = document.getElementById('cursoSelect');
+            if (this.value === 'um_curso') {
+                cursoSelect.style.display = 'block';
+            } else {
+                cursoSelect.style.display = 'none';
+            }
+        });
+    });
+    
+    // Função para atualizar o sinal visual do ponto
+    function atualizarSinal(inputPontos, spanSinal) {
+        const pontos = parseInt(inputPontos.value) || 0;
+        if (pontos >= 0) {
+            spanSinal.innerHTML = `(+${pontos})`;
+            spanSinal.className = 'ponto-sinal sinal-positivo';
+        } else {
+            spanSinal.innerHTML = `(${pontos})`;
+            spanSinal.className = 'ponto-sinal sinal-negativo';
+        }
+    }
+    
+    // Adicionar novo critério
+    document.getElementById('addCriterioBtn').addEventListener('click', () => {
+        const container = document.getElementById('criterios-container');
+        const novaLinha = document.createElement('div');
+        novaLinha.className = 'criterio-linha';
+        novaLinha.innerHTML = `
+            <input type="text" name="criterio_nome[]" placeholder="Ex: Trabalho em grupo" required>
+            <input type="number" name="criterio_pontos[]" placeholder="Ex: 30" value="0" step="1" required>
+            <span class="ponto-sinal sinal-positivo">(+0)</span>
+            <button type="button" class="btn-remover">Remover</button>
+        `;
+        container.appendChild(novaLinha);
+        
+        const inputPontos = novaLinha.querySelector('input[type="number"]');
+        const spanSinal = novaLinha.querySelector('.ponto-sinal');
+        const btnRemover = novaLinha.querySelector('.btn-remover');
+        
+        // Evento para atualizar o sinal quando o valor mudar
+        inputPontos.addEventListener('input', function() {
+            atualizarSinal(inputPontos, spanSinal);
+        });
+        inputPontos.addEventListener('blur', function() {
+            atualizarSinal(inputPontos, spanSinal);
+        });
+        
+        // Atualizar sinal inicial
+        atualizarSinal(inputPontos, spanSinal);
+        
+        // Evento para remover
+        btnRemover.addEventListener('click', () => {
+            if (document.querySelectorAll('.criterio-linha').length > 1) {
+                novaLinha.remove();
+            } else {
+                alert('Deve haver pelo menos um critério de avaliação!');
+            }
+        });
+    });
+    
+    // Remover critérios existentes e atualizar sinais
+    document.querySelectorAll('.criterio-linha').forEach(linha => {
+        const inputPontos = linha.querySelector('input[type="number"]');
+        const spanSinal = linha.querySelector('.ponto-sinal');
+        const btnRemover = linha.querySelector('.btn-remover');
+        
+        if (inputPontos && spanSinal) {
+            // Atualizar sinal
+            atualizarSinal(inputPontos, spanSinal);
+            
+            // Adicionar eventos
+            inputPontos.addEventListener('input', function() {
+                atualizarSinal(inputPontos, spanSinal);
+            });
+            inputPontos.addEventListener('blur', function() {
+                atualizarSinal(inputPontos, spanSinal);
+            });
+        }
+        
+        if (btnRemover && !btnRemover.disabled) {
+            btnRemover.addEventListener('click', () => {
+                if (document.querySelectorAll('.criterio-linha').length > 1) {
+                    linha.remove();
+                } else {
+                    alert('Deve haver pelo menos um critério de avaliação!');
+                }
+            });
+        }
+    });
+    
+    // VALIDAÇÃO ANTES DE ENVIAR
+    document.getElementById('atividadeForm').addEventListener('submit', function(e) {
+        const criterios = document.querySelectorAll('.criterio-linha');
+        
+        // Verificar se há pelo menos um critério
+        if (criterios.length === 0) {
+            e.preventDefault();
+            alert('❌ Atenção! Adicione pelo menos um critério de avaliação.');
+            return false;
+        }
+        
+        // Verificar cada critério
+        let criterioInvalido = false;
+        criterios.forEach((criterio, idx) => {
+            const nome = criterio.querySelector('input[name="criterio_nome[]"]').value.trim();
+            const pontos = criterio.querySelector('input[name="criterio_pontos[]"]').value;
+            
+            if (nome === '') {
+                alert(`❌ Critério ${idx + 1}: O nome não pode estar vazio.`);
+                criterioInvalido = true;
+            }
+            if (pontos === '' || isNaN(pontos)) {
+                alert(`❌ Critério ${idx + 1}: Os pontos devem ser um número válido (pode ser negativo).`);
+                criterioInvalido = true;
+            }
+        });
+        
+        if (criterioInvalido) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // Mostrar loading no botão
+        const submitBtn = document.querySelector('.btn-submit');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> A processar...';
+        
+        return true;
+    });
+    
+    // Logout
+    document.getElementById('logoutBtn')?.addEventListener('click', () => {
+        window.location.href = "{% url 'index' %}";
+    });
+</script>
+{% endblock %}

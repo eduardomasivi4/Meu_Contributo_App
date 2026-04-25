@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <div class="cabecalho">
+        <h2><i class="fas fa-users"></i> Gerir Grupos - {{ atividade.nome }}</h2>
+        <div>
+            <span class="etiqueta">{{ turma.nome }} - {{ turma.get_curso_display }}</span>
+            <a href="{% url 'turma_detail' turma.id %}?disciplina_id={{ atividade.disciplina.id }}" class="btn-voltar">
+                <i class="fas fa-arrow-left"></i> Voltar à Turma
+            </a>
+        </div>
+    </div>
+
+    <div class="info-box">
+        <i class="fas fa-info-circle"></i>
+        <div>
+            <strong>Sobre os Grupos</strong>
+            <p>Os grupos permitem aplicar critérios a vários alunos de uma só vez. Cada aluno só pode pertencer a um grupo.</p>
+        </div>
+    </div>
+
+    <form method="POST" id="gruposForm">
+        {% csrf_token %}
+        {{ formset.management_form }}
+        
+        <div id="grupos-container">
+            {% for form in formset %}
+            <div class="grupo-card" data-grupo-index="{{ forloop.counter0 }}">
+                <div class="grupo-header">
+                    <i class="fas fa-users"></i>
+                    <div class="grupo-nome-wrapper">
+                        {{ form.id }}
+                        <input type="text" name="{{ form.nome.html_name }}" 
+                               value="{{ form.nome.value|default:'' }}"
+                               placeholder="Nome do Grupo (ex: Grupo A, Equipa 1)"
+                               class="grupo-nome-input">
+                    </div>
+                    <div class="grupo-actions">
+                        <button type="button" class="btn-toggle-alunos" data-grupo-index="{{ forloop.counter0 }}">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        {% if formset.can_delete %}
+                        <button type="button" class="btn-remover-grupo" data-form-index="{{ forloop.counter0 }}">
+                            <i class="fas fa-trash"></i> Remover Grupo
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="grupo-body" id="grupo-body-{{ forloop.counter0 }}" style="display: none;">
+                    <p class="grupo-info"><i class="fas fa-check-square"></i> Selecione os alunos deste grupo:</p>
+                    <div class="alunos-grid">
+                        {% for aluno in turma.alunos.all|dictsort:"usuario.first_name" %}
+                        <label class="aluno-checkbox">
+                            <input type="checkbox" name="{{ form.alunos.html_name }}" value="{{ aluno.id }}"
+                                   {% if aluno.id in form.alunos.value %}checked{% endif %}>
+                            {{ aluno.usuario.get_full_name|default:aluno.usuario.username }}
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% if form.DELETE %}
+                <input type="hidden" name="{{ form.DELETE.html_name }}" id="delete_{{ forloop.counter0 }}" value="">
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        
+        <button type="button" id="addGrupoBtn" class="btn-adicionar">
+            <i class="fas fa-plus"></i> Adicionar Grupo
+        </button>
+        
+        <div class="alunos-sem-grupo">
+            <h4><i class="fas fa-user"></i> Alunos sem Grupo</h4>
+            <div class="alunos-sem-grupo-lista">
+                {% for aluno in alunos_sem_grupo %}
+                <span class="aluno-tag">{{ aluno.usuario.get_full_name|default:aluno.usuario.username }}</span>
+                {% empty %}
+                <p class="sem-alunos">Todos os alunos estão em grupos.</p>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn-guardar"><i class="fas fa-save"></i> Guardar Grupos</button>
+            <a href="{% url 'turma_detail' turma.id %}?disciplina_id={{ atividade.disciplina.id }}" class="btn-cancelar">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    let grupoIndex = {{ formset.total_form_count }};
+    
+    function getNovoGrupoHTML(index) {
+        return `
+            <div class="grupo-card" data-grupo-index="${index}">
+                <div class="grupo-header">
+                    <i class="fas fa-users"></i>
+                    <div class="grupo-nome-wrapper">
+                        <input type="text" name="form-${index}-nome" 
+                               placeholder="Nome do Grupo (ex: Grupo ${String.fromCharCode(65 + index)})"
+                               class="grupo-nome-input">
+                    </div>
+                    <div class="grupo-actions">
+                        <button type="button" class="btn-toggle-alunos" data-grupo-index="${index}">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <button type="button" class="btn-remover-grupo" data-form-index="${index}">
+                            <i class="fas fa-trash"></i> Remover Grupo
+                        </button>
+                    </div>
+                </div>
+                <div class="grupo-body" id="grupo-body-${index}" style="display: none;">
+                    <p class="grupo-info"><i class="fas fa-check-square"></i> Selecione os alunos deste grupo:</p>
+                    <div class="alunos-grid">
+                        {% for aluno in turma.alunos.all|dictsort:"usuario.first_name" %}
+                        <label class="aluno-checkbox">
+                            <input type="checkbox" name="form-${index}-alunos" value="{{ aluno.id }}">
+                            {{ aluno.usuario.get_full_name|default:aluno.usuario.username }}
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                <input type="hidden" name="form-${index}-id" id="id_form-${index}-id">
+                <input type="hidden" name="form-${index}-DELETE" id="delete_${index}" value="">
+            </div>
+        `;
+    }
+    
+    document.getElementById('addGrupoBtn').addEventListener('click', function() {
+        const container = document.getElementById('grupos-container');
+        const novoGrupo = document.createElement('div');
+        novoGrupo.innerHTML = getNovoGrupoHTML(grupoIndex);
+        container.appendChild(novoGrupo.firstElementChild);
+        const novoElemento = container.lastElementChild;
+        const btnToggle = novoElemento.querySelector('.btn-toggle-alunos');
+        const btnRemover = novoElemento.querySelector('.btn-remover-grupo');
+        btnToggle.addEventListener('click', function() {
+            const idx = this.dataset.grupoIndex;
+            const body = document.getElementById(`grupo-body-${idx}`);
+            if (body.style.display === 'none') {
+                body.style.display = 'block';
+                this.innerHTML = '<i class="fas fa-chevron-up"></i>';
+            } else {
+                body.style.display = 'none';
+                this.innerHTML = '<i class="fas fa-chevron-down"></i>';
+            }
+        });
+        btnRemover.addEventListener('click', function() {
+            const formIndex = this.dataset.formIndex;
+            const card = this.closest('.grupo-card');
+            const deleteInput = document.getElementById(`delete_${formIndex}`);
+            if (deleteInput) {
+                deleteInput.value = 'on';
+                card.style.display = 'none';
+            } else {
+                card.remove();
+            }
+            reindexarGrupos();
+        });
+        grupoIndex++;
+        reindexarGrupos();
+    });
+    
+    function reindexarGrupos() {
+        const grupos = document.querySelectorAll('.grupo-card:not([style*="display: none"])');
+        grupos.forEach((grupo, idx) => {
+            grupo.setAttribute('data-grupo-index', idx);
+            const nomeInput = grupo.querySelector('.grupo-nome-input');
+            if (nomeInput && nomeInput.name) nomeInput.name = `form-${idx}-nome`;
+            const checkboxes = grupo.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(cb => {
+                if (cb.name && cb.name.includes('alunos')) cb.name = `form-${idx}-alunos`;
+            });
+            const hiddenId = grupo.querySelector('input[type="hidden"][name*="-id"]');
+            if (hiddenId) hiddenId.name = `form-${idx}-id`;
+            const hiddenDelete = grupo.querySelector('input[type="hidden"][name*="-DELETE"]');
+            if (hiddenDelete) hiddenDelete.name = `form-${idx}-DELETE`;
+            const btnToggle = grupo.querySelector('.btn-toggle-alunos');
+            if (btnToggle) btnToggle.setAttribute('data-grupo-index', idx);
+            const btnRemover = grupo.querySelector('.btn-remover-grupo');
+            if (btnRemover) btnRemover.setAttribute('data-form-index', idx);
+        });
+        const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
+        if (totalFormsInput) totalFormsInput.value = grupos.length;
+    }
+    
+    document.querySelectorAll('.btn-toggle-alunos').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const idx = this.dataset.grupoIndex;
+            const body = document.getElementById(`grupo-body-${idx}`);
+            if (body.style.display === 'none') {
+                body.style.display = 'block';
+                this.innerHTML = '<i class="fas fa-chevron-up"></i>';
+            } else {
+                body.style.display = 'none';
+                this.innerHTML = '<i class="fas fa-chevron-down"></i>';
+            }
+        });
+    });
+    
+    document.querySelectorAll('.btn-remover-grupo').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const formIndex = this.dataset.formIndex;
+            const card = this.closest('.grupo-card');
+            const deleteInput = document.getElementById(`delete_${formIndex}`);
+            if (deleteInput) {
+                deleteInput.value = 'on';
+                card.style.display = 'none';
+            } else {
+                card.remove();
+            }
+            reindexarGrupos();
+        });
+    });
+    
+    document.getElementById('gruposForm').addEventListener('submit', function(e) {
+        const alunosSelecionados = new Set();
+        let temDuplicado = false;
+        document.querySelectorAll('.grupo-card:not([style*="display: none"]) input[type="checkbox"]:checked').forEach(cb => {
+            if (alunosSelecionados.has(cb.value)) temDuplicado = true;
+            alunosSelecionados.add(cb.value);
+        });
+        if (temDuplicado) {
+            e.preventDefault();
+            alert('Atenção! Um aluno não pode pertencer a mais do que um grupo.');
+            return false;
+        }
+        let grupoSemNome = false;
+        document.querySelectorAll('.grupo-card:not([style*="display: none"]) .grupo-nome-input').forEach(input => {
+            const temAlunos = input.closest('.grupo-card').querySelectorAll('input[type="checkbox"]:checked').length > 0;
+            if (temAlunos && input.value.trim() === '') {
+                grupoSemNome = true;
+                input.style.borderColor = '#D9534F';
+            }
+        });
+        if (grupoSemNome) {
+            e.preventDefault();
+            alert('Atenção! Todos os grupos que contêm alunos devem ter um nome.');
+            return false;
+        }
+    });
+</script>
+
+<style>
+    .cabecalho { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+    .btn-voltar { background: #FBF7E9; padding: 8px 16px; border-radius: 30px; text-decoration: none; color: #5C3A21; }
+    .etiqueta { background: #2B7A4B; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; margin-right: 10px; }
+    .info-box { background: #E9F5EF; border-radius: 12px; padding: 15px; display: flex; gap: 15px; margin-bottom: 25px; }
+    .info-box i { color: #2B7A4B; font-size: 24px; }
+    .grupo-card { background: white; border-radius: 16px; margin-bottom: 20px; border: 1px solid #F5EDDA; overflow: hidden; }
+    .grupo-header { background: #FBF7E9; padding: 12px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid #F5EDDA; }
+    .grupo-nome-input { width: 100%; max-width: 300px; padding: 8px 12px; border: 1px solid #F5EDDA; border-radius: 8px; }
+    .btn-toggle-alunos, .btn-remover-grupo { background: none; border: none; cursor: pointer; }
+    .btn-remover-grupo { color: #D9534F; }
+    .btn-adicionar { background: #2B7A4B; color: white; border: none; padding: 10px 20px; border-radius: 30px; cursor: pointer; margin-bottom: 25px; }
+    .alunos-sem-grupo { background: #FBF7E9; border-radius: 12px; padding: 15px; margin-bottom: 25px; }
+    .aluno-tag { background: white; padding: 5px 12px; border-radius: 20px; font-size: 12px; color: #5C3A21; border: 1px solid #F5EDDA; display: inline-block; margin: 3px; }
+    .form-actions { display: flex; gap: 15px; justify-content: center; margin-top: 20px; }
+    .btn-guardar { background: #2B7A4B; color: white; border: none; padding: 12px 30px; border-radius: 30px; cursor: pointer; font-weight: 600; }
+    .btn-cancelar { background: #F5EDDA; color: #5C3A21; border: none; padding: 12px 30px; border-radius: 30px; text-decoration: none; font-weight: 600; }
+</style>
+{% endblock %}

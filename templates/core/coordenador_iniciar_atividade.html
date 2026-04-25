@@ -1,0 +1,287 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <div class="cabecalho">
+        <h2>
+            <i class="fas {% if tipo == 'cultural' %}fa-palette{% else %}fa-flask{% endif %}"></i>
+            Iniciar Actividade: {{ atividade.nome }}
+        </h2>
+        <a href="{% if tipo == 'cultural' %}{% url 'coordenador_cultural_dashboard' %}{% else %}{% url 'coordenador_ciencia_dashboard' %}{% endif %}" class="btn-voltar">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+
+    <div class="info-box">
+        <p><strong>Tipo:</strong> {% if tipo == 'cultural' %}Cultural{% else %}Ciência e Tecnologia{% endif %}</p>
+        <p><strong>Critérios disponíveis:</strong></p>
+        <ul>
+            {% for criterio in criterios %}
+            <li>{{ criterio.nome }} ({{ criterio.pontos }} pts)</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="turmas-container">
+        <h3>Distribuição de Pontos por Turma</h3>
+        
+        {% for turma in turmas %}
+        <div class="turma-card" data-turma-id="{{ turma.id }}">
+            <div class="turma-header">
+                <i class="fas fa-users"></i>
+                <span class="turma-nome">{{ turma.nome }} - {{ turma.get_curso_display }}</span>
+                <span class="turma-alunos">{{ turma.alunos.count }} alunos</span>
+                <span class="turma-total-pontos" id="turma-total-{{ turma.id }}">Total: 0 pts</span>
+            </div>
+            <div class="turma-body">
+                <div class="form-group">
+                    <label>Selecionar Critério:</label>
+                    <div class="criterio-input-group">
+                        <select id="criterio-select-{{ turma.id }}" class="criterio-select">
+                            {% for criterio in criterios %}
+                            <option value="{{ criterio.id }}" data-pontos="{{ criterio.pontos }}">
+                                {{ criterio.nome }} ({{ criterio.pontos }} pts)
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <button class="btn-aplicar-turma" data-turma-id="{{ turma.id }}">+ Aplicar à Turma</button>
+                        <button class="btn-desfazer-turma" data-turma-id="{{ turma.id }}">- Desfazer Último</button>
+                    </div>
+                </div>
+                <div class="criterios-aplicados" id="criterios-{{ turma.id }}">
+                    <strong>Critérios aplicados:</strong>
+                    <ul></ul>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="footer-acoes">
+        <div class="resumo-final">
+            <span>Total de Pontos a Distribuir: <strong id="totalGeralPontos">0</strong> pts</span>
+        </div>
+        <button id="terminarBtn" class="btn-terminar" disabled>
+            <i class="fas fa-check-circle"></i> Terminar Actividade
+        </button>
+    </div>
+</div>
+
+<style>
+    .info-box {
+        background: #FBF7E9;
+        border-radius: 16px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    .turmas-container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    .turma-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #F5EDDA;
+        overflow: hidden;
+    }
+    .turma-header {
+        background: #FBF7E9;
+        padding: 15px 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+        border-bottom: 1px solid #F5EDDA;
+    }
+    .turma-nome { font-weight: 700; color: #5C3A21; flex: 1; }
+    .turma-alunos { font-size: 12px; color: #8B694C; }
+    .turma-total-pontos { font-weight: bold; color: #2B7A4B; }
+    .turma-body { padding: 15px 20px; }
+    .criterio-input-group {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 15px;
+    }
+    .criterio-select {
+        flex: 1;
+        padding: 8px 12px;
+        border: 1px solid #F5EDDA;
+        border-radius: 8px;
+    }
+    .btn-aplicar-turma {
+        background: #2B7A4B;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+    .btn-desfazer-turma {
+        background: #D4A373;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+    .criterios-aplicados {
+        margin-top: 10px;
+        padding: 10px;
+        background: #FBF7E9;
+        border-radius: 8px;
+        font-size: 13px;
+    }
+    .criterios-aplicados ul {
+        margin-top: 5px;
+        padding-left: 20px;
+    }
+    .footer-acoes {
+        margin-top: 30px;
+        position: sticky;
+        bottom: 20px;
+        background: white;
+        padding: 15px;
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .resumo-final {
+        text-align: center;
+        margin-bottom: 15px;
+        font-size: 16px;
+    }
+    .btn-terminar {
+        width: 100%;
+        background: #2B7A4B;
+        color: white;
+        border: none;
+        padding: 14px;
+        border-radius: 30px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    .btn-terminar:disabled {
+        background: #A58E6F;
+        cursor: not-allowed;
+    }
+</style>
+
+<script>
+    let aplicacoesPorTurma = {};
+    let totalGeral = 0;
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function atualizarInterface(turmaId) {
+        const aplicacoes = aplicacoesPorTurma[turmaId] || [];
+        let total = 0;
+        let html = '<strong>Critérios aplicados:</strong><ul>';
+        aplicacoes.forEach(reg => {
+            total += reg.pontos;
+            html += `<li>${reg.criterio_nome} (+${reg.pontos} pts)</li>`;
+        });
+        html += '</ul>';
+        document.getElementById(`criterios-${turmaId}`).innerHTML = html;
+        document.getElementById(`turma-total-${turmaId}`).innerHTML = `Total: ${total} pts`;
+        
+        // Atualizar total geral
+        totalGeral = 0;
+        for (const tid in aplicacoesPorTurma) {
+            totalGeral += aplicacoesPorTurma[tid].reduce((sum, reg) => sum + reg.pontos, 0);
+        }
+        document.getElementById('totalGeralPontos').innerHTML = totalGeral;
+        document.getElementById('terminarBtn').disabled = totalGeral === 0;
+        
+        return total;
+    }
+
+    document.querySelectorAll('.btn-aplicar-turma').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const turmaId = parseInt(this.dataset.turmaId);
+            const select = document.getElementById(`criterio-select-${turmaId}`);
+            const option = select.options[select.selectedIndex];
+            const criterioId = parseInt(option.value);
+            const criterioNome = option.text.split('(')[0].trim();
+            const pontos = parseInt(option.dataset.pontos);
+            
+            if (!aplicacoesPorTurma[turmaId]) aplicacoesPorTurma[turmaId] = [];
+            aplicacoesPorTurma[turmaId].push({
+                criterio_id: criterioId,
+                criterio_nome: criterioNome,
+                pontos: pontos
+            });
+            atualizarInterface(turmaId);
+        });
+    });
+
+    document.querySelectorAll('.btn-desfazer-turma').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const turmaId = parseInt(this.dataset.turmaId);
+            if (aplicacoesPorTurma[turmaId] && aplicacoesPorTurma[turmaId].length > 0) {
+                aplicacoesPorTurma[turmaId].pop();
+                atualizarInterface(turmaId);
+            }
+        });
+    });
+
+    document.getElementById('terminarBtn').addEventListener('click', async function() {
+        if (totalGeral === 0) {
+            alert('Nenhum critério foi aplicado. Adicione pelo menos um critério antes de terminar.');
+            return;
+        }
+        
+        const payload = { registos: [] };
+        for (const turmaId in aplicacoesPorTurma) {
+            for (const reg of aplicacoesPorTurma[turmaId]) {
+                payload.registos.push({
+                    turma_id: parseInt(turmaId),
+                    criterio_id: reg.criterio_id,
+                    pontos: reg.pontos
+                });
+            }
+        }
+        
+        this.disabled = true;
+        this.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> A guardar...';
+        
+        try {
+            const response = await fetch(`/coordenador/atividade/terminar/{{ atividade.id }}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            if (data.success) {
+                window.location.href = "{% if tipo == 'cultural' %}{% url 'coordenador_cultural_dashboard' %}{% else %}{% url 'coordenador_ciencia_dashboard' %}{% endif %}";
+            } else {
+                alert('Erro: ' + (data.erro || 'Não foi possível guardar os registos'));
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-check-circle"></i> Terminar Actividade';
+            }
+        } catch (error) {
+            alert('Erro de conexão: ' + error.message);
+            this.disabled = false;
+            this.innerHTML = '<i class="fas fa-check-circle"></i> Terminar Actividade';
+        }
+    });
+</script>
+{% endblock %}

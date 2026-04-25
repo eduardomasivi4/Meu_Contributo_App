@@ -1,22 +1,363 @@
-asgiref==3.11.1
-certifi==2026.2.25
-charset-normalizer==3.4.7
-crispy-bootstrap5==2026.3
-Django==6.0.4
-django-allauth==65.16.1
-django-cors-headers==4.9.0
-django-crispy-forms==2.6
-django-filter==25.2
-djangorestframework==3.17.1
-idna==3.11
-pillow==12.2.0
-psycopg2-binary==2.9.11
-python-dateutil==2.9.0.post0
-python-decouple==3.8
-qrcode==8.2
-reportlab==4.4.10
-requests==2.33.1
-six==1.17.0
-sqlparse==0.5.5
-urllib3==2.6.3
-whitenoise==6.12.0
+================================================================================
+                    SISTEMA DE GESTÃO DE MÉRITO ESTUDANTIL -
+                            LISTA DE USUÁRIOS E FUNCIONALIDADES
+================================================================================
+
+================================ 1. ALUNO ======================================
+
+   - Acede ao sistema com número de processo e senha (ex: 20240021 / aluno123)
+   - O sistema primeiro verifica o número de processo e mostra o nome do aluno,
+     só depois pede a palavra-passe
+   
+   - Dashboard do Aluno:
+        * Visualiza saldo de pontos, benefícios resgatados e total de pontos
+        * Lista das últimas transações realizadas
+        * Acesso rápido às secções: Atividades, Loja, Histórico
+   
+   - Atividades:
+        * Visualiza lista de atividades curriculares (por disciplina)
+        * Visualiza lista de atividades extra-curriculares (Culturais / Ciência e Tecnologia)
+        * Filtra atividades por tipo (curricular/extra) e por disciplina
+        * Vê detalhes (critérios, datas, horas, pontuação máxima)
+   
+   - Loja de Mérito:
+        * Visualiza benefícios disponíveis (Académicos, Tecnologia, Prémios, Eventos)
+        * Filtra benefícios por categoria
+        * Resgata benefícios usando pontos (com confirmação e actualização de saldo)
+        * Gera comprovativo PDF após resgate (inclui QR Code)
+   
+   - Histórico:
+        * Lista todas as transações (adições, remoções, distribuições, resgates)
+        * Gera comprovativo PDF de cada transação (via QR Code)
+
+================================================================================
+
+
+============================= 2. PROFESSOR =====================================
+
+   - Acede com email e senha (ex: professor@caf.ao / prof123)
+   - Sistema identifica o tipo de utilizador e exibe o nome antes de pedir a palavra-passe
+
+   - Dashboard do Professor:
+        * Lista APENAS disciplinas e turmas onde o professor leciona
+        * Disciplinas agrupadas por curso (Eletrónica, Informática)
+        * Ao clicar numa turma, acede à página da turma
+
+   - Gestão de Turma (página da turma):
+        * Visualiza apenas as actividades da turma (lista de alunos removida)
+        * Alterna entre visualização de Actividades
+        * Pesquisa actividades por nome
+        * ⚠️ REMOVIDO: Adicionar pontos a aluno individualmente
+
+   ==================== NOVO FLUXO DE ATIVIDADES COM CRITÉRIOS ====================
+
+   - Criação de Atividade (Curricular):
+        * Substitui o antigo sistema de "Critérios de Avaliação" por uma lista dinâmica
+        * Cada critério tem: nome e pontos (positivo para bónus, negativo para penalização)
+        * Exemplos: "Participação (+20 pts)", "Atraso (-10 pts)", "Trabalho (+50 pts)"
+        * Removidos campos: data_inicio, data_fim, hora_inicio, hora_fim
+        * Usa created_at (data/hora do sistema) como referência temporal
+        * ⚠️ NOVO: Professor pode criar GRUPOS de alunos durante a criação da atividade
+
+   - Grupos (apenas para Professor):
+        * Criar grupos com nome personalizado
+        * Selecionar alunos que pertencem a cada grupo (checkboxes)
+        * Cada aluno só pode pertencer a um grupo por atividade
+        * Editar grupos (nome ou integrantes) antes de iniciar a atividade
+        * Remover grupos (alunos voltam a ficar sem grupo)
+        * Visualizar alunos que não estão em nenhum grupo
+
+   - Gerenciamento de Atividade:
+        * Opções disponíveis após criar atividade:
+          - Iniciar Atividade (se não iniciada)
+          - Editar (enquanto não iniciada)
+          - Eliminar (enquanto não iniciada)
+        * ⚠️ Após iniciada, as opções Editar e Eliminar desaparecem
+        * ⚠️ Após finalizada, exibe apenas "Ver Registos"
+
+   - FLUXO "INICIAR ATIVIDADE" (PROFESSOR):
+        1. Exibe tela com: Nome da atividade, Turma, Curso
+        2. Exibe GRUPOS criados (se existirem)
+        3. Permite aplicar critérios de duas formas:
+           
+           a) APLICAR A GRUPO INTEIRO:
+              - Selecionar um grupo no dropdown
+              - Selecionar um critério
+              - Aplicar o mesmo critério a TODOS os alunos do grupo de uma vez
+              - Remover o último critério aplicado a todos alunos do grupo
+           
+           b) APLICAR A ALUNO INDIVIDUAL:
+              - Lista alunos da turma (agrupados por grupo)
+              - Para cada aluno, permite selecionar critério e aplicar individualmente
+              - Desfazer último critério aplicado ao aluno
+         
+        4. Interface mostra:
+           - Total de pontos acumulados por grupo
+           - Total de pontos acumulados por aluno
+           - Resumo geral: total de pontos a distribuir e alunos com registo
+         
+        5. As operações são temporárias (não afectam o saldo real até finalizar)
+        6. Botão "Terminar Atividade" encerra a atividade (desabilitado sem registos)
+
+   - FLUXO "TERMINAR ATIVIDADE" (PROFESSOR):
+        1. Exibe resumo detalhado da atividade com:
+           - Lista de GRUPOS
+           - Para cada GRUPO: Total de pontos do grupo
+           - Para cada ALUNO: Critérios aplicados, Pontos adicionados (positivos),
+             Pontos reduzidos (negativos), Pontos totais
+        2. Botão "Salvar Registo e Sair":
+           - Cria registo em RegistroAtividadeAluno para cada aplicação
+           - Cria transação correspondente (positiva ou negativa)
+           - Actualiza saldo_pontos do aluno
+           - Marca atividade como finalizada = True
+           - Redireciona para Dashboard do Professor
+
+   - Dashboard - Atividades Finalizadas:
+        * Botão "Distribuir Pontos" substituído por "Ver Registos"
+        * Exibe histórico detalhado da atividade:
+          - Por GRUPO: total de pontos, média por aluno
+          - Por ALUNO: critérios aplicados, pontos, data/hora
+
+   - Se o professor tiver múltiplos cargos, ao sair pode escolher perfil
+
+================================================================================
+
+
+=========================== 3. DIRETOR DE TURMA ================================
+
+   - Acede com email e senha (ex: diretor@caf.ao / diretor123)
+   - Sistema identifica o tipo de utilizador e exibe o nome antes de pedir a palavra-passe
+   - Vinculado a uma única turma (ex: 12ª EA)
+
+   - Dashboard do Diretor:
+        * Lista alunos da sua turma em ordem alfabética (apenas visualização)
+        * Visualiza saldo de pontos de cada aluno
+        * ⚠️ REMOVIDO: Adicionar ou reduzir pontos a aluno individualmente
+        * Lista apenas atividades criadas pelo Coordenador (extra-curriculares)
+        * ⚠️ Verificação de atividade terminada usa campo finalizada (não data/hora)
+
+   ==================== NOVO FLUXO DE DISTRIBUIÇÃO DO DIRETOR ====================
+
+   - Quando uma atividade do coordenador é finalizada:
+        * Aparece no dashboard com o botão "DISTRIBUIR PONTOS"
+        * Exibe o TOTAL DE PONTOS que a turma recebeu (definido pelo coordenador)
+        * ⚠️ O diretor pode DISTRIBUIR esses pontos pelos alunos como entender
+
+   - FLUXO "DISTRIBUIR PONTOS" (DIRETOR):
+        1. Exibe tela com:
+           - Nome da atividade
+           - Barra de progresso com: Total disponível, Já distribuído, Restante
+        2. Lista alunos da turma em ordem alfabética
+        3. Para cada aluno, permite:
+           - Atribuir uma quantidade de pontos (input numérico)
+           - Ver quantos pontos o aluno já recebeu nesta atividade
+        4. ⚠️ REGRAS:
+           - A soma de todos os pontos atribuídos NÃO PODE ULTRAPASSAR o total disponível
+           - Validação em tempo real com feedback visual
+           - Pode distribuir valores diferentes para cada aluno
+           - Pode deixar alunos sem pontos
+        5. ⚠️ SALVAMENTO PARCIAL:
+           - Pode guardar o progresso e continuar depois
+           - Os dados ficam guardados na sessão
+        6. ⚠️ BOTÃO "CANCELAR DISTRIBUIÇÃO":
+           - Limpa todo o progresso e recomeça
+        7. ⚠️ BOTÃO "FINALIZAR DISTRIBUIÇÃO":
+           - Só permite quando todos os pontos estão distribuídos
+           - Guarda todas as transações (uma por aluno)
+           - Actualiza saldo_pontos de cada aluno
+           - Marca atividade como "distribuída"
+           - Redireciona para Dashboard do Diretor
+
+   - Dashboard - Atividades Já Distribuídas:
+        * ⚠️ Botão "DISTRIBUIR PONTOS" substituído por "PONTOS DISTRIBUÍDOS"
+        * Exibe resumo da distribuição:
+          - Total de pontos distribuídos
+          - Pontos por aluno (quem recebeu quanto)
+          - Data da distribuição
+
+================================================================================
+
+
+=========================== 4. COORDENADOR DE ATIVIDADES ========================
+
+   - Acede com email e senha (ex: coordenador@caf.ao / coord123)
+   - Sistema identifica o tipo de utilizador e exibe o nome antes de pedir a palavra-passe
+
+   - Dashboard do Coordenador:
+        * ⚠️ ACESSO SEPARADO por tipo de atividade:
+          - Gestor de Atividades Culturais (apenas tipo 'cultural')
+          - Gestor de Atividades Ciência e Tecnologia (apenas tipo 'ciencia_tecnologia')
+        * Lista apenas atividades criadas pelo próprio (extra-curriculares)
+        * Barra de pesquisa por nome (independente por tab)
+        * Botão "Criar Actividade" (redireciona com ?tipo=cultural ou ?tipo=ciencia)
+
+   - Criação/Edição de Atividade (Extra-Curricular):
+        * ⚠️ TIPO definido pela URL (?tipo=cultural ou ?tipo=ciencia) - NÃO aparece no formulário
+        * ⚠️ Critérios de Avaliação: LISTA DINÂMICA de critérios (nome + pontos)
+        * ⚠️ REMOVIDO: Campos data_inicio, data_fim, hora_inicio, hora_fim
+        * ⚠️ REMOVIDO: Campo interrompe_aula
+        * ⚠️ REMOVIDO: Campo max_pontos_por_aluno (Pontos por Turma)
+        * Usa created_at como referência temporal
+        * Mantém seleção de cursos (Um Curso ou Ambos os Cursos)
+
+   - Gerenciamento de Atividade:
+        * Opções disponíveis após criar atividade:
+          - Iniciar Atividade (se não iniciada)
+          - Editar (enquanto não iniciada)
+          - Eliminar (enquanto não iniciada)
+        * ⚠️ Após iniciada, as opções Editar e Eliminar desaparecem
+        * ⚠️ Após finalizada, exibe apenas "Ver Registos"
+
+   - FLUXO "INICIAR ATIVIDADE" (COORDENADOR):
+        * Mesmo princípio do professor, mas APLICADO A TURMAS EM VEZ DE ALUNOS
+        
+        1. Exibe tela com: Nome da atividade, Tipo (Cultural/Ciência)
+        2. Lista TURMAS do(s) curso(s) associado(s) em ordem alfabética
+        3. Para cada TURMA, permite:
+           - Selecionar um critério da atividade (dropdown)
+           - Aplicar critério à TURMA (botão "+ Aplicar à Turma")
+           - Desfazer último critério aplicado à TURMA (botão "- Desfazer")
+           - Visualizar lista de critérios já aplicados à TURMA
+           - Ver total de pontos atribuídos à TURMA (actualizado em tempo real)
+        4. As operações são temporárias (não afectam o saldo real até finalizar)
+        5. Botão "Terminar Atividade" encerra a atividade (desabilitado sem registos)
+
+   - FLUXO "TERMINAR ATIVIDADE" (COORDENADOR):
+        1. Exibe resumo detalhado da atividade com:
+           - Lista de TURMAS
+           - Para cada TURMA: Critérios aplicados, Pontos adicionados (total),
+             Pontos reduzidos (total), Pontos totais da turma
+        2. Botão "Salvar Registo e Sair":
+           - ⚠️ Para cada TURMA:
+             * Guarda o TOTAL DE PONTOS que a turma recebeu (NÃO divide ainda)
+             * Este total ficará disponível para o DIRETOR DE TURMA distribuir
+           - Marca atividade como finalizada = True
+           - Redireciona para Dashboard do Coordenador
+
+   - Dashboard - Atividades Finalizadas:
+        * Botão substituído por "Ver Registos"
+        * Exibe resumo: TURMAS e total de pontos atribuídos (aguardando distribuição do diretor)
+
+================================================================================
+
+
+================================ 5. ADMINISTRADOR ================================
+
+   - Acede via /admin com credenciais de superutilizador
+   - Mantém sistema de login padrão do Django (não afectado pelo novo login unificado)
+   - Gerir todos os modelos:
+        * Utilizadores (criar, editar, deletar, atribuir permissões)
+        * Turmas
+        * Disciplinas
+        * Atividades (curriculares e extra-curriculares)
+        * Critérios de Atividade (CriterioAtividade)
+        * Registos de Atividades (RegistroAtividadeAluno)
+        * Grupos de Atividade (GrupoAtividade)
+        * Transações
+        * Benefícios
+        * Resgates
+        * Perfis (Professor, Diretor, Coordenador)
+
+================================================================================
+
+
+========================== 6. MODELOS ADICIONADOS ===============================
+
+   - CriterioAtividade:
+        * atividade (ForeignKey)
+        * nome (CharField)
+        * pontos (IntegerField - suporta positivos e negativos)
+        * created_at (DateTimeField)
+
+   - RegistroAtividadeAluno:
+        * atividade (ForeignKey)
+        * aluno (ForeignKey)
+        * criterio (ForeignKey)
+        * pontos_atribuidos (IntegerField)
+        * data_registro (DateTimeField)
+
+   - GrupoAtividade (APENAS PROFESSOR):
+        * atividade (ForeignKey)
+        * nome (CharField)
+        * alunos (ManyToManyField com PerfilAluno)
+        * created_at (DateTimeField)
+
+   - Campos adicionados em Atividade:
+        * finalizada (BooleanField, default=False)
+        * pontos_turma (IntegerField, default=0)
+        * distribuida (BooleanField, default=False)
+        * pontos_ja_distribuidos (IntegerField, default=0)
+
+================================================================================
+
+
+========================== 7. COMPARAÇÃO DOS FLUXOS ============================
+
+   ┌─────────────────────────────────────────────────────────────────────────────┐
+   │  PROFESSOR                          │  COORDENADOR                         │
+   ├─────────────────────────────────────┼───────────────────────────────────────┤
+   │  Tipo Actividade                    │  Curricular                          │  Extra-Curricular
+   │  Alvo                               │  ALUNOS individuais                  │  TURMAS inteiras
+   │  Grupos                             │  ✅ Pode criar grupos                │  ❌ Não aplicável
+   │  Lista na tela                      │  Alunos da turma                     │  Turmas do curso
+   │  Aplica critério a                  │  1 aluno ou 1 grupo                  │  1 turma (todos alunos)
+   │  Pontos vão para                    │  Aluno diretamente                   │  Total da turma
+   │  Distribuição final                 │  Direta pelo professor               │  Pelo diretor (com limite)
+   │  Resumo final                       │  Por aluno + grupos                  │  Por turma
+   └─────────────────────────────────────┴───────────────────────────────────────┘
+
+   ┌─────────────────────────────────────────────────────────────────────────────┐
+   │  DIRETOR DE TURMA                                                          │
+   ├─────────────────────────────────────────────────────────────────────────────┤
+   │  Recebe: TOTAL de pontos que a turma ganhou (definido pelo coordenador)    │
+   │  Pode: Distribuir esses pontos pelos alunos como entender                  │
+   │  Regra: Soma dos pontos atribuídos NÃO pode ultrapassar o total disponível │
+   │  Barra de progresso: Mostra sempre o estado da distribuição                │
+   │  Salvamento parcial: Pode guardar progresso e continuar depois             │
+   │  Botões: "SALVAR PROGRESSO" / "CANCELAR DISTRIBUIÇÃO" / "FINALIZAR"        │
+   └─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+
+
+========================== 8. CREDENCIAIS DE ACESSO ===========================
+
+   ALUNOS (12ª EA):
+   ┌─────────────────────────────────────────────────────────────────────────────┐
+   │   - João Silva      | 20240021 | senha: aluno123                           │
+   │   - Maria Santos    | 20240022 | senha: aluno123                           │
+   │   - Pedro Costa     | 20240023 | senha: aluno123                           │
+   │   - Ana Paula       | 20240024 | senha: aluno123                           │
+   └─────────────────────────────────────────────────────────────────────────────┘
+
+   ALUNOS (12ª ID):
+   ┌─────────────────────────────────────────────────────────────────────────────┐
+   │   - Carlos Ferreira | 20240025 | senha: aluno123                           │
+   │   - Sofia Reis      | 20240026 | senha: aluno123                           │
+   │   - Lucas Mendes    | 20240027 | senha: aluno123                           │
+   │   - Beatriz Lopes   | 20240028 | senha: aluno123                           │
+   └─────────────────────────────────────────────────────────────────────────────┘
+
+   PROFESSORES:
+   ┌─────────────────────────────────────────────────────────────────────────────┐
+   │   - Carlos Mendes (Física)     | professor@caf.ao     | prof123            │
+   │   - Ana Martins (Matemática)   | ana.martins@caf.ao  | prof123            │
+   └─────────────────────────────────────────────────────────────────────────────┘
+
+   COORDENADORES:
+   ┌─────────────────────────────────────────────────────────────────────────────┐
+   │   - Carla Mendes (Cultural)    | cultural@caf.ao     | cultural123        │
+   │   - Ricardo Santos (Ciência)   | ciencia@caf.ao      | ciencia123         │
+   └─────────────────────────────────────────────────────────────────────────────┘
+
+   DIRETOR DE TURMA:
+   ┌─────────────────────────────────────────────────────────────────────────────┐
+   │   - João Zinga (12ª EA)        | diretor@caf.ao      | diretor123         │
+   └─────────────────────────────────────────────────────────────────────────────┘
+
+   ADMIN:
+   ┌─────────────────────────────────────────────────────────────────────────────┐
+   │   - Criar via: python manage.py createsuperuser                            │
+   └─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================

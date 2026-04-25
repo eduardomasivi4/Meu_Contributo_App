@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <h2>Confirmar Eliminação</h2>
+        <p>Tem certeza que deseja eliminar a actividade <strong>"{{ atividade.nome }}"</strong>?</p>
+        <p>Esta acção não pode ser desfeita.</p>
+        
+        <form method="POST">
+            {% csrf_token %}
+            <button type="submit" class="btn-perigo">Sim, Eliminar</button>
+            <a href="{% if atividade.tipo_atividade == 'cultural' %}{% url 'coordenador_cultural_dashboard' %}{% else %}{% url 'coordenador_ciencia_dashboard' %}{% endif %}" class="btn-secundario">Cancelar</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

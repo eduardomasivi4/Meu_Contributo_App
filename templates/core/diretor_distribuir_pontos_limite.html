@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="container">
+    <div class="cabecalho">
+        <h2><i class="fas fa-share-alt"></i> Distribuir Pontos</h2>
+        <a href="{% url 'diretor_dashboard' %}" class="btn-voltar">
+            <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+        </a>
+    </div>
+
+    <div class="atividade-info">
+        <h3><i class="fas fa-tasks"></i> {{ atividade.nome }}</h3>
+        <p class="atividade-descricao">{{ atividade.descricao|default:"Sem descrição" }}</p>
+        <div class="info-grid">
+            <div class="info-item"><i class="fas fa-calendar"></i> Criada em: {{ atividade.created_at|date:"d/m/Y H:i" }}</div>
+            <div class="info-item"><i class="fas fa-graduation-cap"></i> Curso: {{ turma.get_curso_display }}</div>
+            <div class="info-item"><i class="fas fa-users"></i> Total de Alunos: {{ turma.alunos.count }}</div>
+        </div>
+    </div>
+
+    <div class="progresso-card">
+        <div class="progresso-header">
+            <span><i class="fas fa-chart-line"></i> Progresso da Distribuição</span>
+            {% if distribuicao_salva %}
+            <span class="badge-salvo"><i class="fas fa-save"></i> Progresso salvo</span>
+            {% endif %}
+        </div>
+        <div class="progresso-stats">
+            <div class="stat"><span class="stat-label">Total Disponível</span><span class="stat-value total">{{ total_geral }} pts</span></div>
+            <div class="stat"><span class="stat-label">Já Distribuído</span><span class="stat-value distribuido" id="totalDistribuidoDisplay">{{ pontos_ja_distribuidos }} pts</span></div>
+            <div class="stat"><span class="stat-label">Restante</span><span class="stat-value restante" id="totalRestanteDisplay">{{ total_disponivel }} pts</span></div>
+        </div>
+        <div class="progresso-bar-container"><div class="progresso-bar" id="progressoBar" style="width: {% widthratio pontos_ja_distribuidos total_geral 100 %}%"></div></div>
+        <p class="progresso-info" id="progressoInfo">
+            {% if pontos_ja_distribuidos > 0 %}Já distribuiu {{ pontos_ja_distribuidos }} de {{ total_geral }} pontos.{% else %}Ainda não distribuiu nenhum ponto.{% endif %}
+        </p>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-user-graduate"></i> Distribuir Pontos por Aluno</h3>
+            <small>Insira a quantidade de pontos para cada aluno (máximo: {{ total_disponivel }} pts no total)</small>
+        </div>
+
+        <form method="POST" id="distribuicaoForm">
+            {% csrf_token %}
+            <div class="alunos-grid">
+                {% for aluno in alunos %}
+                <div class="aluno-distribuicao-card" data-aluno-id="{{ aluno.id }}">
+                    <div class="aluno-info">
+                        <span class="aluno-nome">{{ aluno.usuario.get_full_name|default:aluno.usuario.username }}</span>
+                        <span class="aluno-saldo">Saldo atual: {{ aluno.saldo_pontos }} pts</span>
+                    </div>
+                    <div class="aluno-input">
+                        <label>Pontos a atribuir:</label>
+                        <input type="number" name="pontos_aluno_{{ aluno.id }}" id="pontos_aluno_{{ aluno.id }}"
+                            class="pontos-input" value="0"
+                            min="0" step="1" data-aluno-id="{{ aluno.id }}">
+                        <span class="pontos-feedback"></span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" name="salvar_progresso" class="btn-salvar"><i class="fas fa-save"></i> Salvar Progresso</button>
+                <button type="submit" name="finalizar" class="btn-finalizar" id="finalizarBtn"><i class="fas fa-check-circle"></i> Finalizar Distribuição</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="acoes-secundarias">
+        <form method="POST" action="{% url 'diretor_limpar_distribuicao' atividade.id %}" onsubmit="return confirm('Tem certeza que deseja cancelar a distribuição? Todo o progresso será perdido.')">
+            {% csrf_token %}
+            <button type="submit" class="btn-limpar"><i class="fas fa-trash-alt"></i> Cancelar Distribuição</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const inputs = document.querySelectorAll('.pontos-input');
+    const totalDisponivel = {{ total_disponivel }};
+    const totalGeral = {{ total_geral }};
+    let pontosJaDistribuidos = {{ pontos_ja_distribuidos }};
+    
+    const totalDistribuidoDisplay = document.getElementById('totalDistribuidoDisplay');
+    const totalRestanteDisplay = document.getElementById('totalRestanteDisplay');
+    const progressoBar = document.getElementById('progressoBar');
+    const progressoInfo = document.getElementById('progressoInfo');
+    const finalizarBtn = document.getElementById('finalizarBtn');
+    
+    function atualizarTotais() {
+        let total = 0;
+        inputs.forEach(input => {
+            let valor = parseInt(input.value) || 0;
+            if (valor < 0) valor = 0;
+            input.value = valor;
+            total += valor;
+            const feedbackSpan = input.parentElement.querySelector('.pontos-feedback');
+            if (valor > 0) feedbackSpan.innerHTML = `✓ ${valor} pts`;
+            else feedbackSpan.innerHTML = '';
+        });
+        const totalAtual = pontosJaDistribuidos + total;
+        totalDistribuidoDisplay.textContent = totalAtual;
+        const restante = totalGeral - totalAtual;
+        totalRestanteDisplay.textContent = restante >= 0 ? restante : 0;
+        const percentual = (totalAtual / totalGeral) * 100;
+        progressoBar.style.width = `${Math.min(percentual, 100)}%`;
+        if (totalAtual > totalGeral) {
+            progressoBar.style.backgroundColor = '#D9534F';
+            progressoInfo.innerHTML = '<strong style="color:#D9534F;">⚠️ Atenção! A soma dos pontos ultrapassa o total disponível.</strong>';
+            finalizarBtn.disabled = true;
+        } else if (totalAtual === totalGeral) {
+            progressoBar.style.backgroundColor = '#2B7A4B';
+            progressoInfo.innerHTML = '<strong style="color:#2B7A4B;">✅ Perfeito! Distribuiu todos os pontos. Pode finalizar.</strong>';
+            finalizarBtn.disabled = false;
+        } else {
+            progressoBar.style.backgroundColor = '#2B7A4B';
+            progressoInfo.innerHTML = `Distribuiu ${totalAtual} de ${totalGeral} pontos. Faltam ${restante} pontos.`;
+            finalizarBtn.disabled = false;
+        }
+    }
+    
+    inputs.forEach(input => {
+        input.addEventListener('input', () => { let v = parseInt(input.value) || 0; if (v < 0) input.value = 0; atualizarTotais(); });
+        input.addEventListener('blur', () => { let v = parseInt(input.value) || 0; input.value = v; atualizarTotais(); });
+    });
+    
+    document.getElementById('distribuicaoForm').addEventListener('submit', function(e) {
+        const acao = e.submitter?.name;
+        if (acao === 'finalizar') {
+            let total = 0;
+            inputs.forEach(input => total += parseInt(input.value) || 0);
+            const totalFinal = pontosJaDistribuidos + total;
+            if (totalFinal !== totalGeral) {
+                e.preventDefault();
+                alert(`Ainda não distribuiu todos os pontos! Faltam ${totalGeral - totalFinal} pontos.`);
+                return false;
+            }
+            if (!confirm(`Tem certeza que deseja finalizar a distribuição?\nTotal: ${totalFinal} pontos\nEsta ação não pode ser desfeita.`)) {
+                e.preventDefault();
+                return false;
+            }
+        }
+        if (acao === 'salvar_progresso') {
+            let total = 0;
+            inputs.forEach(input => total += parseInt(input.value) || 0);
+            if (pontosJaDistribuidos + total > totalGeral) {
+                e.preventDefault();
+                alert(`A soma dos pontos ultrapassa o total disponível.`);
+                return false;
+            }
+        }
+    });
+    
+    atualizarTotais();
+</script>
+
+<style>
+    .cabecalho { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+    .btn-voltar { background: #FBF7E9; padding: 8px 16px; border-radius: 30px; text-decoration: none; color: #5C3A21; }
+    .atividade-info { background: linear-gradient(135deg, #2B7A4B, #1E5A38); color: white; padding: 20px; border-radius: 16px; margin-bottom: 20px; }
+    .info-grid { display: flex; gap: 20px; flex-wrap: wrap; font-size: 13px; margin-top: 10px; }
+    .progresso-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid #F5EDDA; }
+    .progresso-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-weight: 600; }
+    .badge-salvo { background: #E9F5EF; color: #2B7A4B; padding: 4px 10px; border-radius: 20px; font-size: 12px; }
+    .progresso-stats { display: flex; justify-content: space-between; margin-bottom: 15px; flex-wrap: wrap; gap: 15px; }
+    .stat { text-align: center; flex: 1; }
+    .stat-label { display: block; font-size: 12px; color: #8B694C; margin-bottom: 5px; }
+    .stat-value { font-size: 24px; font-weight: bold; }
+    .stat-value.total { color: #2B7A4B; }
+    .stat-value.distribuido { color: #D4A373; }
+    .progresso-bar-container { background: #F5EDDA; border-radius: 20px; height: 12px; overflow: hidden; margin-bottom: 10px; }
+    .progresso-bar { background: #2B7A4B; height: 100%; width: 0%; transition: width 0.3s ease; }
+    .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid #F5EDDA; }
+    .alunos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px; margin-bottom: 25px; }
+    .aluno-distribuicao-card { background: #FBF7E9; border-radius: 12px; padding: 15px; border: 1px solid #F5EDDA; }
+    .aluno-info { display: flex; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+    .aluno-nome { font-weight: 600; color: #5C3A21; }
+    .aluno-saldo { font-size: 12px; color: #2B7A4B; background: #E9F5EF; padding: 2px 8px; border-radius: 20px; }
+    .aluno-input label { display: block; font-size: 12px; color: #8B694C; margin-bottom: 5px; }
+    .pontos-input { width: 100%; padding: 10px; border: 1px solid #F5EDDA; border-radius: 8px; }
+    .pontos-feedback { display: block; font-size: 11px; margin-top: 4px; }
+    .form-actions { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; padding-top: 15px; border-top: 1px solid #F5EDDA; }
+    .btn-salvar { background: #D4A373; color: white; border: none; padding: 12px 24px; border-radius: 30px; cursor: pointer; }
+    .btn-finalizar { background: #2B7A4B; color: white; border: none; padding: 12px 30px; border-radius: 30px; cursor: pointer; }
+    .btn-finalizar:disabled { background: #A58E6F; cursor: not-allowed; }
+    .acoes-secundarias { text-align: center; }
+    .btn-limpar { background: none; border: 1px solid #D9534F; color: #D9534F; padding: 8px 20px; border-radius: 30px; cursor: pointer; }
+    @media (max-width: 700px) { .alunos-grid { grid-template-columns: 1fr; } .progresso-stats { flex-direction: column; text-align: center; } }
+</style>
+{% endblock %}

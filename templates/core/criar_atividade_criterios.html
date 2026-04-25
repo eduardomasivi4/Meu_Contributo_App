@@ -1,0 +1,468 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'success' %}success{% else %}info{% endif %}">
+            <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% elif message.tags == 'success' %}fa-check-circle{% else %}fa-info-circle{% endif %}"></i>
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div class="container">
+    <div class="cabecalho">
+        <h2><i class="fas fa-plus-circle"></i> Criar Nova Actividade</h2>
+        <a href="{% url 'turma_detail' turma.id %}?disciplina_id={{ disciplina.id }}" class="btn-voltar">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+
+    <div class="cartao">
+        <form method="POST" id="atividadeForm" action="">
+            {% csrf_token %}
+            
+            <!-- Dados básicos -->
+            <div class="form-grupo">
+                <label>Nome da Actividade</label>
+                {{ form.nome }}
+            </div>
+            
+            <div class="form-grupo">
+                <label>Descrição</label>
+                {{ form.descricao }}
+            </div>
+            
+            <!-- ==================== CRITÉRIOS ==================== -->
+            <div class="form-grupo">
+                <label><i class="fas fa-list"></i> Critérios de Avaliação</label>
+                <div id="criterios-container">
+                    <div class="criterio-linha">
+                        <input type="text" name="criterio_nome[]" placeholder="Ex: Participação" class="criterio-nome" value="Participação">
+                        <input type="number" name="criterio_pontos[]" placeholder="Pontos (ex: +20 ou -10)" class="criterio-pontos" value="20">
+                        <button type="button" class="btn-remover-linha" disabled>Remover</button>
+                    </div>
+                </div>
+                <button type="button" id="addCriterioBtn" class="btn-secundario" style="margin-top: 10px;">
+                    <i class="fas fa-plus"></i> Adicionar Critério
+                </button>
+            </div>
+            
+            <!-- ==================== GRUPOS ==================== -->
+            <div class="form-grupo grupos-section">
+                <label><i class="fas fa-users"></i> Grupos de Trabalho (Opcional)</label>
+                <div id="grupos-container">
+                    <div class="grupo-card" data-grupo-index="0">
+                        <div class="grupo-header">
+                            <i class="fas fa-users"></i>
+                            <input type="text" name="grupo_nome[]" placeholder="Nome do Grupo (ex: Grupo A)" class="grupo-nome" value="Grupo A">
+                            <button type="button" class="btn-remover-grupo" disabled>Remover Grupo</button>
+                        </div>
+                        <div class="grupo-body">
+                            <p class="grupo-info">Seleccione os alunos deste grupo:</p>
+                            <div class="alunos-grid">
+                                {% for aluno in turma.alunos.all|dictsort:"usuario.first_name" %}
+                                <label class="aluno-checkbox">
+                                    <input type="checkbox" name="grupo_alunos_0[]" value="{{ aluno.id }}">
+                                    {{ aluno.usuario.get_full_name|default:aluno.usuario.username }}
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" id="addGrupoBtn" class="btn-secundario" style="margin-top: 10px;">
+                    <i class="fas fa-plus"></i> Adicionar Grupo
+                </button>
+                <small class="ajuda-texto">
+                    <i class="fas fa-info-circle"></i> 
+                    Os grupos permitem aplicar critérios a vários alunos de uma só vez. 
+                    Cada aluno só pode pertencer a um grupo.
+                </small>
+            </div>
+            
+            <!-- Seleção de Turmas (oculto, apenas a turma atual) -->
+            <input type="hidden" name="turmas" value="{{ turma.id }}">
+            
+            <div class="form-grupo">
+                <label>{{ form.max_pontos_por_aluno.label }}</label>
+                {{ form.max_pontos_por_aluno }}
+                <small class="ajuda-texto">Opcional - apenas para referência</small>
+            </div>
+            
+            <button type="submit" class="btn-submeter" id="submitBtn">
+                <i class="fas fa-save"></i> Criar Actividade
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    let grupoIndex = 1;
+    let totalGrupos = 1;
+    
+    // ADICIONAR CRITÉRIO
+    document.getElementById('addCriterioBtn').addEventListener('click', function() {
+        const container = document.getElementById('criterios-container');
+        const novaLinha = document.createElement('div');
+        novaLinha.className = 'criterio-linha';
+        novaLinha.innerHTML = `
+            <input type="text" name="criterio_nome[]" placeholder="Ex: Participação" class="criterio-nome" value="">
+            <input type="number" name="criterio_pontos[]" placeholder="Pontos (ex: +20 ou -10)" class="criterio-pontos" value="0">
+            <button type="button" class="btn-remover-linha">Remover</button>
+        `;
+        container.appendChild(novaLinha);
+        
+        const btnRemover = novaLinha.querySelector('.btn-remover-linha');
+        btnRemover.addEventListener('click', function() {
+            if (document.querySelectorAll('.criterio-linha').length > 1) {
+                novaLinha.remove();
+            } else {
+                alert('Deve haver pelo menos um critério!');
+            }
+        });
+    });
+    
+    // ADICIONAR GRUPO
+    function criarGrupoHTML(index) {
+        const alunosOptions = [];
+        {% for aluno in turma.alunos.all|dictsort:"usuario.first_name" %}
+        alunosOptions.push(`
+            <label class="aluno-checkbox">
+                <input type="checkbox" name="grupo_alunos_${index}[]" value="{{ aluno.id }}">
+                {{ aluno.usuario.get_full_name|default:aluno.usuario.username }}
+            </label>
+        `);
+        {% endfor %}
+        
+        return `
+            <div class="grupo-card" data-grupo-index="${index}">
+                <div class="grupo-header">
+                    <i class="fas fa-users"></i>
+                    <input type="text" name="grupo_nome[]" placeholder="Nome do Grupo (ex: Grupo ${String.fromCharCode(65 + index)})" class="grupo-nome" value="Grupo ${String.fromCharCode(65 + index)}">
+                    <button type="button" class="btn-remover-grupo">Remover Grupo</button>
+                </div>
+                <div class="grupo-body">
+                    <p class="grupo-info">Seleccione os alunos deste grupo:</p>
+                    <div class="alunos-grid">${alunosOptions.join('')}</div>
+                </div>
+            </div>
+        `;
+    }
+    
+    document.getElementById('addGrupoBtn').addEventListener('click', function() {
+        const container = document.getElementById('grupos-container');
+        const novoGrupo = document.createElement('div');
+        novoGrupo.innerHTML = criarGrupoHTML(grupoIndex);
+        container.appendChild(novoGrupo.firstElementChild);
+        
+        const novoElemento = container.lastElementChild;
+        const btnRemover = novoElemento.querySelector('.btn-remover-grupo');
+        btnRemover.addEventListener('click', function() {
+            if (document.querySelectorAll('.grupo-card').length > 1) {
+                novoElemento.remove();
+                reindexarGrupos();
+            } else {
+                alert('Deve haver pelo menos um grupo ou pode remover todos clicando no botão "Remover" dentro do grupo.');
+            }
+        });
+        
+        grupoIndex++;
+        reindexarGrupos();
+    });
+    
+    function reindexarGrupos() {
+        const grupos = document.querySelectorAll('.grupo-card');
+        grupos.forEach((grupo, idx) => {
+            grupo.setAttribute('data-grupo-index', idx);
+            const checkboxes = grupo.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                const currentName = checkbox.getAttribute('name');
+                if (currentName) {
+                    const newName = currentName.replace(/grupo_alunos_\d+\[\]/, `grupo_alunos_${idx}[]`);
+                    checkbox.setAttribute('name', newName);
+                }
+            });
+        });
+    }
+    
+    // Remover grupo inicial se houver mais de um
+    document.querySelectorAll('.btn-remover-grupo').forEach(btn => {
+        if (!btn.disabled) {
+            btn.addEventListener('click', function() {
+                const card = this.closest('.grupo-card');
+                if (document.querySelectorAll('.grupo-card').length > 1) {
+                    card.remove();
+                    reindexarGrupos();
+                } else {
+                    alert('Deve haver pelo menos um grupo ou pode deixar este vazio.');
+                }
+            });
+        }
+    });
+    
+    // VALIDAÇÃO ANTES DE ENVIAR
+    document.getElementById('atividadeForm').addEventListener('submit', function(e) {
+        // Verificar se há pelo menos um critério
+        const criterios = document.querySelectorAll('.criterio-linha');
+        if (criterios.length === 0) {
+            e.preventDefault();
+            alert('Atenção! Adicione pelo menos um critério de avaliação.');
+            return false;
+        }
+        
+        // Verificar se todos os critérios têm nome e pontos válidos
+        let criterioInvalido = false;
+        criterios.forEach((criterio, idx) => {
+            const nome = criterio.querySelector('input[name="criterio_nome[]"]').value.trim();
+            const pontos = criterio.querySelector('input[name="criterio_pontos[]"]').value;
+            
+            if (nome === '') {
+                alert(`Critério ${idx + 1}: O nome não pode estar vazio.`);
+                criterioInvalido = true;
+            }
+            if (pontos === '' || isNaN(pontos)) {
+                alert(`Critério ${idx + 1}: Os pontos devem ser um número válido.`);
+                criterioInvalido = true;
+            }
+        });
+        
+        if (criterioInvalido) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // Verificar se alunos estão duplicados em grupos diferentes
+        const alunosSelecionados = new Set();
+        let temDuplicado = false;
+        
+        document.querySelectorAll('.grupo-card').forEach(grupo => {
+            grupo.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+                if (alunosSelecionados.has(cb.value)) {
+                    temDuplicado = true;
+                }
+                alunosSelecionados.add(cb.value);
+            });
+        });
+        
+        if (temDuplicado) {
+            e.preventDefault();
+            alert('Atenção! Um aluno não pode pertencer a mais do que um grupo.');
+            return false;
+        }
+        
+        // Verificar se grupos com alunos têm nome
+        let grupoSemNome = false;
+        document.querySelectorAll('.grupo-card').forEach(grupo => {
+            const nome = grupo.querySelector('.grupo-nome').value.trim();
+            const temAlunos = grupo.querySelectorAll('input[type="checkbox"]:checked').length > 0;
+            
+            if (temAlunos && nome === '') {
+                grupoSemNome = true;
+                grupo.querySelector('.grupo-nome').style.borderColor = '#D9534F';
+            }
+        });
+        
+        if (grupoSemNome) {
+            e.preventDefault();
+            alert('Atenção! Todos os grupos que contêm alunos devem ter um nome.');
+            return false;
+        }
+        
+        // Mostrar loading no botão
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> A criar...';
+        
+        // O formulário será enviado normalmente
+        return true;
+    });
+</script>
+
+<style>
+    .cabecalho {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    .btn-voltar {
+        background: #FBF7E9;
+        padding: 8px 16px;
+        border-radius: 30px;
+        text-decoration: none;
+        color: #5C3A21;
+    }
+    .cartao {
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        border: 1px solid #F5EDDA;
+    }
+    .form-grupo {
+        margin-bottom: 20px;
+    }
+    .form-grupo label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #5C3A21;
+    }
+    .form-grupo input, .form-grupo select, .form-grupo textarea {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #F5EDDA;
+        border-radius: 16px;
+        font-size: 14px;
+        font-family: inherit;
+    }
+    .form-grupo input:focus, .form-grupo select:focus, .form-grupo textarea:focus {
+        outline: none;
+        border-color: #2B7A4B;
+    }
+    .criterio-linha {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .criterio-nome {
+        flex: 2;
+        min-width: 150px;
+        padding: 8px 12px;
+        border: 1px solid #F5EDDA;
+        border-radius: 8px;
+    }
+    .criterio-pontos {
+        flex: 1;
+        min-width: 100px;
+        padding: 8px 12px;
+        border: 1px solid #F5EDDA;
+        border-radius: 8px;
+    }
+    .btn-remover-linha {
+        background: #D9534F;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+    .btn-secundario {
+        background: #D4A373;
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 30px;
+        cursor: pointer;
+        font-size: 13px;
+    }
+    .grupos-section {
+        margin-top: 25px;
+        padding-top: 15px;
+        border-top: 2px solid #F5EDDA;
+    }
+    .grupo-card {
+        background: #FBF7E9;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 15px;
+        border: 1px solid #F5EDDA;
+    }
+    .grupo-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+    }
+    .grupo-header i {
+        font-size: 20px;
+        color: #2B7A4B;
+    }
+    .grupo-nome {
+        flex: 1;
+        min-width: 180px;
+        padding: 8px 12px;
+        border: 1px solid #F5EDDA;
+        border-radius: 8px;
+        font-size: 14px;
+    }
+    .btn-remover-grupo {
+        background: #D9534F;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+    .grupo-info {
+        font-size: 12px;
+        color: #8B694C;
+        margin-bottom: 10px;
+    }
+    .alunos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 8px;
+        max-height: 200px;
+        overflow-y: auto;
+        padding: 10px;
+        background: white;
+        border-radius: 8px;
+    }
+    .aluno-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: #5C3A21;
+        cursor: pointer;
+    }
+    .btn-submeter {
+        width: 100%;
+        background: #2B7A4B;
+        color: white;
+        border: none;
+        padding: 14px;
+        border-radius: 40px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 25px;
+        transition: all 0.3s;
+    }
+    .btn-submeter:hover {
+        background: #1E5A38;
+        transform: translateY(-2px);
+    }
+    .btn-submeter:disabled {
+        background: #A58E6F;
+        cursor: not-allowed;
+    }
+    .ajuda-texto {
+        display: block;
+        margin-top: 8px;
+        font-size: 12px;
+        color: #8B694C;
+    }
+    @media (max-width: 600px) {
+        .criterio-linha {
+            flex-direction: column;
+        }
+        .criterio-nome, .criterio-pontos {
+            width: 100%;
+        }
+        .grupo-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+{% endblock %}
