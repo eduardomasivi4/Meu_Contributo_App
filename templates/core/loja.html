@@ -92,8 +92,8 @@
     .beneficio-header h3 { font-size: 18px; color: #5C3A21; }
     .beneficio-body { padding: 20px; }
     .beneficio-descricao { color: #8B694C; font-size: 14px; margin-bottom: 16px; }
-    .beneficio-pontos { display: inline-flex; align-items: center; gap: 6px; background: #FBF7E9; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 18px; color: #2B7A4B; }
-    .btn-resgatar {
+    .beneficio-pontos { display: inline-flex; align-items: center; gap: 6px; background: #FBF7E9; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 13px; color: #2B7A4B; }
+    .btn-solicitar {
       background: #2B7A4B;
       border: none;
       width: 100%;
@@ -106,8 +106,8 @@
       margin-top: 15px;
       transition: all 0.3s;
     }
-    .btn-resgatar:hover { background: #1E5A38; transform: scale(1.02); }
-    .btn-resgatar:disabled { background: #A58E6F; cursor: not-allowed; }
+    .btn-solicitar:hover { background: #1E5A38; transform: scale(1.02); }
+    .btn-solicitar:disabled { background: #A58E6F; cursor: not-allowed; }
 
     @media (max-width: 768px) {
       .beneficios-grid { grid-template-columns: 1fr; }
@@ -141,7 +141,7 @@
 
     <div class="loja-banner">
       <h2><i class="fas fa-gift"></i> Loja de Mérito</h2>
-      <p>Troque seus pontos por benefícios exclusivos!</p>
+      <p>Solicite benefícios com base no seu mérito e nas atividades realizadas!</p>
     </div>
 
     <div class="categories-tabs">
@@ -172,9 +172,9 @@
           </div>
           <div class="beneficio-body">
             <p class="beneficio-descricao">{{ beneficio.descricao }}</p>
-            <div class="beneficio-pontos"><i class="fas fa-star"></i> {{ beneficio.custo_pontos }} pts</div>
-            <button class="btn-resgatar" data-id="{{ beneficio.id }}" data-nome="{{ beneficio.nome }}" data-pontos="{{ beneficio.custo_pontos }}">
-              <i class="fas fa-exchange-alt"></i> Resgatar
+            <div class="beneficio-pontos"><i class="fas fa-medal"></i> Baseado no mérito</div>
+            <button class="btn-solicitar" data-id="{{ beneficio.id }}" data-nome="{{ beneficio.nome }}">
+              <i class="fas fa-paper-plane"></i> Solicitar
             </button>
           </div>
         </div>
@@ -193,7 +193,7 @@
       <div style="width:60px; height:60px; background:#2B7A4B; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 15px;">
         <i id="modalIcon" class="fas fa-check-circle" style="font-size:30px; color:white;"></i>
       </div>
-      <h3 id="modalTitle" style="color:#5C3A21; margin-bottom:10px;">Resgate Confirmado!</h3>
+      <h3 id="modalTitle" style="color:#5C3A21; margin-bottom:10px;">Solicitação Enviada</h3>
       <p id="modalMessage" style="color:#8B694C; margin-bottom:20px;"></p>
       <button id="modalCloseBtn" style="background:#2B7A4B; color:white; border:none; padding:10px 20px; border-radius:30px; cursor:pointer;">Continuar</button>
     </div>
@@ -211,6 +211,7 @@
 
     let saldoAtual = {{ saldo }};
     let categoriaAtiva = 'todos';
+    let pollInterval = null;
 
     function getCookie(name) {
       let cookieValue = null;
@@ -235,39 +236,73 @@
       modal.style.display = 'flex';
     }
 
-    function hideModal() { modal.style.display = 'none'; }
+    function hideModal() {
+      modal.style.display = 'none';
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+    }
 
     function atualizarSaldo(novoSaldo) {
       saldoAtual = novoSaldo;
       saldoSpan.textContent = saldoAtual;
     }
 
-    async function resgatarBeneficio(id, nome, pontos) {
-      if (saldoAtual < pontos) {
-        showModal('❌ Saldo Insuficiente', `Você precisa de ${pontos} pontos. Seu saldo é ${saldoAtual}.`, false);
-        return false;
-      }
-
+    async function solicitarBeneficio(id, nome) {
       try {
-        const response = await fetch(`{% url 'api_resgatar' 0 %}`.replace('0', id), {
+        const response = await fetch(`{% url 'api_solicitar_beneficio' 0 %}`.replace('0', id), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
           credentials: 'include'
         });
         const data = await response.json();
-        
+
         if (data.success) {
-          atualizarSaldo(data.novo_saldo);
-          showModal('🎉 Resgate Confirmado!', `${nome} resgatado por ${pontos} pontos! Dirija-se à secretaria.`);
+          acompanharSolicitacao(data.solicitacao_id, nome, data.tempo_restante);
           return true;
         } else {
-          showModal('❌ Erro', data.erro || 'Não foi possível resgatar o benefício.', false);
+          showModal('❌ Erro', data.erro || 'Não foi possível enviar a solicitação.', false);
           return false;
         }
       } catch (error) {
         showModal('❌ Erro', 'Erro de conexão com o servidor.', false);
         return false;
       }
+    }
+
+    function acompanharSolicitacao(id, nome, tempoRestante) {
+      modalTitle.textContent = 'Aguardando Análise';
+      modalIcon.className = 'fas fa-hourglass-half';
+      modalIcon.parentElement.style.background = '#D4A373';
+      modalMessage.textContent = `A sua solicitação de "${nome}" está a ser analisada (${tempoRestante}s restantes)...`;
+      modalCloseBtn.style.display = 'none';
+      modal.style.display = 'flex';
+
+      pollInterval = setInterval(async () => {
+        try {
+          const response = await fetch(`{% url 'api_status_solicitacao' 0 %}`.replace('0', id));
+          const data = await response.json();
+
+          if (data.status === 'aprovado') {
+            clearInterval(pollInterval);
+            modalIcon.className = 'fas fa-check-circle';
+            modalIcon.parentElement.style.background = '#2B7A4B';
+            modalTitle.textContent = '🎉 Solicitação Aceite';
+            modalMessage.textContent = `O seu pedido de "${nome}" foi aprovado! O comprovativo já está disponível no Histórico.`;
+            modalCloseBtn.style.display = '';
+          } else if (data.status === 'reprovado') {
+            clearInterval(pollInterval);
+            modalIcon.className = 'fas fa-times-circle';
+            modalIcon.parentElement.style.background = '#D9534F';
+            modalTitle.textContent = 'Solicitação Recusada';
+            modalMessage.textContent = `O seu pedido de "${nome}" não foi aprovado desta vez.`;
+            modalCloseBtn.style.display = '';
+          } else {
+            modalMessage.textContent = `A sua solicitação de "${nome}" está a ser analisada (${data.tempo_restante}s restantes)...`;
+          }
+        } catch (e) { /* tenta novamente na próxima sondagem */ }
+      }, 2000);
     }
 
     function filtrarBeneficios() {
@@ -287,17 +322,16 @@
       });
     });
 
-    document.querySelectorAll('.btn-resgatar').forEach(btn => {
+    document.querySelectorAll('.btn-solicitar').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const id = parseInt(btn.dataset.id);
         const nome = btn.dataset.nome;
-        const pontos = parseInt(btn.dataset.pontos);
-        
-        btn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Processando...';
+
+        btn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Enviando...';
         btn.disabled = true;
-        await resgatarBeneficio(id, nome, pontos);
-        btn.innerHTML = '<i class="fas fa-exchange-alt"></i> Resgatar';
+        await solicitarBeneficio(id, nome);
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Solicitar';
         btn.disabled = false;
       });
     });

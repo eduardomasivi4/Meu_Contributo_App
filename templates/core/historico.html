@@ -52,6 +52,18 @@
     .btn-pdf { background: #2B7A4B; color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 12px; }
     .btn-pdf:hover { background: #1E5A38; }
     .sem-transacoes { text-align: center; padding: 40px; color: #8B694C; }
+
+    .solicitacao-hist-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-radius: 14px; margin-bottom: 10px; flex-wrap: wrap; gap: 10px; }
+    .solicitacao-hist-item.aprovado { background: #E9F5EF; border: 1px solid #2B7A4B; }
+    .solicitacao-hist-item.reprovado { background: #FBEAEA; border: 1px solid #D9534F; }
+    .solicitacao-hist-item.aguardando { background: #FFF6E9; border: 1px solid #D4A373; }
+    .solicitacao-hist-nome { font-weight: 600; color: #5C3A21; }
+    .solicitacao-hist-data { font-size: 11px; color: #8B694C; margin-top: 3px; }
+    .badge-aprovado { color: #2B7A4B; font-weight: 600; font-size: 13px; margin-right: 10px; }
+    .badge-reprovado { color: #D9534F; font-weight: 600; font-size: 13px; }
+    .badge-aguardando { color: #B5835A; font-weight: 600; font-size: 13px; }
+    .btn-pdf-solicitacao { background: #2B7A4B; color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 12px; }
+    .btn-pdf-solicitacao:hover { background: #1E5A38; }
     
     @media (max-width: 768px) {
       .header { flex-direction: column; text-align: center; }
@@ -84,6 +96,41 @@
         <div class="saldo-card"><i class="fas fa-star"></i> {{ saldo }} pts</div>
         <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Sair</button>
       </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 25px;">
+      <div class="card-header">
+        <h3><i class="fas fa-gift"></i> Solicitações de Benefícios</h3>
+        <i class="fas fa-chevron-right"></i>
+      </div>
+
+      {% if solicitacoes %}
+      <div id="solicitacoesHistorico">
+        {% for s in solicitacoes %}
+        <div class="solicitacao-hist-item {{ s.status }}" data-id="{{ s.id }}" data-status="{{ s.status }}" data-restante="{{ s.tempo_restante_segundos }}">
+          <div>
+            <div class="solicitacao-hist-nome">{{ s.beneficio_nome }}</div>
+            <div class="solicitacao-hist-data">{{ s.data_solicitacao|date:"d/m/Y H:i" }}</div>
+          </div>
+          <div class="solicitacao-hist-status">
+            {% if s.status == 'aprovado' %}
+              <span class="badge-aprovado"><i class="fas fa-check-circle"></i> Solicitação Aceite</span>
+              <button class="btn-pdf-solicitacao" data-solicitacao-id="{{ s.id }}"><i class="fas fa-file-pdf"></i> PDF</button>
+            {% elif s.status == 'reprovado' %}
+              <span class="badge-reprovado"><i class="fas fa-times-circle"></i> Solicitação Recusada</span>
+            {% else %}
+              <span class="badge-aguardando"><i class="fas fa-hourglass-half"></i> Em análise (<span class="tempo-restante">{{ s.tempo_restante_segundos }}</span>s)</span>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="sem-transacoes">
+        <i class="fas fa-gift" style="font-size: 48px; margin-bottom: 16px; color: #D4A373;"></i>
+        <p>Nenhuma solicitação de benefício ainda.</p>
+      </div>
+      {% endif %}
     </div>
 
     <div class="card">
@@ -203,6 +250,70 @@
 
     modalCloseBtn.addEventListener('click', hideModal);
     modal.addEventListener('click', (e) => { if (e.target === modal) hideModal(); });
+
+    // ---- Solicitações de Benefícios ----
+    document.querySelectorAll('.btn-pdf-solicitacao').forEach(btn => {
+      btn.addEventListener('click', async function() {
+        const id = this.dataset.solicitacaoId;
+        showModal('Processando', 'Gerando comprovativo PDF...');
+
+        try {
+          const response = await fetch(`{% url 'gerar_comprovativo_solicitacao' 0 %}`.replace('0', id), {
+            method: 'GET',
+            headers: { 'X-CSRFToken': getCookie('csrftoken') }
+          });
+
+          if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `comprovativo_solicitacao_${id}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            hideModal();
+          } else {
+            showModal('Erro', 'Erro ao gerar comprovativo', false);
+            setTimeout(hideModal, 2000);
+          }
+        } catch (error) {
+          showModal('Erro', 'Erro de conexão', false);
+          setTimeout(hideModal, 2000);
+        }
+      });
+    });
+
+    // Contagem decrescente local para solicitações "Em análise"
+    setInterval(() => {
+      document.querySelectorAll('.solicitacao-hist-item.aguardando').forEach(item => {
+        let restante = parseInt(item.dataset.restante, 10);
+        if (restante > 0) {
+          restante -= 1;
+          item.dataset.restante = restante;
+          const span = item.querySelector('.tempo-restante');
+          if (span) span.textContent = restante;
+        }
+      });
+    }, 1000);
+
+    // Sondagem: atualiza solicitações "Em análise" até serem decididas
+    async function sondarSolicitacoesHistorico() {
+      const pendentes = document.querySelectorAll('.solicitacao-hist-item.aguardando');
+      if (!pendentes.length) return;
+      for (const item of pendentes) {
+        try {
+          const response = await fetch(`{% url 'api_status_solicitacao' 0 %}`.replace('0', item.dataset.id));
+          const data = await response.json();
+          if (data.status && data.status !== 'aguardando') {
+            location.reload();
+            return;
+          }
+        } catch (e) { /* tenta novamente na próxima sondagem */ }
+      }
+    }
+    setInterval(sondarSolicitacoesHistorico, 3000);
   </script>
 </body>
 </html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atividades do Aluno - Colégio Árvore da Felicidade</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/fundo.css' %}">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #FBF7E9; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+
+        .header {
+            background: white;
+            border-radius: 24px;
+            padding: 15px 25px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            border: 1px solid #F5EDDA;
+        }
+        .logo-area { display: flex; align-items: center; gap: 12px; }
+        .logo-icon { width: 45px; height: 45px; background: #2B7A4B; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+        .logo-icon img { width: 28px; height: 28px; }
+        .logo-area h1 { font-size: 18px; color: #5C3A21; font-weight: 700; }
+        .fechar-btn { background: none; border: 1px solid #F5EDDA; padding: 6px 14px; border-radius: 30px; cursor: pointer; color: #8B694C; }
+
+        .info-banner {
+            background: linear-gradient(135deg, #2B7A4B, #1E5A38);
+            border-radius: 20px;
+            padding: 20px 25px;
+            margin-bottom: 25px;
+            color: white;
+        }
+        .info-banner h2 { font-size: 22px; margin-bottom: 8px; }
+        .info-banner p { font-size: 13px; opacity: 0.9; margin-top: 2px; }
+        .info-banner .beneficio-tag { display: inline-block; background: rgba(255,255,255,0.2); padding: 5px 14px; border-radius: 20px; margin-top: 10px; font-size: 13px; }
+
+        .aviso-consulta { background: #FFF6E9; border: 1px solid #D4A373; color: #8B694C; padding: 12px 18px; border-radius: 14px; font-size: 13px; margin-bottom: 20px; }
+
+        .card { background: white; border-radius: 20px; padding: 20px; border: 1px solid #F5EDDA; }
+        .card-header { margin-bottom: 15px; padding-bottom: 12px; border-bottom: 2px solid #FBF7E9; }
+        .card-header h3 { font-size: 18px; color: #5C3A21; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #F5EDDA; }
+        th { color: #5C3A21; font-weight: 600; }
+        .pontos-positive { color: #2B7A4B; font-weight: 700; }
+        .sem-atividades { text-align: center; padding: 40px; color: #8B694C; }
+
+        @media (max-width: 768px) {
+            .header { flex-direction: column; text-align: center; }
+            table, thead, tbody, th, td, tr { display: block; }
+            th { display: none; }
+            td { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #F5EDDA; }
+            td::before { content: attr(data-label); font-weight: bold; color: #5C3A21; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo-area">
+                <div class="logo-icon"><img src="{% static 'images/logo-caf.png' %}" alt="Logo"></div>
+                <h1>Colégio Árvore da Felicidade</h1>
+            </div>
+            <button class="fechar-btn" onclick="window.close()"><i class="fas fa-times"></i> Fechar</button>
+        </div>
+
+        <div class="info-banner">
+            <h2><i class="fas fa-user-graduate"></i> {{ solicitacao.aluno_nome }}</h2>
+            <p><i class="fas fa-users"></i> {{ solicitacao.aluno_turma_nome }} — {{ solicitacao.aluno_curso_nome }} | Nº Processo: {{ solicitacao.aluno_processo }}</p>
+            <div class="beneficio-tag"><i class="fas fa-gift"></i> Benefício solicitado: {{ solicitacao.beneficio_nome }}</div>
+        </div>
+
+        <div class="aviso-consulta">
+            <i class="fas fa-info-circle"></i> Consulta apenas para leitura — esta lista serve como base para a sua decisão. O voto é dado no painel de aprovação.
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-clipboard-list"></i> Atividades Realizadas</h3>
+            </div>
+
+            {% if transacoes %}
+            <table>
+                <thead>
+                    <tr><th>Atividade</th><th>Tipo</th><th>Data</th><th>Pontos</th></tr>
+                </thead>
+                <tbody>
+                    {% for t in transacoes %}
+                    <tr>
+                        <td data-label="Atividade">{{ t.atividade.nome|default:t.descricao }}</td>
+                        <td data-label="Tipo">{{ t.atividade.get_tipo_atividade_display|default:"—" }}</td>
+                        <td data-label="Data">{{ t.data|date:"d/m/Y H:i" }}</td>
+                        <td data-label="Pontos" class="pontos-positive">+{{ t.quantidade }} pts</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="sem-atividades">
+                <i class="fas fa-clipboard-list" style="font-size: 48px; margin-bottom: 16px; color: #D4A373;"></i>
+                <p>Nenhuma atividade registada para este aluno ainda.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

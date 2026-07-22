@@ -3,21 +3,21 @@ from .models import (
     Usuario, Turma, Disciplina, DisciplinaTurma,
     Atividade, PerfilAluno, Transacao, Beneficio,
     ResgateBeneficio, PerfilProfessor, PerfilDiretorTurma,
-    PerfilCoordenador
+    PerfilCoordenador, SolicitacaoBeneficio
 )
 
 
 @admin.register(Usuario)
 class UsuarioAdmin(admin.ModelAdmin):
     list_display = ['username', 'email', 'get_full_name', 'tipo', 'is_active']
-    list_filter = ['tipo', 'is_professor', 'is_coordenador', 'is_diretor_turma']
+    list_filter = ['tipo', 'is_professor', 'is_coordenador', 'is_diretor_turma', 'is_diretor_pedagogico']
     search_fields = ['username', 'email', 'first_name', 'last_name']
     fieldsets = (
         ('Informações Pessoais', {
             'fields': ('username', 'first_name', 'last_name', 'email', 'telefone', 'tipo')
         }),
         ('Cargos', {
-            'fields': ('is_professor', 'is_coordenador', 'is_diretor_turma', 'turma_vinculada')
+            'fields': ('is_professor', 'is_coordenador', 'curso_coordenado', 'is_diretor_turma', 'is_diretor_pedagogico', 'turma_vinculada')
         }),
         ('Permissões', {
             'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')
@@ -98,3 +98,15 @@ class PerfilDiretorTurmaAdmin(admin.ModelAdmin):
 class PerfilCoordenadorAdmin(admin.ModelAdmin):
     list_display = ['usuario', 'departamento']
     search_fields = ['usuario__username', 'departamento']
+
+
+@admin.register(SolicitacaoBeneficio)
+class SolicitacaoBeneficioAdmin(admin.ModelAdmin):
+    list_display = ['aluno_nome', 'beneficio_nome', 'status', 'data_solicitacao', 'prazo_final']
+    list_filter = ['status', 'data_solicitacao']
+    search_fields = ['aluno_nome', 'aluno_processo', 'beneficio_nome']
+    readonly_fields = [
+        'aluno', 'beneficio', 'aluno_nome', 'aluno_processo', 'aluno_turma_nome', 'aluno_curso_nome',
+        'beneficio_nome', 'beneficio_descricao', 'data_solicitacao', 'prazo_final', 'decidido_em',
+    ]
+    date_hierarchy = 'data_solicitacao'

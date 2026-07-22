@@ -110,6 +110,21 @@
         
         @media (max-width: 900px) { .dashboard-grid { grid-template-columns: 1fr; } }
         @media (max-width: 600px) { .header { flex-direction: column; text-align: center; } }
+
+        /* Solicitações de Benefícios */
+        .solicitacoes-card { background: white; border-radius: 20px; padding: 20px; border: 1px solid #F5EDDA; margin-bottom: 25px; }
+        .solicitacoes-card .card-header { margin-bottom: 15px; padding-bottom: 12px; border-bottom: 2px solid #FBF7E9; }
+        .solicitacoes-card .card-header h3 { font-size: 18px; color: #5C3A21; }
+        .solicitacao-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 14px 0; border-bottom: 1px solid #F5EDDA; flex-wrap: wrap; gap: 12px; }
+        .solicitacao-item:last-child { border-bottom: none; }
+        .solicitacao-aluno { font-weight: 600; color: #5C3A21; }
+        .solicitacao-beneficio { font-size: 13px; color: #5C3A21; margin-top: 3px; }
+        .solicitacao-votos { font-size: 11px; color: #8B694C; margin-top: 8px; }
+        .solicitacao-tempo { font-weight: 700; color: #D9534F; font-size: 14px; }
+        .solicitacao-acoes { text-align: right; }
+        .btn-aceitar { background: #2B7A4B; color: white; border: none; padding: 6px 14px; border-radius: 20px; cursor: pointer; font-size: 12px; margin-left: 6px; }
+        .btn-recusar { background: #D9534F; color: white; border: none; padding: 6px 14px; border-radius: 20px; cursor: pointer; font-size: 12px; }
+        .link-atividades { font-size: 11px; color: #2B7A4B; text-decoration: none; display: inline-block; margin-top: 6px; }
     </style>
 </head>
 <body>
@@ -132,6 +147,15 @@
         <div class="turma-header">
             <h2><i class="fas fa-users"></i> {{ turma.nome }} - {{ turma.get_curso_display }}</h2>
             <p><i class="fas fa-calendar"></i> Ano: {{ turma.ano }} | {{ turma.alunos.count }} alunos</p>
+        </div>
+
+        <div class="solicitacoes-card">
+            <div class="card-header">
+                <h3><i class="fas fa-gift"></i> Solicitações de Benefícios Pendentes</h3>
+            </div>
+            <div id="solicitacoesList">
+                <div style="text-align:center; padding:20px; color:#8B694C;">A carregar...</div>
+            </div>
         </div>
 
         <div class="dashboard-grid">
@@ -357,6 +381,89 @@
                 hideModalMessage();
             }
         });
+
+        // ---- Solicitações de Benefícios Pendentes ----
+        function formatarTempoSolicitacao(segundos) {
+            const m = Math.floor(segundos / 60).toString().padStart(2, '0');
+            const s = (segundos % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        function votoIconeSolicitacao(voto) {
+            if (voto === 'aceitar') return '<i class="fas fa-check-circle" style="color:#2B7A4B;"></i>';
+            if (voto === 'recusar') return '<i class="fas fa-times-circle" style="color:#D9534F;"></i>';
+            return '<i class="fas fa-clock" style="color:#D4A373;"></i>';
+        }
+
+        function renderizarSolicitacoes(lista) {
+            const container = document.getElementById('solicitacoesList');
+            if (!lista.length) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#8B694C;">Nenhuma solicitação pendente no momento.</div>';
+                return;
+            }
+            container.innerHTML = lista.map(s => `
+                <div class="solicitacao-item" data-id="${s.id}" data-restante="${s.tempo_restante}">
+                    <div>
+                        <div class="solicitacao-aluno">${s.aluno_nome} <span style="font-weight:400; color:#8B694C;">— ${s.aluno_turma} (${s.aluno_curso})</span></div>
+                        <div class="solicitacao-beneficio"><i class="fas fa-gift"></i> ${s.beneficio_nome}</div>
+                        <div class="solicitacao-votos">
+                            Diretor de Turma ${votoIconeSolicitacao(s.voto_diretor_turma)} &nbsp;
+                            Coordenador ${votoIconeSolicitacao(s.voto_coordenador)} &nbsp;
+                            Diretor Pedagógico ${votoIconeSolicitacao(s.voto_diretor_pedagogico)}
+                        </div>
+                        <a class="link-atividades" href="/aprovador/solicitacao/${s.id}/atividades/" target="_blank"><i class="fas fa-list"></i> Ver atividades do aluno</a>
+                    </div>
+                    <div class="solicitacao-acoes">
+                        <div class="solicitacao-tempo"><i class="fas fa-hourglass-half"></i> <span class="tempo-restante">${formatarTempoSolicitacao(s.tempo_restante)}</span></div>
+                        <div style="margin-top:10px;">
+                            ${s.meu_voto && s.meu_voto !== 'pendente'
+                                ? `<span style="font-size:11px; color:#8B694C;">O seu voto: ${s.meu_voto === 'aceitar' ? 'Aceitar' : 'Recusar'}</span>`
+                                : `<button class="btn-aceitar" onclick="votarSolicitacao(${s.id}, 'aceitar')">Aceitar</button>
+                                   <button class="btn-recusar" onclick="votarSolicitacao(${s.id}, 'recusar')">Recusar</button>`
+                            }
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function carregarSolicitacoes() {
+            try {
+                const response = await fetch("{% url 'api_solicitacoes_aprovador' %}");
+                const data = await response.json();
+                renderizarSolicitacoes(data.solicitacoes || []);
+            } catch (e) { /* mantém a última lista renderizada em caso de falha momentânea */ }
+        }
+
+        async function votarSolicitacao(id, voto) {
+            try {
+                const response = await fetch(`/api/aprovador/solicitacao/${id}/votar/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                    body: JSON.stringify({ voto })
+                });
+                const data = await response.json();
+                if (!data.success) alert(data.mensagem || 'Não foi possível registar o voto.');
+            } catch (e) {
+                alert('Erro de conexão com o servidor.');
+            }
+            carregarSolicitacoes();
+        }
+
+        setInterval(() => {
+            document.querySelectorAll('.solicitacao-item').forEach(item => {
+                let restante = parseInt(item.dataset.restante, 10);
+                if (restante > 0) {
+                    restante -= 1;
+                    item.dataset.restante = restante;
+                    const span = item.querySelector('.tempo-restante');
+                    if (span) span.textContent = formatarTempoSolicitacao(restante);
+                }
+            });
+        }, 1000);
+
+        carregarSolicitacoes();
+        setInterval(carregarSolicitacoes, 3000);
     </script>
 </body>
 </html>

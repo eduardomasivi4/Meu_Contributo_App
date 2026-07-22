@@ -9,24 +9,22 @@ from core.models import (
 
 
 class Command(BaseCommand):
-    help = 'Popula o banco com dados FIXOS e CONCRETOS para teste'
+    help = 'Popula o banco com dados FIXOS e CONCRETOS para teste (versão com credenciais reduzidas + Diretor Pedagógico)'
 
     def handle(self, *args, **kwargs):
-        self.stdout.write('🚀 Populando banco com dados FIXOS e CONCRETOS...')
+        self.stdout.write('🚀 Populando banco com dados FIXOS e CONCRETOS (credenciais reduzidas + Diretor Pedagógico)...')
 
         # =========================================================
         # 1. TURMAS (FIXAS)
         # =========================================================
         self.stdout.write('📚 Criando turmas...')
         turmas_info = [
-            # Informática
             ('10ª ID', 'informatica', '10ª'),
             ('10ª IB', 'informatica', '10ª'),
             ('11ª ID', 'informatica', '11ª'),
             ('11ª IB', 'informatica', '11ª'),
             ('12ª ID', 'informatica', '12ª'),
             ('12ª IB', 'informatica', '12ª'),
-            # Eletrónica
             ('10ª EA', 'eletronica', '10ª'),
             ('10ª EE', 'eletronica', '10ª'),
             ('11ª EA', 'eletronica', '11ª'),
@@ -99,48 +97,23 @@ class Command(BaseCommand):
         self.stdout.write(f'   ✅ {Disciplina.objects.count()} disciplinas criadas.')
 
         # =========================================================
-        # 3. ALUNOS (2 POR TURMA - NOMES FIXOS)
+        # 3. ALUNOS (1 POR TURMA - NOMES FIXOS)
         # =========================================================
-        self.stdout.write('👨‍🎓 Criando alunos...')
+        self.stdout.write('👨‍🎓 Criando alunos (1 por turma)...')
         
-        # Lista fixa de alunos (2 por turma = 24 alunos)
         alunos_fixos = [
-            # Turma 10ª ID
             ('10ª ID', 'Ricardo Oliveira', '20240001', 1250),
-            ('10ª ID', 'Fernanda Santos', '20240002', 980),
-            # Turma 10ª IB
             ('10ª IB', 'Lucas Almeida', '20240003', 2100),
-            ('10ª IB', 'Beatriz Costa', '20240004', 1850),
-            # Turma 11ª ID
             ('11ª ID', 'Rafael Lima', '20240005', 3420),
-            ('11ª ID', 'Juliana Ferreira', '20240006', 2980),
-            # Turma 11ª IB
             ('11ª IB', 'Gabriel Souza', '20240007', 1560),
-            ('11ª IB', 'Mariana Silva', '20240008', 2230),
-            # Turma 12ª ID
             ('12ª ID', 'André Rodrigues', '20240009', 4100),
-            ('12ª ID', 'Camila Nunes', '20240010', 3870),
-            # Turma 12ª IB
             ('12ª IB', 'Thiago Mendes', '20240011', 2950),
-            ('12ª IB', 'Larissa Rocha', '20240012', 3120),
-            # Turma 10ª EA
             ('10ª EA', 'Pedro Henrique', '20240013', 890),
-            ('10ª EA', 'Amanda Lima', '20240014', 1340),
-            # Turma 10ª EE
             ('10ª EE', 'Bruno Cardoso', '20240015', 1670),
-            ('10ª EE', 'Tatiane Oliveira', '20240016', 1430),
-            # Turma 11ª EA
             ('11ª EA', 'Felipe Augusto', '20240017', 2780),
-            ('11ª EA', 'Natália Souza', '20240018', 2450),
-            # Turma 11ª EE
             ('11ª EE', 'Vinícius Pereira', '20240019', 1890),
-            ('11ª EE', 'Patrícia Lima', '20240020', 2120),
-            # Turma 12ª EA
             ('12ª EA', 'Eduardo Martins', '20240021', 5230),
-            ('12ª EA', 'Carolina Ribeiro', '20240022', 4980),
-            # Turma 12ª EE
             ('12ª EE', 'Guilherme Castro', '20240023', 3670),
-            ('12ª EE', 'Vanessa Alves', '20240024', 3890),
         ]
         
         for turma_nome, nome_completo, processo, saldo in alunos_fixos:
@@ -171,53 +144,120 @@ class Command(BaseCommand):
         self.stdout.write(f'   ✅ {PerfilAluno.objects.count()} alunos criados.')
 
         # =========================================================
-        # 4. USUÁRIOS (Professor, Coordenador, Diretor) - FIXOS
+        # 4. PROFESSORES (1 POR DISCIPLINA)
         # =========================================================
-        self.stdout.write('👨‍🏫 Criando usuários...')
+        self.stdout.write('👨‍🏫 Criando professores para cada disciplina...')
         
-        primeira_disciplina = Disciplina.objects.first()
-        turma_12ea = turmas.get('12ª EA')
+        for disciplina in Disciplina.objects.all():
+            nome_disc = disciplina.nome.lower().replace(' ', '_').replace('.', '').replace('á', 'a').replace('é', 'e').replace('í', 'i').replace('ó', 'o').replace('ú', 'u')
+            username = f"prof.{nome_disc}"
+            first_name = f"Prof_{disciplina.nome.split()[0]}" if disciplina.nome else "Professor"
+            last_name = disciplina.nome.split()[-1] if len(disciplina.nome.split()) > 1 else "Default"
+            email = f"{username}@caf.ao"
+            
+            usuario, _ = Usuario.objects.get_or_create(
+                username=username,
+                defaults={
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'email': email,
+                    'password': make_password('prof123'),
+                    'tipo': 'professor',
+                    'is_professor': True
+                }
+            )
+            PerfilProfessor.objects.get_or_create(
+                usuario=usuario,
+                defaults={'disciplina': disciplina}
+            )
         
-        # Professor
-        prof, _ = Usuario.objects.get_or_create(
-            username='professor.carlos',
+        # Professor genérico para atividades do coordenador (fallback)
+        prof_generico, _ = Usuario.objects.get_or_create(
+            username='professor.generico',
             defaults={
-                'first_name': 'Carlos', 'last_name': 'Mendes',
-                'email': 'professor@caf.ao',
+                'first_name': 'Generico', 'last_name': 'Professor',
+                'email': 'prof.generico@caf.ao',
                 'password': make_password('prof123'),
-                'tipo': 'professor', 'is_professor': True
+                'tipo': 'professor',
+                'is_professor': True
             }
         )
-        if primeira_disciplina:
-            PerfilProfessor.objects.get_or_create(usuario=prof, defaults={'disciplina': primeira_disciplina})
+        PerfilProfessor.objects.get_or_create(usuario=prof_generico)
         
-        # Coordenador
-        coord, _ = Usuario.objects.get_or_create(
-            username='coordenador.ana',
-            defaults={
-                'first_name': 'Ana', 'last_name': 'Paula',
-                'email': 'coordenador@caf.ao',
-                'password': make_password('coord123'),
-                'tipo': 'coordenador', 'is_coordenador': True
-            }
-        )
-        
-        # Diretor
-        diretor, _ = Usuario.objects.get_or_create(
-            username='diretor.joao',
-            defaults={
-                'first_name': 'João', 'last_name': 'Zinga',
-                'email': 'diretor@caf.ao',
-                'password': make_password('diretor123'),
-                'tipo': 'diretor_turma', 'is_diretor_turma': True,
-                'turma_vinculada': turma_12ea
-            }
-        )
-        
-        self.stdout.write('   ✅ Usuários criados.')
+        self.stdout.write(f'   ✅ {Usuario.objects.filter(is_professor=True).count()} professores criados.')
 
         # =========================================================
-        # 5. BENEFÍCIOS (FIXOS)
+        # 5. DIRETORES DE TURMA (1 POR TURMA)
+        # =========================================================
+        self.stdout.write('👨‍🏫 Criando diretores de turma...')
+        
+        for turma_nome, turma in turmas.items():
+            username = f"diretor.{turma_nome.lower().replace(' ', '_').replace('ª', 'a')}"
+            email = f"{username}@caf.ao"
+            first_name = f"Diretor_{turma_nome}"
+            last_name = "Turma"
+            
+            usuario, _ = Usuario.objects.get_or_create(
+                username=username,
+                defaults={
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'email': email,
+                    'password': make_password('diretor123'),
+                    'tipo': 'diretor_turma',
+                    'is_diretor_turma': True,
+                    'turma_vinculada': turma
+                }
+            )
+        
+        self.stdout.write(f'   ✅ {Usuario.objects.filter(is_diretor_turma=True).count()} diretores de turma criados.')
+
+        # =========================================================
+        # 6. COORDENADORES (1 POR CURSO)
+        # =========================================================
+        self.stdout.write('👨‍🏫 Criando coordenadores por curso...')
+        
+        cursos = ['informatica', 'eletronica']
+        for curso in cursos:
+            username = f"coordenador.{curso}"
+            email = f"{username}@caf.ao"
+            first_name = f"Coordenador_{curso.capitalize()}"
+            last_name = "Curso"
+            
+            usuario, _ = Usuario.objects.get_or_create(
+                username=username,
+                defaults={
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'email': email,
+                    'password': make_password('coord123'),
+                    'tipo': 'coordenador',
+                    'is_coordenador': True
+                }
+            )
+        
+        self.stdout.write(f'   ✅ {Usuario.objects.filter(is_coordenador=True).count()} coordenadores criados.')
+
+        # =========================================================
+        # 7. DIRETOR PEDAGÓGICO (1 ÚNICO USUÁRIO)
+        # =========================================================
+        self.stdout.write('👨‍🏫 Criando Diretor Pedagógico...')
+        
+        diretor_pedagogico, _ = Usuario.objects.get_or_create(
+            username='diretor.pedagogico',
+            defaults={
+                'first_name': 'Manuel',
+                'last_name': 'Costa',
+                'email': 'pedagogico@caf.ao',
+                'password': make_password('pedagogico123'),
+                'tipo': 'diretor_pedagogico',
+                'is_diretor_pedagogico': True,
+            }
+        )
+        self.stdout.write('   ✅ Diretor Pedagógico criado.')
+
+        # =========================================================
+        # 8. BENEFÍCIOS (FIXOS)
         # =========================================================
         self.stdout.write('🎁 Criando benefícios...')
         beneficios_fixos = [
@@ -241,7 +281,7 @@ class Command(BaseCommand):
         self.stdout.write(f'   ✅ {Beneficio.objects.count()} benefícios.')
 
         # =========================================================
-        # 6. ATIVIDADES DO COORDENADOR (FIXAS)
+        # 9. ATIVIDADES DO COORDENADOR (FIXAS)
         # =========================================================
         self.stdout.write('📝 Criando atividades do coordenador...')
         hoje = date.today()
@@ -279,7 +319,7 @@ class Command(BaseCommand):
         self.stdout.write(f'   ✅ {Atividade.objects.filter(disciplina__isnull=True).count()} atividades do coordenador.')
 
         # =========================================================
-        # 7. ATIVIDADES DOS PROFESSORES (Curriculares - FIXAS)
+        # 10. ATIVIDADES DOS PROFESSORES (Curriculares - FIXAS)
         # =========================================================
         self.stdout.write('📝 Criando atividades dos professores...')
         
@@ -317,30 +357,29 @@ class Command(BaseCommand):
         self.stdout.write(f'   ✅ {Atividade.objects.filter(disciplina__isnull=False).count()} atividades dos professores.')
 
         # =========================================================
-        # 8. TRANSAÇÕES (Distribuição de pontos - FIXAS)
+        # 11. TRANSAÇÕES (Distribuição de pontos - adaptadas)
         # =========================================================
         self.stdout.write('💰 Criando transações...')
         
-        transacoes_fixas = [
-            # (aluno_processo, atividade_nome, pontos)
+        transacoes_originais = [
             ('20240001', 'Feira de Ciências 2024', 300),
-            ('20240002', 'Feira de Ciências 2024', 280),
             ('20240005', 'Olimpíada de Matemática', 350),
-            ('20240006', 'Olimpíada de Matemática', 310),
             ('20240009', 'Prova Trimestral', 95),
-            ('20240010', 'Prova Trimestral', 88),
             ('20240011', 'Prova Trimestral', 100),
             ('20240013', 'Workshop de Robótica', 250),
-            ('20240014', 'Workshop de Robótica', 230),
             ('20240017', 'Peça de Teatro "O Auto da Compadecida"', 200),
-            ('20240018', 'Peça de Teatro "O Auto da Compadecida"', 190),
             ('20240021', 'Experiência de Laboratório', 120),
-            ('20240022', 'Experiência de Laboratório', 115),
             ('20240023', 'Trabalho em Grupo', 80),
-            ('20240024', 'Trabalho em Grupo', 75),
         ]
+        transacoes_extras = [
+            ('20240003', 'Feira de Ciências 2024', 280),
+            ('20240007', 'Olimpíada de Matemática', 310),
+            ('20240015', 'Workshop de Robótica', 230),
+            ('20240019', 'Peça de Teatro "O Auto da Compadecida"', 190),
+        ]
+        todas_transacoes = transacoes_originais + transacoes_extras
         
-        for processo, atividade_nome, pontos in transacoes_fixas:
+        for processo, atividade_nome, pontos in todas_transacoes:
             aluno = PerfilAluno.objects.filter(numero_processo=processo).first()
             atividade = Atividade.objects.filter(nome=atividade_nome).first()
             if aluno and atividade:
@@ -351,14 +390,14 @@ class Command(BaseCommand):
                     quantidade=pontos,
                     tipo='distribuicao',
                     descricao=f'Pontos da atividade: {atividade_nome}',
-                    professor=prof,
+                    professor=prof_generico,
                     atividade=atividade
                 )
         
         self.stdout.write(f'   ✅ {Transacao.objects.count()} transações criadas.')
 
         # =========================================================
-        # 9. RESGATES DE BENEFÍCIOS (FIXOS)
+        # 12. RESGATES DE BENEFÍCIOS (FIXOS)
         # =========================================================
         self.stdout.write('🛒 Criando resgates...')
         
@@ -386,13 +425,17 @@ class Command(BaseCommand):
         self.stdout.write(f'   ✅ {ResgateBeneficio.objects.count()} resgates criados.')
 
         # =========================================================
-        # 10. RELATÓRIO FINAL
+        # 13. RELATÓRIO FINAL
         # =========================================================
-        self.stdout.write(self.style.SUCCESS('\n🎉 POPULAÇÃO CONCLUÍDA COM DADOS FIXOS!'))
+        self.stdout.write(self.style.SUCCESS('\n🎉 POPULAÇÃO CONCLUÍDA COM DADOS FIXOS (CREDENCIAIS REDUZIDAS + DIRETOR PEDAGÓGICO)!'))
         self.stdout.write('\n📊 RESUMO:')
         self.stdout.write(f'   - Turmas: {Turma.objects.count()}')
         self.stdout.write(f'   - Disciplinas: {Disciplina.objects.count()}')
         self.stdout.write(f'   - Alunos: {PerfilAluno.objects.count()}')
+        self.stdout.write(f'   - Professores (com perfil): {PerfilProfessor.objects.count()}')
+        self.stdout.write(f'   - Diretores de turma: {Usuario.objects.filter(is_diretor_turma=True).count()}')
+        self.stdout.write(f'   - Coordenadores: {Usuario.objects.filter(is_coordenador=True).count()}')
+        self.stdout.write(f'   - Diretores Pedagógicos: {Usuario.objects.filter(is_diretor_pedagogico=True).count()}')
         self.stdout.write(f'   - Benefícios: {Beneficio.objects.count()}')
         self.stdout.write(f'   - Atividades Coordenador: {Atividade.objects.filter(disciplina__isnull=True).count()}')
         self.stdout.write(f'   - Atividades Professor: {Atividade.objects.filter(disciplina__isnull=False).count()}')
@@ -401,9 +444,12 @@ class Command(BaseCommand):
         
         self.stdout.write('\n🔑 CREDENCIAIS (FIXAS):')
         self.stdout.write('   ALUNO: qualquer número de processo - senha "aluno123"')
-        self.stdout.write('   PROFESSOR: professor@caf.ao / prof123')
-        self.stdout.write('   COORDENADOR: coordenador@caf.ao / coord123')
-        self.stdout.write('   DIRETOR: diretor@caf.ao / diretor123')
+        self.stdout.write('   PROFESSOR (genérico): professor.generico@caf.ao / prof123')
+        self.stdout.write('   (Professores por disciplina: prof.<disciplina>@caf.ao / prof123)')
+        self.stdout.write('   COORDENADOR (Informática): coordenador.informatica@caf.ao / coord123')
+        self.stdout.write('   COORDENADOR (Eletrónica): coordenador.eletronica@caf.ao / coord123')
+        self.stdout.write('   DIRETOR DE TURMA: diretor.<turma>@caf.ao / diretor123 (ex: diretor.10a_id@caf.ao)')
+        self.stdout.write('   DIRETOR PEDAGÓGICO: pedagogico@caf.ao / pedagogico123')
         
         self.stdout.write('\n📋 ALUNOS COM Nº PROCESSO:')
         for aluno in PerfilAluno.objects.all().order_by('numero_processo'):

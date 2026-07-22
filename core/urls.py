@@ -13,11 +13,14 @@ urlpatterns = [
     path('aluno/loja/', views.loja, name='loja'),
     path('aluno/historico/', views.historico, name='historico'),
     path('aluno/comprovativo/<int:transacao_id>/', views.gerar_comprovativo, name='gerar_comprovativo'),
+    path('aluno/solicitacao/<int:solicitacao_id>/comprovativo/', views.gerar_comprovativo_solicitacao, name='gerar_comprovativo_solicitacao'),
     
     # APIs Aluno
     path('api/aluno/verificar-processo/', views.verificar_processo, name='verificar_processo'),
     path('api/aluno/validar-senha/', views.validar_senha, name='validar_senha'),
     path('api/aluno/resgatar/<int:beneficio_id>/', views.api_resgatar_beneficio, name='api_resgatar'),
+    path('api/aluno/solicitar/<int:beneficio_id>/', views.api_solicitar_beneficio, name='api_solicitar_beneficio'),
+    path('api/solicitacao/<int:solicitacao_id>/status/', views.api_status_solicitacao, name='api_status_solicitacao'),
      
     # ==================== PROFESSOR ====================
     # Login e autenticação
@@ -50,5 +53,15 @@ urlpatterns = [
     path('coordenador/atividade/editar/<int:pk>/', views.coordenador_editar_atividade, name='coordenador_editar_atividade'),
     path('coordenador/atividade/eliminar/<int:pk>/', views.coordenador_eliminar_atividade, name='coordenador_eliminar_atividade'),
     path('api/coordenador/buscar-atividades/', views.api_buscar_atividades, name='api_buscar_atividades'),
+
+    # ==================== DIRETOR PEDAGÓGICO ====================
+
+    path('diretor-pedagogico/dashboard/', views.diretor_pedagogico_dashboard, name='diretor_pedagogico_dashboard'),
+
+    # ==================== APROVAÇÃO DE SOLICITAÇÕES (Diretor de Turma / Coordenador / Diretor Pedagógico) ====================
+
+    path('api/aprovador/solicitacoes/', views.api_solicitacoes_aprovador, name='api_solicitacoes_aprovador'),
+    path('api/aprovador/solicitacao/<int:solicitacao_id>/votar/', views.api_votar_solicitacao, name='api_votar_solicitacao'),
+    path('aprovador/solicitacao/<int:solicitacao_id>/atividades/', views.ver_atividades_aluno, name='ver_atividades_aluno'),
 
 ]

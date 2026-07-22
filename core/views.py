@@ -23,8 +23,41 @@ from django.utils import timezone
 from .models import (
     Usuario, PerfilAluno, Turma, Disciplina, DisciplinaTurma,
     Atividade, Beneficio, Transacao, ResgateBeneficio,
-    PerfilProfessor, PerfilDiretorTurma, PerfilCoordenador
+    PerfilProfessor, PerfilDiretorTurma, PerfilCoordenador,
+    SolicitacaoBeneficio
 )
+
+
+def obter_aprovadores_atuais(aluno_perfil):
+    """
+    Determina os 3 responsáveis pela análise de uma solicitação de benefício,
+    "naquele exato momento": o Diretor de Turma do aluno, o Coordenador do
+    Curso do aluno e o Diretor Pedagógico. Ver secção 2.3 do documento de
+    lógicas de alteração.
+
+    Segue o mesmo critério já usado no resto do sistema para identificar estes
+    cargos (campos diretos no Usuario: turma_vinculada / is_diretor_turma /
+    is_coordenador / is_diretor_pedagogico), em vez de tabelas de perfil à parte.
+    """
+    diretor_turma = None
+    coordenador = None
+    turma = aluno_perfil.turma
+
+    if turma is not None:
+        diretor_turma = Usuario.objects.filter(is_diretor_turma=True, turma_vinculada=turma).first()
+
+        coordenador = Usuario.objects.filter(is_coordenador=True, curso_coordenado=turma.curso).first()
+        if coordenador is None:
+            # Sem coordenador específico para o curso: usar um coordenador geral (curso em branco)
+            coordenador = Usuario.objects.filter(is_coordenador=True, curso_coordenado='').first()
+
+    if coordenador is None:
+        # Garantia: se ainda não foi encontrado nenhum, usar qualquer coordenador existente
+        coordenador = Usuario.objects.filter(is_coordenador=True).first()
+
+    diretor_pedagogico = Usuario.objects.filter(is_diretor_pedagogico=True).first()
+
+    return diretor_turma, coordenador, diretor_pedagogico
 
 def index(request):
     return render(request, 'core/index.html')
@@ -86,6 +119,8 @@ def dashboard_aluno(request):
         return redirect('index')
     
     perfil = request.user.perfil_aluno
+    for solicitacao in SolicitacaoBeneficio.objects.filter(aluno=perfil, status='aguardando'):
+        solicitacao.avaliar_estado()
     context = {
         'aluno': perfil,
         'nome': request.user.get_full_name() or request.user.username,
@@ -187,6 +222,255 @@ def api_resgatar_beneficio(request, beneficio_id):
     except Beneficio.DoesNotExist:
         return JsonResponse({'success': False, 'erro': 'Benefício não encontrado'})
 
+
+# ---- NOVO FLUXO: solicitação de benefício sujeita a votação (sem custo em pontos) ----
+
+@csrf_exempt
+@login_required
+def api_solicitar_beneficio(request, beneficio_id):
+    """O aluno solicita um benefício. Não há custo, pagamento ou desconto de pontos:
+    a solicitação é enviada para análise dos 3 aprovadores em vigor."""
+    if request.user.tipo != 'aluno':
+        return JsonResponse({'success': False, 'erro': 'Acesso não autorizado'}, status=403)
+
+    if request.method != 'POST':
+        return JsonResponse({'erro': 'Método não permitido'}, status=405)
+
+    try:
+        beneficio = Beneficio.objects.get(id=beneficio_id, disponivel=True)
+    except Beneficio.DoesNotExist:
+        return JsonResponse({'success': False, 'erro': 'Benefício não encontrado'})
+
+    aluno = request.user.perfil_aluno
+    diretor_turma, coordenador, diretor_pedagogico = obter_aprovadores_atuais(aluno)
+
+    solicitacao = SolicitacaoBeneficio.objects.create(
+        aluno=aluno,
+        beneficio=beneficio,
+        aluno_nome=request.user.get_full_name() or request.user.username,
+        aluno_processo=aluno.numero_processo,
+        aluno_turma_nome=aluno.get_turma_nome(),
+        aluno_curso_nome=aluno.get_curso_display(),
+        beneficio_nome=beneficio.nome,
+        beneficio_descricao=beneficio.descricao,
+        aprovador_diretor_turma=diretor_turma,
+        aprovador_coordenador=coordenador,
+        aprovador_diretor_pedagogico=diretor_pedagogico,
+    )
+
+    return JsonResponse({
+        'success': True,
+        'solicitacao_id': solicitacao.id,
+        'tempo_restante': solicitacao.tempo_restante_segundos(),
+    })
+
+
+@login_required
+def api_status_solicitacao(request, solicitacao_id):
+    """Consulta o estado atual de uma solicitação (usado para acompanhar a votação em tempo real)."""
+    solicitacao = get_object_or_404(SolicitacaoBeneficio, id=solicitacao_id)
+
+    if request.user.tipo == 'aluno':
+        autorizado = solicitacao.aluno_id == request.user.perfil_aluno.id
+    else:
+        autorizado = solicitacao.papel_do_usuario(request.user) is not None
+
+    if not autorizado:
+        return JsonResponse({'erro': 'Acesso negado'}, status=403)
+
+    solicitacao.avaliar_estado()
+    return JsonResponse({
+        'status': solicitacao.status,
+        'status_display': solicitacao.get_status_display(),
+        'tempo_restante': solicitacao.tempo_restante_segundos(),
+        'voto_diretor_turma': solicitacao.voto_diretor_turma,
+        'voto_coordenador': solicitacao.voto_coordenador,
+        'voto_diretor_pedagogico': solicitacao.voto_diretor_pedagogico,
+    })
+
+
+@login_required
+def gerar_comprovativo_solicitacao(request, solicitacao_id):
+    """Gera o comprovativo em PDF, exclusivamente quando a solicitação foi aprovada."""
+    solicitacao = get_object_or_404(SolicitacaoBeneficio, id=solicitacao_id, aluno=request.user.perfil_aluno)
+    solicitacao.avaliar_estado()
+
+    if solicitacao.status != 'aprovado':
+        return HttpResponse('Comprovativo disponível apenas para solicitações aprovadas.', status=404)
+
+    dados_comprovativo = (
+        f"Certifica-se que o(a) estudante {solicitacao.aluno_nome}, "
+        f"do curso de {solicitacao.aluno_curso_nome}, turma {solicitacao.aluno_turma_nome}, "
+        f"teve o seu pedido do benefício \"{solicitacao.beneficio_nome}\" analisado e APROVADO "
+        f"pelos responsáveis pedagógicos do Colégio Árvore da Felicidade, com base no mérito "
+        f"das suas atividades realizadas."
+    )
+
+    pdf_url = f"http://{REDE_IP}:{PORTA}{reverse('gerar_comprovativo_solicitacao', args=[solicitacao.id])}"
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="comprovativo_solicitacao_{solicitacao.id}.pdf"'
+
+    pdf = canvas.Canvas(response, pagesize=A4)
+    width, height = A4
+
+    castanho = HexColor('#5C3A21')
+    verde = HexColor('#2B7A4B')
+
+    logo_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'logo-caf.png')
+    if os.path.exists(logo_path):
+        logo = ImageReader(logo_path)
+        pdf.drawImage(logo, (width - 60) / 2, height - 80, width=50, height=50, preserveAspectRatio=True)
+
+    pdf.setFont('Helvetica-Bold', 18)
+    pdf.setFillColor(castanho)
+    pdf.drawCentredString(width / 2, height - 120, "COLÉGIO ÁRVORE DA FELICIDADE")
+    pdf.setFont('Helvetica-Bold', 14)
+    pdf.drawCentredString(width / 2, height - 150, "COMPROVATIVO DE BENEFÍCIO APROVADO")
+    pdf.setStrokeColor(verde)
+    pdf.setLineWidth(2)
+    pdf.line(50, height - 170, width - 50, height - 170)
+
+    pdf.setFont('Helvetica', 12)
+    pdf.setFillColor(castanho)
+    text_lines = []
+    current_line = ""
+    for word in dados_comprovativo.split():
+        if len(current_line) + len(word) + 1 < 80:
+            current_line += " " + word if current_line else word
+        else:
+            text_lines.append(current_line)
+            current_line = word
+    text_lines.append(current_line)
+
+    y = height - 220
+    for line in text_lines:
+        pdf.drawString(50, y, line)
+        y -= 25
+
+    pdf.setFont('Helvetica-Bold', 12)
+    pdf.drawString(50, y - 20, f"Data da aprovação: {solicitacao.decidido_em.strftime('%d/%m/%Y %H:%M')}")
+    pdf.drawString(50, y - 45, f"Benefício: {solicitacao.beneficio_nome}")
+    pdf.drawString(50, y - 70, f"Nº de Processo: {solicitacao.aluno_processo}")
+
+    y_assinaturas = y - 130
+    pdf.setFont('Helvetica', 9)
+    aprovadores = [
+        ('Diretor de Turma', solicitacao.aprovador_diretor_turma),
+        ('Coordenador do Curso', solicitacao.aprovador_coordenador),
+        ('Diretor Pedagógico', solicitacao.aprovador_diretor_pedagogico),
+    ]
+    x_positions = [50, 230, 410]
+    for (label, usuario), x in zip(aprovadores, x_positions):
+        pdf.drawString(x, y_assinaturas, "____________________")
+        nome = usuario.get_full_name() if usuario else "—"
+        pdf.drawString(x, y_assinaturas - 12, nome[:24])
+        pdf.drawString(x, y_assinaturas - 24, label)
+
+    qr = qrcode.QRCode(version=1, box_size=10, border=4)
+    qr.add_data(pdf_url)
+    qr.make(fit=True)
+    qr_img = qr.make_image(fill_color="#5C3A21", back_color="white")
+
+    qr_buffer = BytesIO()
+    qr_img.save(qr_buffer, format='PNG')
+    qr_buffer.seek(0)
+    qr_reader = ImageReader(qr_buffer)
+
+    qr_size = 80
+    pdf.drawImage(qr_reader, width - qr_size - 50, y_assinaturas - 110, width=qr_size, height=qr_size)
+    pdf.setFont('Helvetica', 8)
+    pdf.drawString(width - qr_size - 45, y_assinaturas - 120, "QR Code para download")
+    pdf.drawString(width - qr_size - 55, y_assinaturas - 130, "do comprovativo")
+
+    pdf.save()
+    return response
+
+
+@login_required
+def ver_atividades_aluno(request, solicitacao_id):
+    """Tela de consulta (apenas leitura) das atividades realizadas pelo aluno, para os
+    aprovadores basearem a sua decisão. Ver secção 3.2 do documento."""
+    solicitacao = get_object_or_404(SolicitacaoBeneficio, id=solicitacao_id)
+
+    if solicitacao.papel_do_usuario(request.user) is None:
+        messages.error(request, 'Acesso não autorizado.')
+        return redirect('index')
+
+    transacoes = Transacao.objects.filter(
+        aluno=solicitacao.aluno, atividade__isnull=False
+    ).order_by('-data')
+
+    context = {
+        'solicitacao': solicitacao,
+        'transacoes': transacoes,
+        'nome': request.user.get_full_name() or request.user.username,
+    }
+    return render(request, 'core/aprovador_ver_atividades.html', context)
+
+
+@login_required
+def api_solicitacoes_aprovador(request):
+    """Lista, em JSON, as solicitações 'Aguardando Análise' atribuídas ao utilizador
+    autenticado (em qualquer um dos 3 papéis de aprovador). Usado para atualizar os
+    painéis dos aprovadores em tempo real (sondagem)."""
+    user = request.user
+    qs = SolicitacaoBeneficio.objects.filter(
+        Q(aprovador_diretor_turma=user) | Q(aprovador_coordenador=user) | Q(aprovador_diretor_pedagogico=user)
+    ).filter(status='aguardando').order_by('data_solicitacao')
+
+    resultado = []
+    for solicitacao in qs:
+        solicitacao.avaliar_estado()
+        if solicitacao.status != 'aguardando':
+            continue
+        papel = solicitacao.papel_do_usuario(user)
+        resultado.append({
+            'id': solicitacao.id,
+            'aluno_nome': solicitacao.aluno_nome,
+            'aluno_processo': solicitacao.aluno_processo,
+            'aluno_turma': solicitacao.aluno_turma_nome,
+            'aluno_curso': solicitacao.aluno_curso_nome,
+            'beneficio_nome': solicitacao.beneficio_nome,
+            'beneficio_descricao': solicitacao.beneficio_descricao,
+            'tempo_restante': solicitacao.tempo_restante_segundos(),
+            'meu_papel': papel,
+            'meu_voto': getattr(solicitacao, f'voto_{papel}') if papel else None,
+            'voto_diretor_turma': solicitacao.voto_diretor_turma,
+            'voto_coordenador': solicitacao.voto_coordenador,
+            'voto_diretor_pedagogico': solicitacao.voto_diretor_pedagogico,
+        })
+
+    return JsonResponse({'solicitacoes': resultado})
+
+
+@csrf_exempt
+@login_required
+def api_votar_solicitacao(request, solicitacao_id):
+    """Regista o voto ('aceitar'/'recusar') de um dos 3 aprovadores. Genérico para os
+    painéis de Diretor de Turma, Coordenador e Diretor Pedagógico."""
+    if request.method != 'POST':
+        return JsonResponse({'erro': 'Método não permitido'}, status=405)
+
+    solicitacao = get_object_or_404(SolicitacaoBeneficio, id=solicitacao_id)
+    papel = solicitacao.papel_do_usuario(request.user)
+    if papel is None:
+        return JsonResponse({'success': False, 'erro': 'Não é um dos aprovadores designados para esta solicitação.'}, status=403)
+
+    try:
+        data = json.loads(request.body)
+        voto = data.get('voto')
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'erro': 'Requisição inválida'}, status=400)
+
+    sucesso, mensagem = solicitacao.registrar_voto(papel, voto)
+    return JsonResponse({
+        'success': sucesso,
+        'mensagem': mensagem,
+        'status': solicitacao.status,
+    })
+
+
 @login_required
 def historico(request):
     if request.user.tipo != 'aluno':
@@ -194,9 +478,14 @@ def historico(request):
     
     transacoes = Transacao.objects.filter(aluno=request.user.perfil_aluno).order_by('-data')
     perfil = request.user.perfil_aluno
-    
+
+    solicitacoes = SolicitacaoBeneficio.objects.filter(aluno=perfil)
+    for solicitacao in solicitacoes:
+        solicitacao.avaliar_estado()  # garante que solicitações já expiradas são fechadas
+
     context = {
         'transacoes': transacoes,
+        'solicitacoes': solicitacoes,
         'nome': request.user.get_full_name() or request.user.username,
         'processo': perfil.numero_processo,
         'turma': perfil.get_turma_nome(),
@@ -330,7 +619,7 @@ def verificar_credenciais_professor(request):
                 return JsonResponse({'success': False, 'erro': 'Senha incorreta'})
             
             # Verificar permissões
-            if not (user.is_professor or user.is_coordenador or user.is_diretor_turma):
+            if not (user.is_professor or user.is_coordenador or user.is_diretor_turma or user.is_diretor_pedagogico):
                 print(f"🔍 DEBUG: {user.username} não tem permissões")
                 return JsonResponse({'success': False, 'erro': 'Usuário não tem permissão para esta área'})
             
@@ -346,6 +635,8 @@ def verificar_credenciais_professor(request):
                 cargos.append('coordenador')
             if user.is_diretor_turma:
                 cargos.append('diretor_turma')
+            if user.is_diretor_pedagogico:
+                cargos.append('diretor_pedagogico')
             
             print(f"🔍 DEBUG: Cargos: {cargos}")
             
@@ -357,6 +648,8 @@ def verificar_credenciais_professor(request):
                     return JsonResponse({'success': True, 'redirect': reverse('coordenador_dashboard')})
                 elif cargos[0] == 'diretor_turma':
                     return JsonResponse({'success': True, 'redirect': reverse('diretor_dashboard')})
+                elif cargos[0] == 'diretor_pedagogico':
+                    return JsonResponse({'success': True, 'redirect': reverse('diretor_pedagogico_dashboard')})
             
             # Múltiplos cargos
             # No final da view, quando o usuário tem múltiplos cargos
@@ -378,6 +671,7 @@ def selecionar_perfil(request):
         'tem_professor': 'professor' in cargos,
         'tem_coordenador': 'coordenador' in cargos,
         'tem_diretor': 'diretor_turma' in cargos,
+        'tem_diretor_pedagogico': 'diretor_pedagogico' in cargos,
     }
     return render(request, 'core/selecionar_perfil.html', context)
 
@@ -396,6 +690,8 @@ def redirecionar_perfil(request):
             return JsonResponse({'redirect': reverse('coordenador_dashboard')})
         elif perfil == 'diretor_turma':
             return JsonResponse({'redirect': reverse('diretor_dashboard')})  # ← Nome correto
+        elif perfil == 'diretor_pedagogico':
+            return JsonResponse({'redirect': reverse('diretor_pedagogico_dashboard')})
         else:
             return JsonResponse({'erro': 'Perfil inválido'}, status=400)
     
@@ -680,10 +976,19 @@ def diretor_dashboard(request):
         session_key = f'atividade_{atividade.id}_turma_{turma.id}_distribuida'
         atividade.ja_distribuida = request.session.get(session_key, False)
     
+    # Solicitações de benefícios pendentes atribuídas a este diretor de turma
+    solicitacoes_qs = SolicitacaoBeneficio.objects.filter(
+        aprovador_diretor_turma=request.user, status='aguardando'
+    )
+    for solicitacao in solicitacoes_qs:
+        solicitacao.avaliar_estado()
+    solicitacoes_pendentes = [s for s in solicitacoes_qs if s.status == 'aguardando']
+
     context = {
         'turma': turma,
         'alunos': alunos,
         'atividades': atividades,
+        'solicitacoes_pendentes': solicitacoes_pendentes,
         'nome': request.user.get_full_name() or request.user.username,
         'tem_multiplos_cargos': request.session.get('tem_multiplos_cargos', False),
     }
@@ -974,11 +1279,22 @@ def coordenador_dashboard(request):
     # Contar total de atividades curriculares
     total_curriculares = Atividade.objects.filter(disciplina__isnull=False).count()
     
+    # Solicitações de benefícios pendentes atribuídas a este coordenador
+    solicitacoes_qs = SolicitacaoBeneficio.objects.filter(
+        aprovador_coordenador=request.user, status='aguardando'
+    )
+    for solicitacao in solicitacoes_qs:
+        solicitacao.avaliar_estado()
+    solicitacoes_pendentes = [s for s in solicitacoes_qs if s.status == 'aguardando']
+
     context = {
         'atividades': page_obj,
         'search_query': search_query,
         'total_count': atividades.count(),
         'total_curriculares': total_curriculares,
+        'solicitacoes_pendentes': solicitacoes_pendentes,
+        'nome': request.user.get_full_name() or request.user.username,
+        'tem_multiplos_cargos': request.session.get('tem_multiplos_cargos', False),
     }
     return render(request, 'core/coordenador_dashboard.html', context)
 
@@ -1225,3 +1541,28 @@ def api_buscar_atividades(request):
         })
     
     return JsonResponse({'success': True, 'atividades': data})
+
+
+# ==================== DIRETOR PEDAGÓGICO ====================
+
+def is_diretor_pedagogico(user):
+    return user.is_authenticated and user.is_diretor_pedagogico
+
+
+@login_required
+@user_passes_test(is_diretor_pedagogico)
+def diretor_pedagogico_dashboard(request):
+    """Dashboard do Diretor Pedagógico - análise de solicitações de benefícios."""
+    solicitacoes_qs = SolicitacaoBeneficio.objects.filter(
+        aprovador_diretor_pedagogico=request.user, status='aguardando'
+    )
+    for solicitacao in solicitacoes_qs:
+        solicitacao.avaliar_estado()
+    solicitacoes_pendentes = [s for s in solicitacoes_qs if s.status == 'aguardando']
+
+    context = {
+        'solicitacoes_pendentes': solicitacoes_pendentes,
+        'nome': request.user.get_full_name() or request.user.username,
+        'tem_multiplos_cargos': request.session.get('tem_multiplos_cargos', False),
+    }
+    return render(request, 'core/diretor_pedagogico_dashboard.html', context)
